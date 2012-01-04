@@ -18,7 +18,7 @@ BEGIN {
     };
 }
 
-changes_ok( next_release => 'next_release' );
+changes_ok( { next_token => 'next_release' } );
 
 1;
 
