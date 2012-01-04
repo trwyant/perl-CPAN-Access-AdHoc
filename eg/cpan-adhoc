@@ -110,6 +110,11 @@ sub verb_cd {
     return;
 }
 
+sub verb_cpan {
+    say $cad->cpan();
+    return;
+}
+
 sub verb_clear {
     %dist = ();
     return;
@@ -399,6 +404,12 @@ Without an argument, it changes to the user's home directory.
  cpan-adhoc> clear
 
 This command removes all packages from the stash.
+
+=head2 cpan
+
+ cpan-adhoc> cpan
+
+This command just prints the CPAN URL being used.
 
 =head2 base
 
