@@ -1,0 +1,533 @@
+#!/usr/local/bin/perl
+
+use 5.010;
+
+use strict;
+use warnings;
+
+use autodie;
+
+use Config;
+use CPAN::DistnameInfo;
+use CPAN::Access::AdHoc;
+use Cwd;
+use File::Temp;
+use Getopt::Long 2.33;
+use Pod::Usage;
+use Term::ReadLine;
+use version 0.77;
+
+our $VERSION = '0.000_01';
+
+use constant CURRENT_PACKAGE => 'current';
+
+my %opt;
+
+GetOptions( \%opt,
+    'help|?' => sub { pod2usage( { -verbose => 2 } ) },
+) or pod2usage( { -verbose => 0 } );
+
+my $rl;
+if ( -t STDIN ) {
+    my $trl = Term::ReadLine->new( 'cpan-adhoc' );
+    $rl = sub {
+	return $trl->readline( $_[0] );
+    };
+} elsif ( -t STDOUT ) {
+    $rl = sub { print @_; return scalar <STDIN> };
+} else {
+    $rl = sub { return scalar <STDIN> };
+}
+
+-t STDOUT and say <<"EOD";
+
+cpan-adhoc - Get arbitrary information from a CPAN mirror.
+Version $VERSION, based on CPAN::Access::AdHoc version @{[
+    CPAN::Access::AdHoc->VERSION ]}
+
+Use 'help' for documentation, copyright, and license.
+
+EOD
+
+my $cad = CPAN::Access::AdHoc->new();
+my %dist;
+
+MAIN_LOOP:
+while ( defined( my $buffer = $rl->( 'cpan-adhoc> ' ) ) ) {
+    $buffer =~ s/ \s+ \z //smx;
+    $buffer =~ s/ \A \s+ //smx;
+    '' eq $buffer
+	and next;
+    $buffer =~ m/ \A [#] /smx
+	and next;
+    my ( $verb, @args ) = split qr{ \s+ }smx, $buffer;
+    if ( my $code = __PACKAGE__->can( "verb_$verb" ) ) {
+	eval {
+	    $code->( @args );
+	    1;
+	} or warn $@;
+    } else {
+	warn "Unrecognized verb '$verb'\n";
+    }
+}
+
+sub verb_alias {
+    my ( $old, $new ) = @_;
+    defined $old
+	or die "Package alias must be given\n";
+    defined $new
+	or ( $old, $new ) = ( CURRENT_PACKAGE, $old );
+    $dist{$old}
+	or die "Package '$old' not downloaded\n";
+    $dist{$new} = $dist{$old};
+    return;
+}
+
+sub verb_base {
+    my @args = @_;
+    @args or @args = ( CURRENT_PACKAGE );
+    foreach my $name ( @args ) {
+	if ( $dist{$name} ) {
+	    my $di = $dist{$name}{info};
+	    say sprintf '%s/%s  %s', $di->cpanid(), $di->filename(),
+		$dist{$name}{archive}->base_directory();
+	} else {
+	    say "Package $name not downloaded";
+	}
+    }
+    return;
+}
+
+sub verb_cd {
+    my ( $dir ) = @_;
+    if ( defined $dir ) {
+	chdir $dir
+	    or die "Failed to cd to $dir: $!\n";
+    } else {
+	chdir
+	    or die "Failed to cd to home directory: $!\n";
+    }
+    return;
+}
+
+sub verb_clear {
+    %dist = ();
+    return;
+}
+
+sub verb_diff {
+    local @ARGV = @_;
+    my ( @d_opt, @d_arg );
+    my %opt;
+    my $go = Getopt::Long::Parser->new(
+	config => [ qw{ pass_through no_auto_abbrev } ] );
+    $go->getoptions( \%opt, qw{ less! } );
+    while ( @ARGV ) {
+	local $_ = shift @ARGV;
+	if ( '--' eq $_ ) {
+	    @d_arg = @ARGV;
+	    last;
+	} elsif ( m/ \A - /smx ) {
+	    push @d_opt, $_;
+	} else {
+	    push @d_arg, $_;
+	}
+    }
+    @d_arg
+	and @d_arg <= 3
+	or die "The diff command requores one to three arguments\n";
+    my ( $local, $remote, $pkg ) = reverse @d_arg;
+    $remote //= $local;
+    my $temp = _fetch_file( $pkg, $remote );
+    _issue( \%opt, diff => @d_opt, $temp->filename(), $local );
+
+    return;
+}
+
+sub verb_exit {
+    no warnings qw{ exiting };
+    last MAIN_LOOP;
+}
+
+sub verb_extract {
+    my @args = @_;
+    @args or @args = ( CURRENT_PACKAGE );
+    foreach my $name ( @args ) {
+	if ( $dist{$name} ) {
+	    $dist{$name}{archive}->extract();
+	    my $di = $dist{$name}{info};
+	    say sprintf '%s/%s  %s', $di->cpanid(), $di->filename(),
+		$dist{$name}{archive}->base_directory();
+	} else {
+	    say "Package $name not downloaded";
+	}
+    }
+    return;
+}
+
+sub verb_help {
+    pod2usage( { -verbose => 2 } );
+    return;
+}
+
+sub verb_less {
+    my ( $pkg, $file ) = @_;
+    my $temp = _fetch_file( $pkg, $file );
+    _less( $temp );
+    return;
+}
+
+sub verb_list {
+    local @ARGV = @_;
+    my %opt;
+    GetOptions( \%opt, qw{ less! } )
+	or return;
+    my @args = @ARGV;
+    @args
+	or push @args, CURRENT_PACKAGE;
+    my $output = $opt{less} ? File::Temp->new() : *STDOUT;
+    foreach my $name ( @args ) {
+	if ( $dist{$name} ) {
+	    say { $output } $dist{$name}{name};
+	    foreach my $file ( $dist{$name}{archive}->list_contents() )
+	    {
+		say { $output } '    ', $file;
+	    }
+	} else {
+	    warn "Package '$name' not found\n";
+	}
+    }
+    $opt{less}
+	and _less( $output );
+    return;
+}
+
+sub verb_module {
+    local @ARGV = @_;
+    my %opt;
+    GetOptions( \%opt, qw{ fetch! } )
+	and @ARGV == 1
+	or die "The module command takes exactly one argument\n";
+    my ( $module ) = @ARGV;
+    my $inx = $cad->fetch_module_index();
+    $inx->{$module}
+	or die "Module '$module' not indexed\n";
+    my $pkg = $inx->{$module}{package};
+    say join "\t", $module, $inx->{$module}{version}, $pkg;
+    $opt{fetch}
+	and _fetch_package( $pkg );
+    return;
+}
+
+sub verb_package {
+    local @ARGV = @_;
+    my %opt;
+    GetOptions( \%opt, qw{ fetch! } )
+	and @ARGV == 1
+	or die "The package command takes exactly one argument\n";
+    my $re = qr{ $ARGV[0] }smx;
+    my $count = 0;
+    my $package;
+    foreach my $pkg ( $cad->indexed_packages ) {
+	$pkg =~ $re
+	    or next;
+	say $pkg;
+	$count++
+	    or $package = $pkg;
+    }
+    if ( $opt{fetch} ) {
+	if ( $count == 1 ) {
+	    _fetch_package( $package );
+	} elsif ( $count ) {
+	    die "Multiple packages matching $re were found\n";
+	} else {
+	    die "No packages matching $re were found\n";
+	}
+    }
+    return;
+}
+
+sub verb_perldoc {
+    my ( $pkg, $file ) = @_;
+    my $temp = _fetch_file( $pkg, $file );
+    _issue( {}, perldoc => $temp );
+    return;
+}
+
+sub verb_pwd {
+    say cwd;
+    return;
+}
+
+sub _fetch_file {
+    my ( $pkg, $file ) = @_;
+    defined $pkg
+	or defined $file
+	or die "File name must be given\n";
+    defined $file
+	or ( $pkg, $file ) = ( CURRENT_PACKAGE, $pkg );
+    $pkg //= CURRENT_PACKAGE;
+    $dist{$pkg}
+	or die "Package '$pkg' not downloaded\n";
+    my $dname = $dist{$pkg}{info}->distvname();
+    $dist{$pkg}{archive}->item_present( $file )
+	or die "File '$file' not in package '$dname'\n";
+    my $temp = File::Temp->new();
+    print { $temp } $dist{$pkg}{archive}->get_item_content( $file );
+    return $temp;
+}
+
+sub _fetch_package {
+    my ( $pkg ) = @_;
+    my $archive = $cad->fetch_package_archive( $pkg );
+    my $path = $archive->path();
+    my $di = CPAN::DistnameInfo->new( $path );
+    my $dn = $di->dist();
+    my $dv = $di->distvname();
+    my $version = version->parse( $di->version() );
+    $dist{+CURRENT_PACKAGE} = $dist{$pkg} = $dist{$dv} = {
+	name	=> $pkg,
+	archive	=> $archive,
+	version	=> $version,
+	dist	=> $dn,
+	info	=> $di,
+    };
+    $dist{$dn}
+	and $dist{$dn}{version} > $version
+	or $dist{$dn} = $dist{$pkg};
+    return;
+}
+
+sub _issue {
+    my ( $opt, $name, @args ) = @_;
+    if ( $opt->{less} ) {
+	my $pid = open my $pipe, '-|';
+	if ( ! defined $pid ) {
+	    die "Failed to fork: $!\n";
+	} elsif ( $pid ) {
+	    # Parent
+	    my $temp = File::Temp->new();
+	    while ( <$pipe> ) {
+		print { $temp } $_;
+	    }
+	    _less( $temp );
+	} else {
+	    # Child
+	    exec { $name } $name, @args;
+	    die "Exec failed: $!\n";
+	}
+    } else {
+	system { $name } $name, @args;
+    }
+    return;
+}
+
+{
+
+    my @pager;
+
+    BEGIN {
+	@pager = split qr{ \s+ }smx, $Config{pager};
+    }
+
+    sub _less {
+	my ( $file ) = @_;
+	_issue( {}, @pager, $file );
+	return;
+    }
+
+}
+
+__END__
+
+=head1 TITLE
+
+cpan-adhoc - Get arbitrary information from a CPAN mirror.
+
+=head1 SYNOPSIS
+
+ $ cpan-adhoc
+ cpan-adhoc> help
+ cpan-adhoc> module -fetch LWP::UserAgent
+ cpan-adhoc> list
+ cpan-adhoc> perldoc lib/LWP/UserAgent.pm
+ cpan-adhoc> exit
+ 
+ $ cpan-adhoc -help
+ $ cpan-adhoc -version
+
+=head1 OPTIONS
+
+=head2 -help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 -version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script implements an interactive query of a CPAN mirror.
+
+The following commands are supported:
+
+=head2 alias
+
+ cpan-adhoc> alias libwww-perl libwww
+ cpan-adhoc> alias libwww
+
+This command creates an alias for a downloaded package in the downloaded
+package stash. It is simply a convenience to save typing. The first
+argument is the name of an entry in the stash, and the second is the
+alias.
+
+The single-argument version creates an alias for the current package, if
+any.
+
+=head2 cd
+
+ cpan-adhoc> cd fu/bar
+ cpan-adhoc> cd
+
+This command changes the default directory under which the script runs.
+Without an argument, it changes to the user's home directory.
+
+=head2 clear
+
+ cpan-adhoc> clear
+
+This command removes all packages from the stash.
+
+=head2 base
+
+This command displays the base directories for the named packages. If no
+package is specified, the current package, if any, is displayed.
+Packages must be fetched before they can be displayed.
+
+=head2 diff
+
+ cpan-adhoc> diff libwww-perl README README
+ cpan-adhoc> diff README README
+ cpan-adhoc> diff README
+ cpan-adhoc> diff -less -u README README
+
+This command runs F<diff> on a file from a CPAN archive and a local
+file. The arguments are the package name, the file in the package, and
+the local file. The package defaults to the current package, and the
+file in the package defaults to the local file.
+
+The C<-less> option specifies that the output of F<diff> be viewed in
+F<less>. Anything else that looks like an option (that is, that has a
+leading dash) will be passed to the F<diff> program. Because of the
+possibility of conflict with F<diff> options, C<-less> may not be
+abbreviated, though it may be specified as C<--less>, or negated
+C<-noless>.
+
+The null option (C<-->) ends option processing, and causes anything
+after it to be considered an argument. For example, in
+
+ cpan-adhoc> diff README -readme
+
+the trailing C<-readme> is taken as an option for F<diff>. But in
+
+ cpan-adhoc> diff -- README -readme
+
+the trailing C<-readme> is taken as a file name.
+
+=head2 exit
+
+ cpan-adhoc> exit
+
+This command causes the script to exit. An end-of-file also works.
+
+=head2 help
+
+ cpan-adhoc> help
+
+This command displays the documentation for this script.
+
+=head2 less
+
+ cpan-adhoc> less libwww-perl lib/LWP/UserAgent.pm
+ cpan-adhoc> less lib/LWP/UserAgent.pm
+
+This command feeds the specified file from the specified package to
+whatever pager was configured when Perl was built. The package must
+have been previously downloaded.
+
+The single-argument form displays the given file in the current package.
+
+=head2 list
+
+ cpan-adhoc> list libwww-perl
+ cpan-adhoc> list
+
+This command lists the files in the given package, which must have been
+previously downloaded. If no package is specified, the current package
+is listed.
+
+=head2 module
+
+ cpan-adhoc> module LWP::UserAgent
+ cpan-adhoc> module -fetch LWP::UserAgent
+
+This command looks up the given modules in the module index, and
+displays their version and the package they are contained in.
+
+If the C<-fetch> option is specified, the package is fetched, and
+stashed locally under the name that appeared in the index, and under its
+package and version (e.g. C<libwww-perl-6.03> for the above examples).
+It is also stashed under the package name if no higher version of the
+same package has been stashed. The last package fetched becomes the
+current package.
+
+=head2 package
+
+ cpan-adhoc> package libwww-perl
+ cpan-adhoc> package -fetch libwww-perl
+
+This command looks up the given package in the module index (sic), using
+an unanchored regular expression, and displays any matches.
+
+If the C<-fetch> option is specified and exxactly one match is found,
+that package is fetched, and stashed locally under the name that
+appeared in the index, and under its package and version (e.g.
+C<libwww-perl-6.03> for the above examples).  It is also stashed under
+the package name if no higher version of the same package has been
+stashed. The last package fetched becomes the current package.
+
+=head2 perldoc
+
+ cpan-adhoc> perldoc libwww-perl-6.03 lib/LWP/UserAgent.pm
+ cpan-adhoc> perldoc lib/LWP/UserAgent.pm
+
+This command feeds the specified file from the specified package to
+perldoc.  The package must have been previously downloaded.
+
+The single-argument form displays the given file in the current package.
+
+=head2 pwd
+
+This command displays the current default directory.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2012 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the full text
+of the licenses in the directory LICENSES.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :

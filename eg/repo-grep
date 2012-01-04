@@ -1,0 +1,87 @@
+#!/usr/local/bin/perl
+
+use 5.006002;
+
+use strict;
+use warnings;
+
+use CPAN::Access::AdHoc;
+use Getopt::Long 2.33;
+use Pod::Usage;
+
+our $VERSION = '0.000_01';
+
+my %opt;
+
+GetOptions( \%opt,
+    qw{ cpan=s },
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) or pod2usage( { -verbose => 0 } );
+
+my @res = map { qr{ $_ }smx } @ARGV;
+
+my $cad = CPAN::Access::AdHoc->new( cpan => $opt{cpan} );
+
+foreach my $pkg ( $cad->indexed_packages() ) {
+    foreach my $re ( @res ) {
+	$pkg =~ $re
+	    or next;
+	print "$pkg\n";
+	last;
+    }
+}
+
+__END__
+
+=head1 TITLE
+
+repo-grep - List all indexed packages that match one or more regexes.
+
+=head1 SYNOPSIS
+
+ repo-grep '\.zip\z'
+ repo-grep -help
+ repo-grep -version
+
+=head1 OPTIONS
+
+=head2 -cpan
+
+This option specifies the URL of the CPAN repository to analyze. The
+default depends on how L<CPAN::Access::AdHoc|CPAN::Access::AdHoc> is configured.
+
+=head2 -help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 -version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script takes as its arguments one or more Perl regular
+expressions, applies those regular expressions to the names of all the
+packages in the CPAN repository, and writes the names of any matches to
+standard out.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2012 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the full text
+of the licenses in the directory LICENSES.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :

@@ -1,0 +1,101 @@
+#!/usr/local/bin/perl
+
+use 5.010;
+
+use strict;
+use warnings;
+
+use CPAN::Access::AdHoc;
+use Getopt::Long 2.33;
+use Pod::Usage;
+
+our $VERSION = '0.000_01';
+
+my %opt;
+
+GetOptions( \%opt,
+    qw{ cpan=s verbose! },
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) and @ARGV or pod2usage( { -verbose => 0 } );
+
+my @res = map { qr{ $_ }smx } @ARGV;
+
+my $cad = CPAN::Access::AdHoc->new( cpan => $opt{cpan} );
+
+my $module_index = $cad->fetch_module_index();
+
+foreach my $module ( sort keys %{ $module_index } )
+{
+    foreach my $re ( @res ) {
+	$module =~ $re
+	    or next;
+	my $data = $module_index->{$module};
+	say join "\t", $module, $opt{verbose} ?
+	    ( $data->{version}, $data->{package} ) :
+	    ();
+	last;
+    }
+}
+
+__END__
+
+=head1 TITLE
+
+grep-modules - Find indexed modules that match one or more regexps.
+
+=head1 SYNOPSIS
+
+ grep-modules '\A CPAN::Shell::[^:]+ \z';
+ grep-modules -help
+ grep-modules -version
+
+=head1 OPTIONS
+
+=head2 -cpan
+
+This option specifies the URL of the CPAN repository to access.
+
+=head2 -help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 -verbose
+
+This option causes the module's version and package to be displayed.
+
+=head2 -version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script takes as its arguments one or more Perl regular
+expressions. Well, actually they are strings made into regular
+expressions with C<qr{ $_ }smx>. The desired CPAN repository is
+accessed, and all indexed modules which match at least one of the
+regexes are displayed.
+
+The URL of the desired CPAN repository can be specified using the
+C<-cpan> option; otherwise it defaults to whatever
+L<CPAN::Access::AdHoc|CPAN::Access::AdHoc> provides.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2012 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the full text
+of the licenses in the directory LICENSES.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :

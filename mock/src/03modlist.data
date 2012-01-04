@@ -1,0 +1,59 @@
+File:        03modlist.data
+Description: These are the data that are published in the module
+        list, but they may be more recent than the latest posted
+        modulelist. Over time we'll make sure that these data
+        can be used to print the whole part two of the
+        modulelist. Currently this is not the case.
+Modcount:    2
+Written-By:  Tom Wyant
+Date:        Mon, 26 Dec 2011 17:10:00 GMT
+
+package CPAN::Modulelist;
+# Usage: print Data::Dumper->new([CPAN::Modulelist->data])->Dump or similar
+# cannot 'use strict', because we normally run under Safe
+# use strict;
+sub data {
+my $result = {};
+my $primary = "modid";
+for (@$CPAN::Modulelist::data){
+my %hash;
+@hash{@$CPAN::Modulelist::cols} = @$_;
+$result->{$hash{$primary}} = \%hash;
+}
+$result;
+}
+$CPAN::Modulelist::cols = [
+'modid',	# Module ID
+'statd',	# Development stage (icabRMS?)
+'stats',	# Support level (dmuna?)
+'statl',	# Language used (pc+oh?)
+'stati',	# Interface style (frOphn?)
+'statp',	# Public license (pglba2odrn?)
+'description',
+'userid',	# CPAN ID
+'chapterid'	# Module List Chapter (002 - 028)
+];
+$CPAN::Modulelist::data = [
+[
+'Yehudi',
+'R',
+'d',
+'p',
+'O',
+'p',
+'Represents Yehudi Menuhin',
+'MENUHIN',
+'023'
+],
+[
+'Johann',
+'R',
+'d',
+'p',
+'O',
+'p',
+'Represents Johann Sebastian Bach',
+'BACH',
+'023'
+],
+];

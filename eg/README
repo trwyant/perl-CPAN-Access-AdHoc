@@ -1,0 +1,28 @@
+This directory contains sample scripts. Specifically:
+
+README - This file.
+
+corpus - Given a CPAN ID, list the packages by that author.
+
+cpan-adhoc - An interactive script to obtain information about CPAN
+	modules and packages.
+
+dist-extensions - List all file name extensions found on distributions
+	in CPAN.
+
+grep-modules - List all indexed modules that match one or more regular
+	expressions given on the command line.
+
+mod-dep - List all dependencies of the given module or modules.
+	Optionally takes installed modules into account.
+
+mod-dist - Say what distribution a given module is in.
+
+mod-doc - Display the documentation for the package containing the given
+	module in your web browser.
+
+repo-grep - Find all indexed packages that match one or more regular
+	expressions given on the command line.
+
+In all the above scripts, you can get the documentation with the --help
+option.

@@ -1,0 +1,136 @@
+#!/usr/local/bin/perl
+
+use 5.006002;
+
+use strict;
+use warnings;
+
+use CPAN::DistnameInfo;
+use Getopt::Long 2.33;
+use Pod::Usage;
+
+use CPAN::Access::AdHoc;
+
+our $VERSION = '0.000_01';
+
+my %canned_url = (
+    kobes	=> 'http://cpan.uwinnipeg.ca/dist',
+    meta	=> 'http://metacpan.org/release',
+    search	=> 'http://search.cpan.org/dist',
+);
+
+my %default_browser = (
+    MSWin32	=> 'start',
+    darwin	=> 'open',
+);
+
+my %opt = (
+    browser => $default_browser{$^O} || 'firefox',
+    url => $canned_url{search},
+);
+
+GetOptions( \%opt,
+    qw{ browser=s cpan=s url=s },
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) and @ARGV or pod2usage( { -verbose => 0 } );
+
+my $cad = CPAN::Access::AdHoc->new( cpan => $opt{cpan} );
+
+my ( $module ) = @ARGV;
+
+my $index = $cad->fetch_module_index();
+
+my $info = $index->{$module},
+    or die "$module not in index";
+
+my $di = CPAN::DistnameInfo->new( $info->{package} );
+
+my $url = $opt{url};
+defined $canned_url{$url}
+    and $url = $canned_url{$url};
+$url =~ m{ / \z }smx
+    or $url .= '/';
+
+system $opt{browser}, $url . $di->dist();
+
+__END__
+
+=head1 TITLE
+
+mod-doc - Given a module name, display its package documentation
+
+=head1 SYNOPSIS
+
+ mod-doc LWP::UserAgent
+ mod-doc -help
+ mod-doc -version
+
+=head1 OPTIONS
+
+=head2 -browser
+
+This option specifies the command used to run the browser. The default
+is C<start> under C<MSWin32>, C<open> under C<darwin>, and C<firefox>
+anywhere else.
+
+=head2 -cpan
+
+This option specifies the URL of the CPAN repository used for the module
+lookup. This defaults based on your C<CPAN::Mini>, C<CPAN>, or
+C<CPANPLUS> setup.
+
+=head2 -help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 url
+
+This option specifies the URL of the documentation root. The name of the
+package containing this will be appended, and the result passed to the
+selected browser.
+
+There are three canned URLs that can be specified by name:
+
+=over
+
+=item kobes => 'http://cpan.uwinnipeg.ca/dist'
+
+=item meta => 'http://metacpan.org/release',
+
+=item search => 'http://search.cpan.org/dist',
+
+=back
+
+The default is C<http://search.cpan.org/dist>.
+
+=head2 -version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script finds the name of the distribution that contains a
+given module and displays its documentation in the specified browser.
+
+It does this by looking up the module in the index of the 
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2012 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the full text
+of the licenses in the directory LICENSES.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :

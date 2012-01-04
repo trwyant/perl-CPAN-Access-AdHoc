@@ -1,0 +1,178 @@
+#!/usr/local/bin/perl
+
+use 5.010;
+
+use strict;
+use warnings;
+
+use CPAN::Access::AdHoc;
+use Getopt::Long 2.33;
+use Pod::Usage;
+
+our $VERSION = '0.000_01';
+
+my %opt;
+
+GetOptions( \%opt,
+    qw{ cpan=s incremental! prune! recurse|recursive|R! },
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) or pod2usage( { -verbose => 0 } );
+
+my $cad = CPAN::Access::AdHoc->new( cpan => $opt{cpan} );
+
+my $index = $cad->fetch_module_index();
+
+foreach my $module ( @ARGV ) {
+    mod_dep( $module );
+}
+
+my %seen;
+
+sub mod_dep {
+    my ( $module, $indent, $stack ) = @_;
+    $opt{prune}
+	and $seen{$module}++
+	and return;
+    $opt{incremental}
+	and module_installed( $module )
+	and return;
+    $indent //= '';
+
+    if ( my $info = $index->{$module} ) {
+
+	say $indent, "$module $info->{version}";
+	$indent .= '  ';
+	$info->{package} =~ m{ / perl -? \d+ [.] }smx
+	    and do {
+	    say $indent, 'In core';
+	    return;
+	};
+	my $meta = $cad->fetch_package_archive( $info->{package} )
+	->metadata()
+	    or do {
+	    say $indent, 'Prerequisites not available';
+	    return;
+	};
+	my $prereq = $meta->effective_prereqs();
+	my $versions = $prereq->requirements_for(
+	    runtime => 'requires'
+	)->as_string_hash();
+	foreach my $mod ( sort keys %{ $versions } ) {
+	    if ( 'perl' eq $mod ) {
+		$opt{incremental}
+		    and perl_installed( $versions->{$mod} )
+		    or say $indent, "$mod $versions->{$mod}";
+	    } elsif ( $opt{recurse} ) {
+		$stack ||= [];
+		foreach ( @{ $stack } ) {
+		    $_ eq $mod and return;
+		}
+		push @{ $stack }, $mod;
+		mod_dep( $mod, $indent, $stack );
+		pop @{ $stack };
+	    } else {
+		$opt{incremental}
+		    and module_installed( $mod )
+		    or say $indent, "$mod $versions->{$mod}";
+	    }
+	}
+
+    } else {
+
+	say $indent, "$module is not indexed";
+
+    }
+
+    return;
+}
+
+sub module_installed {
+    my ( $module ) = @_;
+
+    ( my $fn = $module ) =~ s{ :: }{/}smxg;
+
+    foreach my $dir ( @INC ) {
+	my $path = File::Spec->catfile( $dir, $fn );
+	-f "$path.pm"
+	    and return 1;
+    }
+
+    return;
+}
+
+sub perl_installed {
+    my ( $version ) = @_;
+    my $v = version->parse( $version );
+    return $^V >= $v;
+}
+
+__END__
+
+=head1 TITLE
+
+mod-dep - Display the dependencies of a module.
+
+=head1 SYNOPSIS
+
+ mod-dep LWP::UserAgent
+ mod-dep -cpan=http://cpan.pair.com/ LWP::UserAgent
+ mod-dep -help
+ mod-dep -version
+
+=head1 OPTIONS
+
+=head2 -cpan
+
+This option specifies the URL of the CPAN repository you wish to use as
+the basis of your analysis. The default is whatever
+L<CPAN::Access::AdHoc|CPAN::Access::AdHoc> comes up with.
+
+=head2 -incremental
+
+This option supresses the display of modules that are already installed.
+In the case of C<'perl'>, the display is supressed if the Perl that is
+running the script meets the requirement.
+
+=head2 -help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 -prune
+
+This option supresses the display of all occurrances of a module after
+the first. This only does anything useful when combined with
+C<-recurse>.
+
+=head2 -recurse
+
+This option causes the script to recurse through the dependants of the
+given module. It can also be specified as C<-recursive> or C<-R>.
+
+=head2 -version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script analyzes the requirements of a given CPAN module.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2012 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the full text
+of the licenses in the directory LICENSES.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :
