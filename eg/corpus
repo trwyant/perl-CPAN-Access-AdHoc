@@ -34,7 +34,7 @@ corpus - List the indexed distributions of one or more CPAN authors.
 
 =head1 SYNOPSIS
 
- corpus audreyt
+ corpus some_cpan_id
  corpus -help
  corpus -version
 
