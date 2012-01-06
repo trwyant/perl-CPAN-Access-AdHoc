@@ -1,2 +1,20 @@
+0.000_02	2012-01-06	T. R. Wyant
+  The CPAN::Access::AdHoc default_cpan_source() mutator now validates
+    its argument, and croaks on an error.
+  The CPAN::Access::AdHoc cpan() mutator now croaks if its argument was
+    undef and no default can be computed.
+  Check in CPAN::Access::AdHoc for failure when opening string
+    references, and croak with error if needed.
+  CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini now explicitly converts
+    the local repository path to POSIX before making a file: URL out of
+    it.
+  Add dependency on Module::Pluggable::Object, in lieu of home-grown
+    plugin code.
+  Review and update dependencies.
+  Add author tests without optional modules CPANPLUS, CPAN::Mini and
+    App::cpanminus.
+  Add 'cpan' and 'cpan_default_source' commands to eg/cpan-adhoc, and
+    have the 'help' command not exit.
+
 0.000_01	2012-01-04	T. R. Wyant
   Initial release

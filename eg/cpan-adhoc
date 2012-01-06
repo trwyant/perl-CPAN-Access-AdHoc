@@ -17,7 +17,7 @@ use Pod::Usage;
 use Term::ReadLine;
 use version 0.77;
 
-our $VERSION = '0.000_01';
+our $VERSION = '0.000_02';
 
 use constant CURRENT_PACKAGE => 'current';
 

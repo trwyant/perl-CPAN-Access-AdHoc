@@ -5,7 +5,7 @@ use 5.008;
 use strict;
 use warnings;
 
-our $VERSION = '0.000_01';
+our $VERSION = '0.000_02';
 
 my $_attr = sub {
     my ( $self ) = @_;

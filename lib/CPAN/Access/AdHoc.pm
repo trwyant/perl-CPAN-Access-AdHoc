@@ -14,7 +14,7 @@ use LWP::UserAgent ();
 use Module::Pluggable::Object;
 use Text::ParseWords ();
 
-our $VERSION = '0.000_01';
+our $VERSION = '0.000_02';
 
 my @attributes = (
     [ config		=> \&_attr_config,	],	# Must be first

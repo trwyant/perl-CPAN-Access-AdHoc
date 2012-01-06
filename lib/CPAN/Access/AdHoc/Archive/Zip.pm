@@ -11,7 +11,7 @@ use Archive::Zip;
 use File::Spec::Unix ();
 use IO::File ();
 
-our $VERSION = '0.000_01';
+our $VERSION = '0.000_02';
 
 my $_attr = sub {
     my ( $self ) = @_;

@@ -13,7 +13,7 @@ use IO::File ();
 use IO::Uncompress::Bunzip2 ();
 use IO::Uncompress::Gunzip ();
 
-our $VERSION = '0.000_01';
+our $VERSION = '0.000_02';
 
 my $_attr = sub {
     my ( $self ) = @_;
