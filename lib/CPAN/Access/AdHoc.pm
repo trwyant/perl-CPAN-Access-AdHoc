@@ -129,7 +129,8 @@ sub fetch_module_index {
 
     my $packages_details = $self->fetch( 'modules/02packages.details.txt.gz' );
 
-    my $fh = IO::File->new( \$packages_details, '<' );
+    my $fh = IO::File->new( \$packages_details, '<' )
+	or _wail( "Unable to open string reference: $!" );
 
     my $meta = $self->_read_meta( $fh );
 
@@ -160,7 +161,8 @@ sub fetch_registered_module_index {
 
     my $packages_details = $self->fetch( 'modules/03modlist.data.gz' );
 
-    my $fh = IO::File->new( \$packages_details, '<' );
+    my $fh = IO::File->new( \$packages_details, '<' )
+	or _wail( "Unable to open string reference: $!" );
 
     my $meta = $self->_read_meta( $fh );
 
