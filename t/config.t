@@ -10,6 +10,8 @@ use Test::More 0.88;	# Because of done_testing();
 use lib qw{ mock };
 
 use Cwd();
+use File::Spec;
+use File::Spec::Unix;
 
 require_ok 'Config::Tiny';		# Load mock object
 require_ok 'CPAN';			# Load mock object
@@ -21,7 +23,15 @@ use CPAN::Access::AdHoc;
 
 # Make sure mock objects work as desired.
 
-my $default_mock_repos = 'file://' . Cwd::abs_path( 'mock/repos' );
+# Compute file:// URL for mock repository.
+my $default_mock_repos;
+{
+    my ( $dev, $dir, $base ) = File::Spec->splitpath(
+	Cwd::abs_path( 'mock/repos' ) );
+    my @path = grep { defined $_ && $_ ne '' } File::Spec->splitdir( $dir );
+    $default_mock_repos = 'file://' . File::Spec::Unix->catfile(
+	$dev, @path, $base );
+}
 
 # Mock File::HomeDir
 
