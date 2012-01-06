@@ -23,6 +23,7 @@ my %args = (
     ),
     license => 'perl',
 #   add_to_cleanup	=> [ qw{ mock/repos/ } ],
+    add_to_cleanup =>[ qw{ xt/author/optionals } ],
     PL_files => {
 	'mock/src/Build_Repos.PL' => 'mock/repos',
     },

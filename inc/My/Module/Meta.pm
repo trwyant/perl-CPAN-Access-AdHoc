@@ -19,7 +19,13 @@ sub new {
 
 sub build_requires {
     return +{
-	'Test::More'	=> 0.88,	# Because of done_testing().
+	'ExtUtils::MakeMaker'	=> 0,
+	'ExtUtils::Manifest'	=> 0,
+	'File::Copy'		=> 0,
+	'File::Glob'		=> 0,
+	'IO::Compress::Gzip'	=> 0,
+	'Pod::Usage'		=> 0,
+	'Test::More'		=> 0.88,	# Because of done_testing().
     };
 }
 
@@ -38,17 +44,19 @@ sub requires {
 	'base'			=> 0,
 	'Carp'			=> 0,
 	'Config::Tiny'		=> 0,
-	'CPAN'			=> 0,
 	'CPAN::Meta'		=> 0,
 	'Cwd'			=> 0,
 	'File::Find'		=> 0,
 	'File::HomeDir'		=> 0,
+	'File::Path'		=> 2.07,
 	'File::Spec'		=> 0,
+	'File::Spec::Unix'	=> 0,
 	'Getopt::Long'		=> 2.33,
 	'IO::File'		=> 0,
 	'IO::Uncompress::Bunzip2'	=> 0,
 	'IO::Uncompress::Gunzip'	=> 0,
-	'LWP::UserAgent'	=> 0,
+	'LWP::UserAgent'		=> 0,
+	'Module::Pluggable::Object'	=> 0,
 	'strict'		=> 0,
 	'Text::ParseWords'	=> 0,
 	'warnings'		=> 0,

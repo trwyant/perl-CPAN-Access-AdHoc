@@ -32,48 +32,6 @@ sub load {
     return;
 }
 
-sub plugins {
-    my ( $base ) = @_;
-
-    $base =~ m< \A
-	[[:alpha:]_] \w*
-	(?: :: [[:alpha:]_] \w* )* \z
-    >smx
-	or do{
-	require Carp;
-	Carp::croak( "Malformed base module name '$base'" );
-    };
-
-    ( my $dir = $base ) =~ s{ :: }{/}smxg;
-
-    foreach my $inc ( @INC ) {
-	my $path = File::Spec->catdir( $inc, $dir );
-	-d $path
-	    or next;
-	my @found;
-	find( sub {
-		-f or return;
-		m{ [.] pm \z }smx
-		    or return;
-		my $module;
-		eval {
-		    $module = File::Spec->abs2rel( $File::Find::name,
-			$inc );
-		    $INC{$module}
-			or require $module;
-		    1;
-		} or return;
-		$module =~ s{ [.] [^.]* \z }{}smx;
-		$module =~ s{ / }{::}smxg;
-		push @found, $module;
-		return;
-	    }, $path );
-	return ( sort @found );
-    }
-
-    return;
-}
-
 1;
 
 __END__
@@ -105,12 +63,6 @@ This module provides the following public subroutines:
 
 This subroutine takes as its arguments one or more module names, and
 loads them.
-
-=head2 plugins
-
-This subroutine takes as its argument a base package name space, and
-loads any modules found under that name space, returning the names of
-all modules loaded, in ASCIIbetical order.
 
 =head1 SUPPORT
 

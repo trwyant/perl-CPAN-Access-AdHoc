@@ -11,9 +11,14 @@ use CPAN::Meta;
 use File::HomeDir ();
 use File::Spec ();
 use LWP::UserAgent ();
+use Module::Pluggable::Object;
 use Text::ParseWords ();
 
-my @archivers = CPAN::Access::AdHoc::Util::plugins( 'CPAN::Access::AdHoc::Archive' );
+my @archivers = Module::Pluggable::Object->new(
+    search_path	=> 'CPAN::Access::AdHoc::Archive',
+    inner	=> 0,
+    require	=> 1,
+)->plugins();
 
 our $VERSION = '0.000_01';
 

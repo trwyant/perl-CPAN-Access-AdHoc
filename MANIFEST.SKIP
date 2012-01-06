@@ -4,6 +4,7 @@
 ^blib/
 ^Build$
 ^cover_db/
+^CPAN-Access-AdHoc
 CVS/
 ^foo
 ^html/
@@ -18,4 +19,4 @@ CVS/
 \.swp$
 ^tools/
 ^TODO$
-^CPAN-Access-AdHoc
+^xt/author/optionals/

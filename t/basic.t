@@ -18,7 +18,7 @@ my @expect_archive_methods = qw{
 require_ok 'CPAN::Access::AdHoc::Util'
     or BAIL_OUT 'CPAN::Access::AdHoc::Util is required';
 
-can_ok     'CPAN::Access::AdHoc::Util' => qw{ load plugins };
+can_ok     'CPAN::Access::AdHoc::Util' => qw{ load };
 
 require_ok 'CPAN::Access::AdHoc::Archive'
     or BAIL_OUT 'CPAN::Access::AdHoc::Archive is required';
@@ -61,15 +61,6 @@ require_ok 'CPAN::Access::AdHoc::Default::CPAN::CPANPLUS'
     or BAIL_OUT 'CPAN::Access::AdHoc::Default::CPAN::CPANPLUS is required';
 
 can_ok     'CPAN::Access::AdHoc::Default::CPAN::CPANPLUS' => @default_class_methods;
-
-is_deeply [ CPAN::Access::AdHoc::Util::plugins( 'CPAN::Access::AdHoc::Default::CPAN' ) ],
-    [ qw{
-	CPAN::Access::AdHoc::Default::CPAN::CPAN
-	CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini
-	CPAN::Access::AdHoc::Default::CPAN::CPANPLUS
-	CPAN::Access::AdHoc::Default::CPAN::cpanm
-    } ],
-    'The plugins utility can find all the CPAN default modules';
 
 require_ok 'CPAN::Access::AdHoc'
     or BAIL_OUT 'CPAN::Access::AdHoc is required';

@@ -7,15 +7,119 @@ use base qw{ Module::Build };
 
 use Carp;
 
+my @optionals_dir = qw{ xt author optionals };
+
+# Note that we do not hide CPAN because it is core.
+my @hide = qw{
+    CPAN::Mini CPANPLUS App::cpanminus
+};
+
+sub ACTION_make_optional_modules_tests {
+    my ( $self, @args ) = @_;
+
+    my $hider = 'Test::Without::Module';
+
+    my $gendir = File::Spec->catdir( @optionals_dir );
+
+    -d $gendir
+	or mkdir $gendir
+	or die "Unable to create $gendir: $!\n";
+
+    foreach my $ip ( _get_general_tests() ) {
+	my ( $op ) = _get_tests_without_optional_modules( $ip );
+	-f $op and next;
+	print "Creating $op\n";
+	open my $oh, '>', $op or die "Unable to open $op: $!\n";
+	print { $oh } <<"EOD";
+package main;
+
+use strict;
+use warnings;
+
+use $hider qw{
+@{ [ my_wrap( @hide ) ] }
+};
+
+do '$ip';
+
+1;
+
+__END__
+
+# ex: set textwidth=72 :
+EOD
+	close $oh;
+    }
+}
+
 
 sub ACTION_authortest {
     my ( $self, @args ) = @_;
 
-    $self->depends_on( 'build' );
-    $self->test_files( qw{ t xt/author } );
+    my @depends_on = qw{ build make_optional_modules_tests };
+    -e 'META.yml'
+	or push @depends_on, 'distmeta';
+    $self->depends_on( @depends_on );
+
+    my @test_files = qw{ t xt/author };
+    my $optdir = File::Spec->catdir( @optionals_dir );
+    -d $optdir
+	and push @test_files, $optdir;
+    $self->test_files( @test_files );
+
     $self->depends_on( 'test' );
 
     return;
+}
+
+sub _get_tests_without_optional_modules {
+    my @args = @_;
+    my @cleanup;
+    @args or @args = _get_general_tests();
+    foreach my $path ( @args ) {
+	push @cleanup, File::Spec->catfile( @optionals_dir,
+	    ( File::Spec->splitpath( $path ) )[2] );
+    }
+    return @cleanup;
+}
+
+{
+
+    my @general_tests;
+
+    sub _get_general_tests {
+	@general_tests and return @general_tests;
+	my $th;
+	opendir $th, 't'
+	    or die "Unable to open directory t: $!\n";
+	while ( defined( my $fn = readdir $th ) ) {
+	    '.' eq substr $fn, 0, 1 and next;
+	    $fn =~ m/ [.] t \z /smx or next;
+	    my $path = File::Spec->catfile( 't', $fn );
+	    -f $path or next;
+	    push @general_tests, $path;
+	}
+	closedir $th;
+	return @general_tests;
+    }
+}
+
+sub my_wrap {
+    my ( @args ) = @_;
+    my @rslt;
+    my $left_margin = ' ' x 3;
+    my $line;
+    foreach my $item ( @args ) {
+	defined $line or $line = $left_margin;
+	if ( length( $line ) + length( $item ) > 71 ) {
+	    push @rslt, $line . "\n";
+	    $line = $left_margin;
+	}
+	$line .= ' ' . $item;
+    }
+    defined $line and push @rslt, $line;
+    @rslt and chomp $rslt[-1];
+    return join '', @rslt;
 }
 
 1;
