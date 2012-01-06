@@ -14,12 +14,6 @@ use LWP::UserAgent ();
 use Module::Pluggable::Object;
 use Text::ParseWords ();
 
-my @archivers = Module::Pluggable::Object->new(
-    search_path	=> 'CPAN::Access::AdHoc::Archive',
-    inner	=> 0,
-    require	=> 1,
-)->plugins();
-
 our $VERSION = '0.000_01';
 
 my @attributes = (
@@ -58,34 +52,43 @@ sub corpus {
     return ( grep { $_ =~ $re } $self->indexed_packages() );
 }
 
-sub fetch {
-    my ( $self, $path ) = @_;
+{
 
-    $path =~ s{ \A / }{}smx;
+    my @archivers = Module::Pluggable::Object->new(
+	search_path	=> 'CPAN::Access::AdHoc::Archive',
+	inner	=> 0,
+	require	=> 1,
+    )->plugins();
 
-    my $ua = LWP::UserAgent->new();
+    sub fetch {
+	my ( $self, $path ) = @_;
 
-    my $url = $self->cpan() . $path;
+	$path =~ s{ \A / }{}smx;
 
-    my $rslt = $ua->get( $url );
+	my $ua = LWP::UserAgent->new();
 
-    $rslt->is_success
-	or _wail( "Failed to get $url: ", $rslt->status_line() );
+	my $url = $self->cpan() . $path;
 
-    $rslt->header( 'Content-Location' => $path );
+	my $rslt = $ua->get( $url );
 
-    $self->_normalize_mime_info( $url, $rslt );
+	$rslt->is_success
+	    or _wail( "Failed to get $url: ", $rslt->status_line() );
 
-    foreach my $archiver ( @archivers ) {
-	my $archive;
-	defined( $archive = $archiver->handle_http_response( $rslt ) )
-	    and return $archive;
+	$rslt->header( 'Content-Location' => $path );
+
+	$self->_normalize_mime_info( $url, $rslt );
+
+	foreach my $archiver ( @archivers ) {
+	    my $archive;
+	    defined( $archive = $archiver->handle_http_response( $rslt ) )
+		and return $archive;
+	}
+
+	_wail( sprintf q{Unsupported Content-Type '%s'},
+	    $rslt->header( 'Content-Type' ) );
+
+	return;	# Can't get here, but Perl::Critic does not know this.
     }
-
-    _wail( sprintf q{Unsupported Content-Type '%s'},
-	$rslt->header( 'Content-Type' ) );
-
-    return;	# Can't get here, but Perl::Critic does not know this.
 }
 
 sub fetch_author_index {
@@ -279,6 +282,7 @@ sub _attr_default_cpan_source {
     #    we can not presume that the user actually uses it.
     defined $value
 	or $value = 'CPAN::Mini,cpanm,CPAN,CPANPLUS';
+    $self->_expand_default_cpan_source( $value );
 
     return $value;
 }
@@ -306,12 +310,38 @@ sub _attr_cpan {
     return $value;
 }
 
+{
+
+    my $search_path = 'CPAN::Access::AdHoc::Default::CPAN';
+    my %defaulter = map {
+	substr( $_, length( $search_path ) + 2 ) => $_
+    } Module::Pluggable::Object->new(
+	search_path	=> $search_path,
+	inner	=> 0,
+	require	=> 1,
+    )->plugins();
+
+    sub _expand_default_cpan_source {
+	my ( $self, $value ) = @_;
+	defined $value
+	    or $value = $self->default_cpan_source();
+	my @rslt;
+	foreach my $source ( split qr{ \s* , \s* }smx, $value ) {
+	    defined( my $class = $defaulter{$source} )
+		or _wail( "Unknown default_cpan_source '$source'" );
+	    push @rslt, $class;
+	}
+	return @rslt;
+    }
+
+}
+
 # Get the repository URL from the first source that actually supplies
 # it. The CPAN::Access::AdHoc::Default::CPAN plug-ins are called in the order
 # specified in the default_cpan_source attribute, and the first source
 # that actually supplies a URL is used. If that source provides a file:
 # URL, the first such is returned. Otherwise the first URL is returned,
-# whatever its scheme.
+# whatever its scheme. If no URL can be determined, we die.
 
 sub _get_default_url {
     my ( $self ) = @_;
@@ -320,15 +350,7 @@ sub _get_default_url {
 
     my $debug = $self->__debug();
 
-    foreach my $source ( split qr{ \s* , \s* }smx,
-	$self->default_cpan_source() ) {
-
-	my $class = __PACKAGE__ . "::Default::CPAN::$source";
-
-	eval {
-	    CPAN::Access::AdHoc::Util::load( $class );
-	    1;
-	} or next;
+    foreach my $class ( $self->_expand_default_cpan_source() ) {
 
 	my @url_list = $class->get_default()
 	    or next;
@@ -344,10 +366,12 @@ sub _get_default_url {
 	    or $url = $url_list[0];
 
 	$debug
-	    and warn "Debug - Default cpan '$url' from $source\n";
+	    and warn "Debug - Default cpan '$url' from $class\n";
 
 	return $url;
     }
+
+    _wail( 'No CPAN URL obtained from ' . $self->default_cpan_source() );
 
     return;
 }
@@ -496,8 +520,13 @@ This class supports the following public methods:
 
 =head3 new
 
-This static method instantiates the object. Defaults are documented with
-the individual attributes.
+This static method instantiates the object. You can specify attribute
+values by passing name/value argument pairs. Defaults are documented
+with the individual attributes.
+
+If you do not specify an explicit C<cpan> argument, and a default CPAN
+URL can not be computed, an exception is thrown. See the L<cpan|/cpan>
+attribute documentation for a few more details.
 
 =head2 Accessors/Mutators
 
@@ -520,8 +549,11 @@ When called with no arguments, this method acts as an accessor, and
 returns the URL of the CPAN repository accessed by this object.
 
 When called with an argument, this method acts as a mutator, and sets
-the URL of the CPAN repository accessed by this object. If the argument
-is C<undef>, the default URL is restored.
+the URL of the CPAN repository accessed by this object.
+
+If the argument is C<undef>, the default URL as computed from the
+sources in L<default_cpan_source|/default_cpan_source> is used. If no
+URL can be computed from any source, an exception is thrown.
 
 =head3 default_cpan_source
 
@@ -535,6 +567,10 @@ and consists of the names of zero or more
 C<CPAN::Access::AdHoc::Default::CPAN::*> classes, with the common
 prefix removed.  object. See the documentation of these classes for more
 information.
+
+If any of the elements in the string does not represent an existing
+C<CPAN::Access::AdHoc::Default::CPAN::> class, an exception is thrown
+and the value of the attribute remains unmodified.
 
 If the argument is C<undef>, the default is restored.
 
