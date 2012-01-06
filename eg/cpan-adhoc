@@ -71,6 +71,8 @@ while ( defined( my $buffer = $rl->( 'cpan-adhoc> ' ) ) ) {
     }
 }
 
+say '';
+
 sub verb_alias {
     my ( $old, $new ) = @_;
     defined $old
@@ -171,7 +173,7 @@ sub verb_extract {
 }
 
 sub verb_help {
-    pod2usage( { -verbose => 2 } );
+    pod2usage( { -verbose => 2, -exitval => 'NOEXIT' } );
     return;
 }
 
