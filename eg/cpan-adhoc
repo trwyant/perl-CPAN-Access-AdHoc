@@ -113,7 +113,20 @@ sub verb_cd {
 }
 
 sub verb_cpan {
-    say $cad->cpan();
+    my @arg = _expand_default( @_ );
+    @arg
+	and $cad->cpan( @arg );
+    defined $arg[0]
+	or say $cad->cpan();
+    return;
+}
+
+sub verb_default_cpan_source {
+    my @arg = _expand_default( @_ );
+    @arg
+	and $cad->default_cpan_source( @arg );
+    defined $arg[0]
+	or say $cad->default_cpan_source();
     return;
 }
 
@@ -266,6 +279,24 @@ sub verb_pwd {
     return;
 }
 
+sub _expand_default {
+    local @ARGV = @_;
+    my %opt;
+    GetOptions( \%opt, qw{ default! } )
+	or die "The only legal option is -default\n";
+    if ( $opt{default} ) {
+	@ARGV
+	    and die "You may not specify both -default and an argument\n";
+	return ( undef );
+    } elsif ( @ARGV ) {
+	@ARGV == 1
+	    or die "You may not specify more than one argument\n";
+	return @ARGV;
+    } else {
+	return;
+    }
+}
+
 sub _fetch_file {
     my ( $pkg, $file ) = @_;
     defined $pkg
@@ -393,6 +424,12 @@ alias.
 The single-argument version creates an alias for the current package, if
 any.
 
+=head2 base
+
+This command displays the base directories for the named packages. If no
+package is specified, the current package, if any, is displayed.
+Packages must be fetched before they can be displayed.
+
 =head2 cd
 
  cpan-adhoc> cd fu/bar
@@ -410,14 +447,39 @@ This command removes all packages from the stash.
 =head2 cpan
 
  cpan-adhoc> cpan
+ cpan-adhoc> cpan file:///home/yehudi/Mini-CPAN/
+ cpan-adhoc> cpan -default
 
-This command just prints the CPAN URL being used.
+If no argument is specified, this command displays the CPAN URL being
+used.
 
-=head2 base
+If an argument is specified, this command sets the CPAN URL being used.
 
-This command displays the base directories for the named packages. If no
-package is specified, the current package, if any, is displayed.
-Packages must be fetched before they can be displayed.
+If the CPAN URL was specified as C<-default>, a default value is
+computed from the current setting of C<cpan_default_source>, and that
+value is both set as the current soure and displayed. If no default can
+be computed from the current C<cpan_default_source>, an error is
+displayed and the current setting is left unchanged.
+
+=head2 cpan_default_source
+
+ cpan-adhoc> cpan_default_source
+ cpan-adhoc> cpan_default_source cpanm,CPAN
+ cpan-adhoc> cpan_default_source -default
+
+If no argument is specified, this command displays the sources of
+default CPAN URLs being used.
+
+If an argument is specified, this command sets the sources of default
+CPAN URLs. The value is a comma-delimited list.
+
+If the argument was specified as C<-default>, the default value is
+reinstated.
+
+B<Note> that setting this value does not affect the C<cpan> setting. If
+you want to recompute the C<cpan> URL after setting this, you must do
+
+ cpan-adhoc> cpan -default
 
 =head2 diff
 
