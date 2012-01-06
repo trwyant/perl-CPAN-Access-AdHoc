@@ -222,6 +222,26 @@ sub verb_list {
     return;
 }
 
+sub verb_metadata {
+    my @args = @_;
+    @args or push @args, CURRENT_PACKAGE;
+    foreach my $name ( @args ) {
+	if ( $dist{$name} ) {
+	    my $dv = $dist{$name}{info}->distvname();
+	    if ( my $meta = $dist{$name}{archive}->metadata() ) {
+		my $ms = $meta->as_string();
+		chomp $ms;
+		say "$dv: $ms";
+	    } else {
+		warn "No metadata found for $dv\n";
+	    }
+	} else {
+	    warn "Package '$name' not found\n";
+	}
+    }
+    return;
+}
+
 sub verb_module {
     local @ARGV = @_;
     my %opt;
@@ -539,9 +559,18 @@ The single-argument form displays the given file in the current package.
  cpan-adhoc> list libwww-perl
  cpan-adhoc> list
 
-This command lists the files in the given package, which must have been
+This command lists the files in the given packages, which must have been
 previously downloaded. If no package is specified, the current package
 is listed.
+
+=head2 metadata
+
+This command displays the metadata for the given packages, which must
+have been peviously downloaded. If metadata is not available (i.e. no
+F<META.json> or F<META.yml> was found) a warning will be issued.
+
+The metadata is displayed by the L<CPAN::Meta|CPAN::Meta> C<as_string()>
+method.
 
 =head2 module
 
