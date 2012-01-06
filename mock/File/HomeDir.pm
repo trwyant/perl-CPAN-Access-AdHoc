@@ -5,7 +5,7 @@ use 5.008;
 use strict;
 use warnings;
 
-use Carp;
+use File::Spec::Unix;
 
 our $VERSION = '0.000_01';
 
@@ -13,7 +13,7 @@ our $BASE ||= 'mock/Perl';
 
 sub my_dist_config {
     my ( $class, $dist ) = @_;
-    return File::Spec->catdir( $BASE, $dist );
+    return File::Spec::Unix->catdir( $BASE, $dist );
 }
 
 
