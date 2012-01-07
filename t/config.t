@@ -136,7 +136,7 @@ is $cad->cpan(), 'http://someone/', 'Explicit cpan';
 {
     local $CPAN::CONFIG = {
 	urllist	=> [ qw{
-	    html://somewhere/out/there/
+	    http://somewhere/out/there/
 	    file://here/and/there
 	    } ],
     };
@@ -152,8 +152,8 @@ is $cad->cpan(), 'http://someone/', 'Explicit cpan';
 {
     local $CPAN::CONFIG = {
 	urllist => [ qw{
-	    html://somewhere/out/there/
-	    html://here/and/there
+	    http://somewhere/out/there/
+	    http://here/and/there
 	    } ],
     };
 
@@ -161,12 +161,12 @@ is $cad->cpan(), 'http://someone/', 'Explicit cpan';
 	default_cpan_source => 'CPAN',
     );
 
-    is $cad->cpan(), 'html://somewhere/out/there/',
+    is $cad->cpan(), 'http://somewhere/out/there/',
 	'cpan from CPAN takes first if not file: scheme';
 }
 {
     local $ENV{PERL_CPANM_OPT} =
-	'--mirror html://somewhere/out/there/ --mirror file:///here/and/there --fubar';
+	'--mirror http://somewhere/out/there/ --mirror file:///here/and/there --fubar';
 
     $cad = CPAN::Access::AdHoc->new(
 	default_cpan_source => 'cpanm',

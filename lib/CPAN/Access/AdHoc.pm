@@ -7,12 +7,14 @@ use warnings;
 
 use Config::Tiny ();
 use CPAN::Access::AdHoc::Util;
+use CPAN::DistnameInfo;
 use CPAN::Meta;
 use File::HomeDir ();
 use File::Spec ();
 use LWP::UserAgent ();
 use Module::Pluggable::Object;
 use Text::ParseWords ();
+use URI::URL ();
 
 our $VERSION = '0.000_02';
 
@@ -119,7 +121,17 @@ sub fetch_author_index {
 
 sub fetch_package_archive {
     my ( $self, $package ) = @_;
-    return $self->fetch( "authors/id/$package" );
+    my $path;
+    if ( my $ci = CPAN::DistnameInfo->new( $package ) ) {
+	my $author = $ci->cpanid();
+	$path = join '/', substr( $author, 0, 1 ),
+	    substr( $author, 0, 2 ),
+	    $author,
+	    $ci->filename();
+    } else {
+	$path = $package;
+    }
+    return $self->fetch( "authors/id/$path" );
 }
 
 sub fetch_module_index {
@@ -306,6 +318,16 @@ sub _attr_cpan {
     defined $value
 	and not $value =~ m{ / \z }smx
 	and $value .= '/';
+
+    my $old_strict = URI::URL::strict( 1 );
+    eval {
+	URI::URL->new( $value );
+	1;
+    } or do {
+	URI::URL::strict( $old_strict );
+	die $@;
+    };
+    URI::URL::strict( $old_strict );
 
     return $value;
 }
