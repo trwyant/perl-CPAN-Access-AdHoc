@@ -325,7 +325,10 @@ sub _attr_cpan {
 	1;
     } or do {
 	URI::URL::strict( $old_strict );
-	die $@;
+	# We re-raise the captured exception after putting strict back
+	# the way it was. Wish there was a scope-sensitive way to make
+	# URI::URL strict.
+	die $@;	## no critic (RequireUseOfExceptions)
     };
     URI::URL::strict( $old_strict );
 
