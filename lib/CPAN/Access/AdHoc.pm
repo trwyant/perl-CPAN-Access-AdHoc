@@ -7,7 +7,6 @@ use warnings;
 
 use Config::Tiny ();
 use CPAN::Access::AdHoc::Util;
-use CPAN::DistnameInfo;
 use CPAN::Meta;
 use File::HomeDir ();
 use File::Spec ();
@@ -121,16 +120,14 @@ sub fetch_author_index {
 
 sub fetch_package_archive {
     my ( $self, $package ) = @_;
-    my $path;
-    if ( my $ci = CPAN::DistnameInfo->new( $package ) ) {
-	my $author = $ci->cpanid();
-	$path = join '/', substr( $author, 0, 1 ),
-	    substr( $author, 0, 2 ),
-	    $author,
-	    $ci->filename();
-    } else {
-	$path = $package;
-    }
+    my @parts = split qr{ / }smx, $package;
+    @parts > 1
+	or _wail( 'Incomplete package name specification' );
+    my ( $author, $filename ) = @parts[ -2, -1 ];
+    my $path = join '/', substr( $author, 0, 1 ),
+	substr( $author, 0, 2 ),
+	$author,
+	$filename;
     return $self->fetch( "authors/id/$path" );
 }
 

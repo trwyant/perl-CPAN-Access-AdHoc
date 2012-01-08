@@ -44,7 +44,6 @@ sub requires {
 	'base'			=> 0,
 	'Carp'			=> 0,
 	'Config::Tiny'		=> 0,
-	'CPAN::DistnameInfo'	=> 0,
 	'CPAN::Meta'		=> 0,
 	'Cwd'			=> 0,
 	'File::Find'		=> 0,

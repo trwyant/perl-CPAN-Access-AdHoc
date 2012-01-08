@@ -262,26 +262,30 @@ sub verb_module {
 sub verb_package {
     local @ARGV = @_;
     my %opt;
-    GetOptions( \%opt, qw{ fetch! } )
+    GetOptions( \%opt, qw{ direct! fetch! } )
 	and @ARGV == 1
 	or die "The package command takes exactly one argument\n";
-    my $re = qr{ $ARGV[0] }smx;
-    my $count = 0;
-    my $package;
-    foreach my $pkg ( $cad->indexed_packages ) {
-	$pkg =~ $re
-	    or next;
-	say $pkg;
-	$count++
-	    or $package = $pkg;
-    }
-    if ( $opt{fetch} ) {
-	if ( $count == 1 ) {
-	    _fetch_package( $package );
-	} elsif ( $count ) {
-	    die "Multiple packages matching $re were found\n";
-	} else {
-	    die "No packages matching $re were found\n";
+    if ( $opt{direct} ) {
+	_fetch_package( $ARGV[0] );
+    } else {
+	my $re = qr{ $ARGV[0] }smx;
+	my $count = 0;
+	my $package;
+	foreach my $pkg ( $cad->indexed_packages ) {
+	    $pkg =~ $re
+		or next;
+	    say $pkg;
+	    $count++
+		or $package = $pkg;
+	}
+	if ( $opt{fetch} ) {
+	    if ( $count == 1 ) {
+		_fetch_package( $package );
+	    } elsif ( $count ) {
+		die "Multiple packages matching $re were found\n";
+	    } else {
+		die "No packages matching $re were found\n";
+	    }
 	}
     }
     return;
