@@ -109,6 +109,15 @@ sub get_item_content {
     return $self->archive()->get_content( $file );
 }
 
+sub get_item_mtime {
+    my ( $self, $file ) = @_;
+    $file = $self->base_directory() . $file;
+    my @files = $self->archive()->get_files( $file );
+    @files
+	and return $files[0]->mtime();
+    return;
+}
+
 {
 
     my %handled = map { $_ => 1 } qw{ application/x-tar };

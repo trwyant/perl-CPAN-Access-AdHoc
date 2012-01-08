@@ -14,6 +14,7 @@ use Cwd;
 use File::Temp;
 use Getopt::Long 2.33;
 use Pod::Usage;
+use POSIX qw{ strftime };
 use Term::ReadLine;
 use version 0.77;
 
@@ -259,6 +260,14 @@ sub verb_module {
     return;
 }
 
+sub verb_mtime {
+    my ( $pkg, $file ) = _validate_pkg_file( @_ );
+    say strftime( '%d-%b-%Y %H:%M:%S', localtime
+	$pkg->{archive}->get_item_mtime( $file )
+    );
+    return;
+}
+
 sub verb_package {
     local @ARGV = @_;
     my %opt;
@@ -321,7 +330,7 @@ sub _expand_default {
     }
 }
 
-sub _fetch_file {
+sub _validate_pkg_file {
     my ( $pkg, $file ) = @_;
     defined $pkg
 	or defined $file
@@ -334,8 +343,13 @@ sub _fetch_file {
     my $dname = $dist{$pkg}{info}->distvname();
     $dist{$pkg}{archive}->item_present( $file )
 	or die "File '$file' not in package '$dname'\n";
+    return ( $dist{$pkg}, $file );
+}
+
+sub _fetch_file {
+    my ( $pkg, $file ) = _validate_pkg_file( @_ );
     my $temp = File::Temp->new();
-    print { $temp } $dist{$pkg}{archive}->get_item_content( $file );
+    print { $temp } $pkg->{archive}->get_item_content( $file );
     return $temp;
 }
 

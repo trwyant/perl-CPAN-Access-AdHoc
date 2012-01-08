@@ -58,6 +58,11 @@ sub get_item_content {
     return;	# We can't get here, but Perl::Critic does not know this
 }
 
+sub get_item_mtime {
+    $_wallow->( 'The get_item_mtime() method must be overridden' );
+    return;	# We can't get here, but Perl::Critic does not know this
+}
+
 sub handle_http_response {
     $_wallow->( 'The handle() method must be overridden' );
     return;	# We can't get here, but Perl::Critic does not know this
@@ -219,6 +224,17 @@ whatever the extraction method is for the underlying archiver.
 
 This method returns the content of the named item in the archive. The
 name of the item is specified relative to C<< $arc->base_directory() >>.
+
+=head3 get_item_mtime
+
+ use POSIX qw{ strftime };
+ print 'README modified ', strftime(
+     '%d-%b-%Y %H:%M:%S',
+      $arc->get_item_mtime( 'README' ) ), "\n";
+
+This method returns the modification time of the named item in the
+archive. The name of the item is specified relative to
+C<< $arc->base_directory() >>.
 
 =head3 handle_http_response
 

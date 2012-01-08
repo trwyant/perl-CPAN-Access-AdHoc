@@ -102,6 +102,14 @@ sub get_item_content {
     return scalar $member->contents();
 }
 
+sub get_item_mtime {
+    my ( $self, $file ) = @_;
+    $file = $self->base_directory() . $file;
+    my $member = $self->archive()->memberNamed( $file )
+	or return;
+    return scalar $member->lastModTime();
+}
+
 {
 
     my %handled = map { $_ => 1 } qw{ application/zip };
