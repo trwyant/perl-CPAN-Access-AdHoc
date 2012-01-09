@@ -3,6 +3,7 @@ use 5.008;
 use strict;
 use warnings;
 
+use CPAN::Checksums qw{ updatedir };
 use CPAN::Meta;
 use Cwd qw{ cwd };
 use ExtUtils::MakeMaker;
@@ -136,7 +137,7 @@ foreach my $user ( bsd_glob( 'mock/src/repos/*' ) ) {
 	}
     }
 
-    # TODO CHECKSUM file, with CPAN::Checksums
+    updatedir( $dest_dir );
 
 }
 
