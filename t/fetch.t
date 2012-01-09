@@ -153,6 +153,12 @@ EOD
     'Content of 03modlist.data';
 }
 
+# Test access to CHECKSUMS.
+
+is_deeply $cad->fetch_package_checksums( 'BACH' ),
+    do 'mock/repos/authors/id/B/BA/BACH/CHECKSUMS',
+    'BACH/CHECKSUMS';
+
 # Test access to .tar.gz archive
 
 SKIP: {
