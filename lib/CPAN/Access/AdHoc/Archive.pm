@@ -240,10 +240,9 @@ C<< $arc->base_directory() >>.
 
 This static method takes as its argument an
 L<HTTP::Response|HTTP::Response> object. If this method determines that
-it can handle the response object, it does so, returning the appropriate
-datum (typically a C<CPAN::Access::AdHoc::Archive> object, though it may
-simply be a string if the response object represents the contents of a
-single file). Otherwise, it simply returns.
+it can handle the response object, it does so, returning the
+C<CPAN::Access::AdHoc::Archive> object derived from the content of the
+L<HTTP::Response|HTTP::Response> object.  Otherwise, it simply returns.
 
 The method can do anything it wants to evaluate its argument, but
 typically it examines the C<Content-Type>, C<Content-Encoding>, and

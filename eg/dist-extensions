@@ -26,13 +26,17 @@ foreach my $pkg ( $cad->indexed_packages() ) {
     my $dist = CPAN::DistnameInfo->new( $pkg );
     my $xt = $dist->extension();
     if ( not defined $xt ) {
-	$opt{quiet}
-	    or warn "$pkg has an undefined extension\n";
+	if ( $pkg =~ m/ [.] ( pm [.] gz ) \z /smx ) {
+	    $ext{$1}++;
+	} else {
+	    $opt{quiet}
+		or warn "$pkg has an unknown extension\n";
+	}
     } elsif ( '' eq $xt ) {
 	$opt{quiet}
 	    or warn "$pkg has an empty extension\n";
     } else {
-	$ext{ $dist->extension() }++;
+	$ext{$xt}++;
     }
 }
 

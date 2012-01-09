@@ -20,10 +20,21 @@ my $cad = CPAN::Access::AdHoc->new();
 
 # Test access to module index
 
-is $cad->fetch( 'modules/02packages.details.txt' ), $text,
+is $cad->fetch( 'modules/02packages.details.txt' )->get_item_content(),
+    $text,
     'Fetch the un-compressed packages details';
 
-is $cad->fetch( 'modules/02packages.details.txt.gz' ), $text,
+{
+    my $got = $cad->fetch( 'modules/02packages.details.txt'
+    )->get_item_mtime(),
+    my $want = ( stat 'mock/repos/modules/02packages.details.txt' )[9];
+    ok abs( $got - $want ) < 2,
+    'Can get modules/02packages.details.txt mod time'
+	or mtime_diag( $got, $want );
+}
+
+is $cad->fetch( 'modules/02packages.details.txt.gz' )->get_item_content(),
+    $text,
     'Fetch the compressed packages details';
 
 my ( $module_index, $meta ) = $cad->fetch_module_index();

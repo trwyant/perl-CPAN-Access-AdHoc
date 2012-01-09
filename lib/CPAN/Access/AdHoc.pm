@@ -98,7 +98,9 @@ sub fetch_author_index {
     exists $self->{_cache}{author_index}
 	and return $self->{_cache}{author_index};
 
-    my $author_details = $self->fetch( 'authors/01mailrc.txt.gz' );
+    my $author_details = $self->fetch(
+	'authors/01mailrc.txt.gz'
+    )->get_item_content();
 
     my $fh = IO::File->new( \$author_details, '<' );
 
@@ -139,7 +141,9 @@ sub fetch_module_index {
 	    @{ $self->{_cache}{module_index} } :
 	    $self->{_cache}{module_index}[0];
 
-    my $packages_details = $self->fetch( 'modules/02packages.details.txt.gz' );
+    my $packages_details = $self->fetch(
+	'modules/02packages.details.txt.gz'
+    )->get_item_content();
 
     my $fh = IO::File->new( \$packages_details, '<' )
 	or _wail( "Unable to open string reference: $!" );
@@ -171,7 +175,9 @@ sub fetch_registered_module_index {
 	    @{ $self->{_cache}{registered_module_index} } :
 	    $self->{_cache}{registered_module_index}[0];
 
-    my $packages_details = $self->fetch( 'modules/03modlist.data.gz' );
+    my $packages_details = $self->fetch(
+	'modules/03modlist.data.gz'
+    )->get_item_content();
 
     my $fh = IO::File->new( \$packages_details, '<' )
 	or _wail( "Unable to open string reference: $!" );
@@ -328,6 +334,8 @@ sub _attr_cpan {
 	die $@;	## no critic (RequireUseOfExceptions)
     };
     URI::URL::strict( $old_strict );
+
+    $self->flush();
 
     return $value;
 }
@@ -570,8 +578,10 @@ an empty L<Config::Tiny|Config::Tiny> object.
 When called with no arguments, this method acts as an accessor, and
 returns the URL of the CPAN repository accessed by this object.
 
-When called with an argument, this method acts as a mutator, and sets
-the URL of the CPAN repository accessed by this object.
+When called with an argument, this method acts as a mutator. It sets
+the URL of the CPAN repository accessed by this object, and (for reasons
+of sanity) calls L<flush()|/flush> to purge any data cached from the old
+repository.
 
 If the argument is C<undef>, the default URL as computed from the
 sources in L<default_cpan_source|/default_cpan_source> is used. If no

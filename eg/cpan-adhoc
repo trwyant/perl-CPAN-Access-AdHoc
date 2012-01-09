@@ -113,10 +113,18 @@ sub verb_cd {
     return;
 }
 
+sub verb_clear {
+    %dist = ();
+    $cad->flush();
+    return;
+}
+
 sub verb_cpan {
     my @arg = _expand_default( @_ );
-    @arg
-	and $cad->cpan( @arg );
+    if ( @arg ) {
+	$cad->cpan( @arg );
+	verb_clear();
+    }
     defined $arg[0]
 	or say $cad->cpan();
     return;
@@ -128,11 +136,6 @@ sub verb_default_cpan_source {
 	and $cad->default_cpan_source( @arg );
     defined $arg[0]
 	or say $cad->default_cpan_source();
-    return;
-}
-
-sub verb_clear {
-    %dist = ();
     return;
 }
 

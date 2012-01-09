@@ -153,7 +153,8 @@ sub get_item_mtime {
 	    encoding	=> scalar $rslt->header( 'Content-Encoding' ),
 	    mtime	=> $mtime,
 	    path	=> scalar $rslt->header( 'Content-Location' ),
-	)->get_item_content();
+##	)->get_item_content();
+	);
     }
 
 }
