@@ -5,21 +5,16 @@ use 5.008;
 use strict;
 use warnings;
 
+use POSIX ();
 use Test::More 0.88;	# Because of done_testing();
 
 use lib qw{ mock };
 
 use CPAN::Access::AdHoc;
 
-my $text;
-{
-    my $fn = 'mock/repos/modules/02packages.details.txt';
-    local $/ = undef;	# Slurp
-    open my $fh, '<', $fn
-	or die "Unable to read $fn: $!\n";
-    $text = <$fh>;
-    close $fh;
-}
+my %maybe_bad_mtime = map { $_ => 1 } qw{ DOS MSWin32 cygwin };
+
+my $text = slurp( 'mock/repos/modules/02packages.details.txt' );
 
 my $cad = CPAN::Access::AdHoc->new();
 
@@ -150,7 +145,7 @@ EOD
 # Test access to .tar.gz archive
 
 SKIP: {
-    my $tests = 6;
+    my $tests = 8;
 
     my $pkg = $module_index->{Yehudi}{package}
 	or skip q{Module 'Yehudi' not indexed}, $tests;
@@ -161,6 +156,18 @@ SKIP: {
 
     is $kit->path(), 'authors/id/M/ME/MENUHIN/Yehudi-0.001.tar.gz',
 	'Path to Yehudi-0.001.tar.gz';
+
+    is $kit->get_item_content( 'Makefile.PL' ),
+	slurp( 'mock/src/repos/MENUHIN/Yehudi/Makefile.PL' ),
+	"Can extract Makefile.PL from $pkg";
+
+    {
+	my $got = $kit->get_item_mtime( 'Makefile.PL' );
+	my $want = ( stat 'mock/src/repos/MENUHIN/Yehudi/Makefile.PL' )[9];
+	ok abs( $got - $want ) < 2,
+	"Can get Makefile.PL mod time from $pkg"
+	    or mtime_diag( $got, $want );
+    }
 
     my $meta = $kit->metadata();
 
@@ -220,7 +227,7 @@ SKIP: {
 # Test access to .zip archive
 
 SKIP: {
-    my $tests = 6;
+    my $tests = 8;
 
     my $pkg = $module_index->{PDQ}{package}
 	or skip q{Module 'PDQ' not indexed}, $tests;
@@ -231,6 +238,18 @@ SKIP: {
 
     is $kit->path(), 'authors/id/B/BA/BACH/PDQ-0.000_01.zip',
 	'Path to PDQ-0.000_01.zip';
+
+    is $kit->get_item_content( 'Makefile.PL' ),
+	slurp( 'mock/src/repos/BACH/PDQ/Makefile.PL' ),
+	"Can extract Makefile.PL from $pkg";
+
+    {
+	my $got = $kit->get_item_mtime( 'Makefile.PL' );
+	my $want = ( stat 'mock/src/repos/BACH/PDQ/Makefile.PL' )[9];
+	ok abs( $got - $want ) < 2,
+	"Can get Makefile.PL mod time from $pkg"
+	    or mtime_diag( $got, $want );
+    }
 
     my $meta = $kit->metadata();
 
@@ -264,8 +283,30 @@ SKIP: {
 
 done_testing;
 
+sub mtime_diag {
+    my ( $got, $want ) = map { strftime( $_ ) } @_;
+    return diag( <<"EOD" );
+    got: $got
+    expected: $want
+    This test may fail if your kit is on a FAT filesystem
+EOD
+}
 
 
+sub slurp {
+    my ( $fn ) = @_;
+    local $/ = undef;
+    open my $fh, '<', $fn
+	or die "Unable to open $fn for input: $!\n";
+    my $text = <$fh>;
+    close $fh;
+    return $text;
+}
+
+sub strftime {
+    my ( $time ) = @_;
+    return POSIX::strftime( '%d-%b-%Y %H:%M:%S GMT', gmtime $time );
+}
 
 1;
 
