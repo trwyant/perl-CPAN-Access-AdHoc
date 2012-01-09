@@ -128,11 +128,18 @@ sub fetch_package_archive {
     @parts > 1
 	or _wail( 'Incomplete package name specification' );
     my ( $author, $filename ) = @parts[ -2, -1 ];
-    my $path = join '/', substr( $author, 0, 1 ),
-	substr( $author, 0, 2 ),
-	$author,
-	$filename;
-    return $self->fetch( "authors/id/$path" );
+    my $path = _author_path( $author, $filename );
+    return $self->fetch( $path );
+}
+
+sub fetch_package_checksums {
+    my ( $self, $author ) = @_;
+    $self->{_cache}{$author} ||= do {
+	my $path = _author_path( $author, 'CHECKSUMS' );
+	my $cksum;
+	eval $self->fetch( $path )->get_item_content();
+    };
+    return $self->{_cache}{$author};
 }
 
 sub fetch_module_index {
@@ -366,6 +373,16 @@ sub _attr_cpan {
 	return @rslt;
     }
 
+}
+
+# Given a CPAN ID and the name of a file, compute the path to the file.
+sub _author_path {
+    my ( $author, $filename ) = @_;
+    return join '/', qw{ authors id },
+	substr( $author, 0, 1 ),
+	substr( $author, 0, 2 ),
+	$author,
+	$filename;
 }
 
 # Get the repository URL from the first source that actually supplies
@@ -695,6 +712,17 @@ relative to the F<authors/id/> directory. So, for example,
 
  $arc = $cad->fetch_package_archive( 'B/BA/BACH/PDQ-0.000_01.zip
  say $arc->path(); # authors/id/B/BA/BACH/PDQ-0.000_01.zip
+
+=head3 fetch_package_checksums
+
+ use YAML::Any;
+ print Dump( $cad->fetch_package_checksums( 'BACH' ) );
+
+This method takes as its argument a CPAN ID, and returns a reference to
+a hash representing the author's F<CHECKSUMS> file.
+
+The result of the first fetch for a given author is cached, and
+subesquent calls for the same author are supplied from cache.
 
 =head3 fetch_registered_module_index
 

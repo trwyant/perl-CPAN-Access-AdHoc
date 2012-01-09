@@ -17,6 +17,7 @@ use Pod::Usage;
 use POSIX qw{ strftime };
 use Term::ReadLine;
 use version 0.77;
+use YAML::Any;
 
 our $VERSION = '0.000_02';
 
@@ -110,6 +111,15 @@ sub verb_cd {
 	chdir
 	    or die "Failed to cd to home directory: $!\n";
     }
+    return;
+}
+
+sub verb_checksums {
+    my ( $author ) = @_;
+    defined $author
+	or die 'Must specify a CPAN ID';
+    my $cksum = $cad->fetch_package_checksums( $author );
+    print Dump( $cksum );
     return;
 }
 
@@ -478,6 +488,12 @@ Packages must be fetched before they can be displayed.
 
 This command changes the default directory under which the script runs.
 Without an argument, it changes to the user's home directory.
+
+=head2 checksums
+
+ cpan-adhoc> checksums MENUHIN
+
+This command displays the given author's F<CHECKSUMS> file.
 
 =head2 clear
 
