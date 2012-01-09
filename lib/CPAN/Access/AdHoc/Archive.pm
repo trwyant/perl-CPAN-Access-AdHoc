@@ -182,6 +182,9 @@ This optional argument is intended to contain the path to the archive.
 Subclasses may (but need not) default it to the value of the C<content>
 argument, provided the C<content> argument is not a reference.
 
+The intent is that the various components of this package should
+conspire to make this the path to the file relative to the CPAN URL.
+
 =back
 
 If you do not specify at least C<content>, you get an empty object,
@@ -215,8 +218,8 @@ computed from the directories contained in the package.
 
 =head3 extract
 
-This method extracts the contents of the archive. It simply wraps
-whatever the extraction method is for the underlying archiver.
+This method extracts the contents of the archive to files. It simply
+wraps whatever the extraction method is for the underlying archiver.
 
 =head3 get_item_content
 

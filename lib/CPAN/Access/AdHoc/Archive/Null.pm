@@ -153,7 +153,6 @@ sub get_item_mtime {
 	    encoding	=> scalar $rslt->header( 'Content-Encoding' ),
 	    mtime	=> $mtime,
 	    path	=> scalar $rslt->header( 'Content-Location' ),
-##	)->get_item_content();
 	);
     }
 
@@ -217,8 +216,8 @@ This class supports the following public methods:
 
 =head2 new
 
-This static method instantiates the object, and possibly loads it.
-There are two supported arguments:
+This static method instantiates the object, and possibly loads it. The
+supported arguments are:
 
 =over
 
@@ -235,6 +234,18 @@ If this argument is a scalar reference, the file name is set to
 
 This is the MIME encoding of the content. It is ignored if the content
 is not present.
+
+=item mtime
+
+This is the modification time of the content. If the content is not a
+reference, it is taken as a file name, so this argument is ignored and
+the modification time of the file is used instead.
+
+=item path
+
+This is intended to be a path to the content. If not specified, and the
+content argument is a file name (i.e. not a reference), this defaults to
+the content argument.
 
 =back
 
