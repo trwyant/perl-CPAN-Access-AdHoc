@@ -43,7 +43,8 @@ my $_wail = sub {
 		    or $_wail->( "Unsupported encoding '$encoding'" );
 		$content = $decode{$encoding}->( $content );
 	    } elsif ( ref $content ) {
-		$content = IO::File->new( $content, '<' );
+		$content = IO::File->new( $content, '<' )
+		    or $_wail->( "Unable to open string reference: $!" );
 	    }
 
 	    my $status = $archive->read( $content );

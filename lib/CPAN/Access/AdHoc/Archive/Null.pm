@@ -99,7 +99,7 @@ sub extract {
 
     foreach my $name ( keys %{ $attr->{contents} } ) {
 	my $fh = IO::File->new( $name, '>' )
-	    or $_wail->( "Failed to open $name for output: $!" );
+	    or $_wail->( "Unable to open $name for output: $!" );
 	print { $fh } $attr->{contents}{$name}{content};
     }
 

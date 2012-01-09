@@ -10,6 +10,7 @@ use CPAN::Access::AdHoc::Util;
 use CPAN::Meta;
 use File::HomeDir ();
 use File::Spec ();
+use IO::File ();
 use LWP::UserAgent ();
 use Module::Pluggable::Object;
 use Text::ParseWords ();
@@ -102,7 +103,8 @@ sub fetch_author_index {
 	'authors/01mailrc.txt.gz'
     )->get_item_content();
 
-    my $fh = IO::File->new( \$author_details, '<' );
+    my $fh = IO::File->new( \$author_details, '<' )
+	or _wail( "Unable to open string reference: $!" );
 
     my %author_index;
     while ( <$fh> ) {
