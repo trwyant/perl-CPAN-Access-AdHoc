@@ -137,7 +137,9 @@ sub fetch_package_checksums {
     $self->{_cache}{$author} ||= do {
 	my $path = _author_path( $author, 'CHECKSUMS' );
 	my $cksum;
-	eval $self->fetch( $path )->get_item_content();
+	# Unfortunately, the CHECKSUMS file is a Data::Dumper dump, so
+	# the only way to find out what's in it is to eval() it.
+	eval $self->fetch( $path )->get_item_content();	## no critic (ProhibitStringyEval,RequireCheckingReturnValueOfEval)
     };
     return $self->{_cache}{$author};
 }
@@ -340,7 +342,7 @@ sub _attr_cpan {
 	# We re-raise the captured exception after putting strict back
 	# the way it was. Wish there was a scope-sensitive way to make
 	# URI::URL strict.
-	die $@;	## no critic (RequireUseOfExceptions)
+	die $@;
     };
     URI::URL::strict( $old_strict );
 
@@ -722,7 +724,7 @@ This method takes as its argument a CPAN ID, and returns a reference to
 a hash representing the author's F<CHECKSUMS> file.
 
 The result of the first fetch for a given author is cached, and
-subesquent calls for the same author are supplied from cache.
+subsequent calls for the same author are supplied from cache.
 
 =head3 fetch_registered_module_index
 
