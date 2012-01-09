@@ -13,6 +13,7 @@ use File::Spec ();
 use IO::File ();
 use LWP::UserAgent ();
 use Module::Pluggable::Object;
+use Safe;
 use Text::ParseWords ();
 use URI::URL ();
 
@@ -139,7 +140,7 @@ sub fetch_package_checksums {
 	my $cksum;
 	# Unfortunately, the CHECKSUMS file is a Data::Dumper dump, so
 	# the only way to find out what's in it is to eval() it.
-	eval $self->fetch( $path )->get_item_content();	## no critic (ProhibitStringyEval,RequireCheckingReturnValueOfEval)
+	_eval_string( $self->fetch( $path )->get_item_content() );
     };
     return $self->{_cache}{$author};
 }
@@ -385,6 +386,17 @@ sub _author_path {
 	substr( $author, 0, 2 ),
 	$author,
 	$filename;
+}
+
+# Eval a string in a sandbox, and return the result. This was cribbed
+# _very_ heavily from CPAN::Distribution CHECKSUM_check_file().
+sub _eval_string {
+    my ( $string ) = @_;
+    $string =~ s/ \015? \012 /\n/smxg;
+    my $sandbox = Safe->new();
+    my $rslt = $sandbox->reval( $string );
+    $@ and _wail( $@ );
+    return $rslt;
 }
 
 # Get the repository URL from the first source that actually supplies

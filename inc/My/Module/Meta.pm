@@ -59,6 +59,7 @@ sub requires {
 	'LWP::UserAgent'		=> 0,
 	'Module::Pluggable::Object'	=> 0,
 	'URI::URL'		=> 0,
+	'Safe'			=> 0,
 	'strict'		=> 0,
 	'Text::ParseWords'	=> 0,
 	'warnings'		=> 0,
@@ -67,7 +68,7 @@ sub requires {
 }
 
 sub requires_perl {
-    return 5.006002;
+    return 5.008;
 }
 
 
