@@ -79,7 +79,7 @@ is_deeply $author_index, {
 
 {
     my ( $registered_module_index, $meta ) =
-    $cad->fetch_registered_module_index();
+	$cad->fetch_registered_module_index();
 
     my $desc = <<'EOD';
 These are the data that are published in the module
@@ -99,58 +99,31 @@ EOD
 	Date =>		'Mon, 26 Dec 2011 17:10:00 GMT',
     }, 'Metadata for 03modlist.data';
 
-    is $registered_module_index, <<'EOD',
-package CPAN::Modulelist;
-# Usage: print Data::Dumper->new([CPAN::Modulelist->data])->Dump or similar
-# cannot 'use strict', because we normally run under Safe
-# use strict;
-sub data {
-my $result = {};
-my $primary = "modid";
-for (@$CPAN::Modulelist::data){
-my %hash;
-@hash{@$CPAN::Modulelist::cols} = @$_;
-$result->{$hash{$primary}} = \%hash;
-}
-$result;
-}
-$CPAN::Modulelist::cols = [
-'modid',	# Module ID
-'statd',	# Development stage (icabRMS?)
-'stats',	# Support level (dmuna?)
-'statl',	# Language used (pc+oh?)
-'stati',	# Interface style (frOphn?)
-'statp',	# Public license (pglba2odrn?)
-'description',
-'userid',	# CPAN ID
-'chapterid'	# Module List Chapter (002 - 028)
-];
-$CPAN::Modulelist::data = [
-[
-'Yehudi',
-'R',
-'d',
-'p',
-'O',
-'p',
-'Represents Yehudi Menuhin',
-'MENUHIN',
-'023'
-],
-[
-'Johann',
-'R',
-'d',
-'p',
-'O',
-'p',
-'Represents Johann Sebastian Bach',
-'BACH',
-'023'
-],
-];
-EOD
-    'Content of 03modlist.data';
+    is_deeply $registered_module_index, {
+	Johann	=> {
+	    modid	=> 'Johann',
+	    statd	=> 'R',
+	    stats	=> 'd',
+	    statl	=> 'p',
+	    stati	=> 'O',
+	    statp	=> 'p',
+	    description	=> 'Represents Johann Sebastian Bach',
+	    userid	=> 'BACH',
+	    chapterid	=> '023',
+	},
+	Yehudi	=> {
+	    modid	=> 'Yehudi',
+	    statd	=> 'R',
+	    stats	=> 'd',
+	    statl	=> 'p',
+	    stati	=> 'O',
+	    statp	=> 'p',
+	    description	=> 'Represents Yehudi Menuhin',
+	    userid	=> 'MENUHIN',
+	    chapterid	=> '023',
+	},
+    }, 'Data for 03modlist.data';
+
 }
 
 # Test access to CHECKSUMS.

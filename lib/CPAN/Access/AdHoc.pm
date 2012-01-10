@@ -201,20 +201,24 @@ sub fetch_registered_module_index {
 	'modules/03modlist.data.gz'
     )->get_item_content();
 
-    my $fh = IO::File->new( \$packages_details, '<' )
-	or _wail( "Unable to open string reference: $!" );
+    my ( $meta, $reg );
 
-    my $meta = $self->_read_meta( $fh );
-
-    my $code;
     {
+
+	my $fh = IO::File->new( \$packages_details, '<' )
+	    or _wail( "Unable to open string reference: $!" );
+
+	$meta = $self->_read_meta( $fh );
+
 	local $/ = undef;
-	$code = <$fh>;
+	$reg = <$fh>;
     }
 
-    $self->{_cache}{registered_module_index} = [ $code, $meta ];
+    my $hash = _eval_string( "$reg\nCPAN::Modulelist->data();" );
 
-    return wantarray ? ( $code, $meta ) : $code;
+    $self->{_cache}{registered_module_index} = [ $hash, $meta ];
+
+    return wantarray ? ( $hash, $meta ) : $hash;
 }
 
 sub flush {
@@ -581,6 +585,12 @@ production release, which will be at least a week after the release of
 version 0.000_03. Yes, this is short notice, but this B<is> a
 development release, and I have not publicized this distribution.
 
+Also, in version 0.000_02 and earlier,
+L<fetch_registered_module_index()|/fetch_registered_module_index>
+returned a string that had to be C<eval>-ed to generate the index. As of
+version 0.000_03, the C<eval> is done for you, and a reference to the
+hash containing the index is returned.
+
 =head1 DESCRIPTION
 
 This class provides a lowish-level interface to an arbitrary CPAN
@@ -806,9 +816,8 @@ L<fetch_distribution_checksums()|/fetch_distribution_checksums>.
 =head3 fetch_registered_module_index
 
 This method fetches the registered module index,
-F<modules/03modlist.data.gz>. It is expanded and returned as a string.
-This string, when when run through a stringy C<eval>, creates
-C<< CPAN::Modulelist->data() >>, which returns the list.
+F<modules/03modlist.data.gz>. It is interpreted, and returned as a hash
+reference keyed by module name.
 
 If called in list context, the first return is the index, and the second
 is a hash reference containing the metadata that appears at the top of
