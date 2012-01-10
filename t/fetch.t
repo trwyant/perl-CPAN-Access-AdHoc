@@ -128,9 +128,21 @@ EOD
 
 # Test access to CHECKSUMS.
 
-is_deeply $cad->fetch_distribution_checksums( 'BACH' ),
-    do 'mock/repos/authors/id/B/BA/BACH/CHECKSUMS',
-    'BACH/CHECKSUMS';
+{
+    my $cksum = do 'mock/repos/authors/id/B/BA/BACH/CHECKSUMS';
+
+    is_deeply $cad->fetch_distribution_checksums( 'BACH/' ),
+        $cksum, 'BACH/CHECKSUMS';
+
+    is_deeply $cad->fetch_distribution_checksums(
+	    'BACH/Johann-0.001.tar.bz2' ),
+	$cksum->{ 'Johann-0.001.tar.bz2' },
+	'BACH/Johann-0.001.tar.bz2 checksums';
+
+    ok ! defined scalar $cad->fetch_distribution_checksums(
+	    'BACH/Carl-Philipp-Emanuel-0.001.tar.gz' ),
+	'BACH/Carl-Philipp-Emanuel-0.001.tar.gz has no checksum';
+}
 
 # Test access to .tar.gz archive
 

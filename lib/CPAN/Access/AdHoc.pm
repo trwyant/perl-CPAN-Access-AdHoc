@@ -130,12 +130,19 @@ sub fetch_distribution_archive {
 }
 
 sub fetch_distribution_checksums {
-    my ( $self, $directory ) = @_;
-    $directory =~ s{ (?<= [^/] ) \z }{/}smx;
-    my $path = _distribution_path( $directory . 'CHECKSUMS' );
-    ( my $base = $path ) =~ s{ [^/]* \z }{}smx;
-    return ( $self->{_cache}{checksums}{$base} ||= _eval_string(
-	    $self->fetch( "authors/id/$path" )->get_item_content() ) );
+    my ( $self, $distribution ) = @_;
+    $distribution =~ m{ \A ( .* / ) ( [^/]* ) \z }smx
+	or _wail( "Invalid distribution '$distribution'" );
+    my ( $dir, $file ) = ( $1, $2 );
+    $file eq 'CHECKSUMS'
+	and $file = '';
+    my $path = _distribution_path( $dir . 'CHECKSUMS' );
+    ( $dir = $path ) =~ s{ [^/]* \z }{}smx;
+    $self->{_cache}{checksums}{$dir} ||= _eval_string(
+	$self->fetch( "authors/id/$path" )->get_item_content() );
+    $file eq ''
+	and return $self->{_cache}{checksums}{$dir};
+    return $self->{_cache}{checksums}{$dir}{$file};
 }
 
 sub fetch_package_archive {
@@ -807,11 +814,28 @@ example can also be written as
 =head3 fetch_distribution_checksums
 
  use YAML::Any;
- print Dump( $cad->fetch_distribution_checksums( 'B/BA/BACH' ) );
+ print Dump( $cad->fetch_distribution_checksums(
+     'B/BA/BACH/' ) );
+ print Dump( $cad->fetch_distribution_checksums(
+     'B/BA/BACH/Johann-0.001.tar.bz2' ) );
 
-This method takes as its argument a directory name relative to
-F<authors/id/>, and returns a hash representing that directory's
-F<CHECKSUMS> file.
+This method takes as its argument either a file name or a directory name
+relative to F<authors/id/>. A directory is indicated by a trailing
+slash.
+
+If the request if for the F<CHECKSUMS> file, a reference the return is a
+reference to a hash which contains the interpreted contents of the
+entire file.
+
+If the argument is a file name other than F<CHECKSUMS>, the return is a
+reference to the F<CHECKSUMS> entry for that file.
+
+If the argument is a directory name, it is treated like a request for
+the F<CHECKSUMS> file in that directory.
+
+If the F<CHECKSUMS> file does not exist, an exception is raised. If the
+argument was a file name and the file has no entry in the F<CHECKSUMS>
+file, nothing is returned.
 
 For convenience, either the top or the top two directories can be
 omitted, since they can be reconstructed from the rest.
