@@ -19,8 +19,10 @@ GetOptions( \%opt,
 
 my $cad = CPAN::Access::AdHoc->new();
 
+my $inx = $cad->fetch_author_index();
+
 foreach my $cpan_id ( @ARGV ) {
-    say $cpan_id;
+    say sprintf '%-14s %s', $cpan_id, $inx->{$cpan_id}{address};
     foreach my $pkg ( $cad->corpus( $cpan_id ) ) {
 	say "    $pkg";
     }
