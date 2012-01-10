@@ -10,6 +10,9 @@ cpan-adhoc - An interactive script to obtain information about CPAN
 dist-extensions - List all file name extensions found on distributions
 	in CPAN.
 
+grep-distributions - Find all indexed distributions that match one or
+	more regular expressions given on the command line.
+
 grep-modules - List all indexed modules that match one or more regular
 	expressions given on the command line.
 
@@ -20,9 +23,6 @@ mod-dist - Say what distribution a given module is in.
 
 mod-doc - Display the documentation for the distribution containing the
 	given module in your web browser.
-
-repo-grep - Find all indexed distributions that match one or more
-	regular expressions given on the command line.
 
 In all the above scripts, you can get the documentation with the --help
 option.

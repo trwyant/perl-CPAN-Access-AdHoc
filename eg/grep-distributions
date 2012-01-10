@@ -35,20 +35,21 @@ __END__
 
 =head1 TITLE
 
-repo-grep - List all indexed distributions that match one or more regexes.
+grep-distributions - List all indexed distributions that match one or more regexes.
 
 =head1 SYNOPSIS
 
- repo-grep '\.zip\z'
- repo-grep -help
- repo-grep -version
+ grep-distributions '\.zip\z'
+ grep-distributions -help
+ grep-distributions -version
 
 =head1 OPTIONS
 
 =head2 -cpan
 
 This option specifies the URL of the CPAN repository to analyze. The
-default depends on how L<CPAN::Access::AdHoc|CPAN::Access::AdHoc> is configured.
+default depends on how L<CPAN::Access::AdHoc|CPAN::Access::AdHoc> is
+configured.
 
 =head2 -help
 
