@@ -22,7 +22,7 @@ my @res = map { qr{ $_ }smx } @ARGV;
 
 my $cad = CPAN::Access::AdHoc->new( cpan => $opt{cpan} );
 
-foreach my $pkg ( $cad->indexed_packages() ) {
+foreach my $pkg ( $cad->indexed_distributions() ) {
     foreach my $re ( @res ) {
 	$pkg =~ $re
 	    or next;
@@ -35,7 +35,7 @@ __END__
 
 =head1 TITLE
 
-repo-grep - List all indexed packages that match one or more regexes.
+repo-grep - List all indexed distributions that match one or more regexes.
 
 =head1 SYNOPSIS
 
@@ -63,8 +63,8 @@ This option displays the version of this script. The script then exits.
 
 This Perl script takes as its arguments one or more Perl regular
 expressions, applies those regular expressions to the names of all the
-packages in the CPAN repository, and writes the names of any matches to
-standard out.
+distributions in the CPAN repository, and writes the names of any
+matches to standard out.
 
 =head1 AUTHOR
 

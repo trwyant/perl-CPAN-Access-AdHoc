@@ -118,7 +118,7 @@ sub verb_checksums {
     my ( $author ) = @_;
     defined $author
 	or die 'Must specify a CPAN ID';
-    my $cksum = $cad->fetch_package_checksums( $author );
+    my $cksum = $cad->fetch_distribution_checksums( $author );
     print Dump( $cksum );
     return;
 }
@@ -176,6 +176,43 @@ sub verb_diff {
     _issue( \%opt, diff => @d_opt, $temp->filename(), $local );
 
     return;
+}
+
+sub verb_distribution {
+    local @ARGV = @_;
+    my %opt;
+    GetOptions( \%opt, qw{ direct! fetch! } )
+	and @ARGV == 1
+	or die "The distribution command takes exactly one argument\n";
+    if ( $opt{direct} ) {
+	_fetch_distribution( $ARGV[0] );
+    } else {
+	my $re = qr{ $ARGV[0] }smx;
+	my $count = 0;
+	my $distribution;
+	foreach my $dist ( $cad->indexed_distributions() ) {
+	    $dist =~ $re
+		or next;
+	    say $dist;
+	    $count++
+		or $distribution = $dist;
+	}
+	if ( $opt{fetch} ) {
+	    if ( $count == 1 ) {
+		_fetch_distribution( $distribution );
+	    } elsif ( $count ) {
+		die "Multiple distributions matching $re were found\n";
+	    } else {
+		die "No distributions matching $re were found\n";
+	    }
+	}
+    }
+    return;
+}
+
+BEGIN {
+    no warnings qw{ once };
+    *verb_dist = \&verb_distribution;
 }
 
 sub verb_exit {
@@ -266,10 +303,10 @@ sub verb_module {
     my $inx = $cad->fetch_module_index();
     $inx->{$module}
 	or die "Module '$module' not indexed\n";
-    my $pkg = $inx->{$module}{package};
-    say join "\t", $module, $inx->{$module}{version}, $pkg;
+    my $dist = $inx->{$module}{distribution};
+    say join "\t", $module, $inx->{$module}{version}, $dist;
     $opt{fetch}
-	and _fetch_package( $pkg );
+	and _fetch_distribution( $dist );
     return;
 }
 
@@ -278,38 +315,6 @@ sub verb_mtime {
     say strftime( '%d-%b-%Y %H:%M:%S', localtime
 	$pkg->{archive}->get_item_mtime( $file )
     );
-    return;
-}
-
-sub verb_package {
-    local @ARGV = @_;
-    my %opt;
-    GetOptions( \%opt, qw{ direct! fetch! } )
-	and @ARGV == 1
-	or die "The package command takes exactly one argument\n";
-    if ( $opt{direct} ) {
-	_fetch_package( $ARGV[0] );
-    } else {
-	my $re = qr{ $ARGV[0] }smx;
-	my $count = 0;
-	my $package;
-	foreach my $pkg ( $cad->indexed_packages ) {
-	    $pkg =~ $re
-		or next;
-	    say $pkg;
-	    $count++
-		or $package = $pkg;
-	}
-	if ( $opt{fetch} ) {
-	    if ( $count == 1 ) {
-		_fetch_package( $package );
-	    } elsif ( $count ) {
-		die "Multiple packages matching $re were found\n";
-	    } else {
-		die "No packages matching $re were found\n";
-	    }
-	}
-    }
     return;
 }
 
@@ -355,7 +360,7 @@ sub _validate_pkg_file {
 	or die "Package '$pkg' not downloaded\n";
     my $dname = $dist{$pkg}{info}->distvname();
     $dist{$pkg}{archive}->item_present( $file )
-	or die "File '$file' not in package '$dname'\n";
+	or die "File '$file' not in distribution '$dname'\n";
     return ( $dist{$pkg}, $file );
 }
 
@@ -366,9 +371,9 @@ sub _fetch_file {
     return $temp;
 }
 
-sub _fetch_package {
+sub _fetch_distribution {
     my ( $pkg ) = @_;
-    my $archive = $cad->fetch_package_archive( $pkg );
+    my $archive = $cad->fetch_distribution_archive( $pkg );
     my $path = $archive->path();
     my $di = CPAN::DistnameInfo->new( $path );
     my $dn = $di->dist();
@@ -467,19 +472,19 @@ The following commands are supported:
  cpan-adhoc> alias libwww-perl libwww
  cpan-adhoc> alias libwww
 
-This command creates an alias for a downloaded package in the downloaded
-package stash. It is simply a convenience to save typing. The first
+This command creates an alias for a distribution in the downloaded
+distribution stash. It is simply a convenience to save typing. The first
 argument is the name of an entry in the stash, and the second is the
 alias.
 
-The single-argument version creates an alias for the current package, if
-any.
+The single-argument version creates an alias for the current
+distribution, if any.
 
 =head2 base
 
-This command displays the base directories for the named packages. If no
-package is specified, the current package, if any, is displayed.
-Packages must be fetched before they can be displayed.
+This command displays the base directories for the named distributions.
+If no distribution is specified, the current distribution, if any, is
+displayed.  Distributions must be fetched before they can be displayed.
 
 =head2 cd
 
@@ -499,7 +504,8 @@ This command displays the given author's F<CHECKSUMS> file.
 
  cpan-adhoc> clear
 
-This command removes all packages from the stash.
+This command removes all distributions from the stash, and purges cached
+data from the L<CPAN::Access::AdHoc|CPAN::Access::AdHoc> object.
 
 =head2 cpan
 
@@ -546,9 +552,10 @@ you want to recompute the C<cpan> URL after setting this, you must do
  cpan-adhoc> diff -less -u README README
 
 This command runs F<diff> on a file from a CPAN archive and a local
-file. The arguments are the package name, the file in the package, and
-the local file. The package defaults to the current package, and the
-file in the package defaults to the local file.
+file. The arguments are the distribution name, the file in the
+distribution, and the local file. The distribution defaults to the
+current distribution, and the file in the distribution defaults to the
+local file.
 
 The C<-less> option specifies that the output of F<diff> be viewed in
 F<less>. Anything else that looks like an option (that is, that has a
@@ -568,6 +575,26 @@ the trailing C<-readme> is taken as an option for F<diff>. But in
 
 the trailing C<-readme> is taken as a file name.
 
+=head2 dist
+
+This is a synonym for L<distribution|/distribution>, for convenience.
+
+=head2 distribution
+
+ cpan-adhoc> distribution libwww-perl
+ cpan-adhoc> distribution -fetch libwww-perl
+
+This command looks up the given distribution in the module index (sic),
+using an unanchored regular expression, and displays any matches.
+
+If the C<-fetch> option is specified and exxactly one match is found,
+that distribution is fetched, and stashed locally under the name that
+appeared in the index, and under its distribution and version (e.g.
+C<libwww-perl-6.03> for the above examples).  It is also stashed under
+the distribution name if no higher version of the same distribution has
+been stashed. The last distribution fetched becomes the current
+distribution.
+
 =head2 exit
 
  cpan-adhoc> exit
@@ -585,26 +612,27 @@ This command displays the documentation for this script.
  cpan-adhoc> less libwww-perl lib/LWP/UserAgent.pm
  cpan-adhoc> less lib/LWP/UserAgent.pm
 
-This command feeds the specified file from the specified package to
-whatever pager was configured when Perl was built. The package must
+This command feeds the specified file from the specified distribution to
+whatever pager was configured when Perl was built. The distribution must
 have been previously downloaded.
 
-The single-argument form displays the given file in the current package.
+The single-argument form displays the given file in the current
+distribution.
 
 =head2 list
 
  cpan-adhoc> list libwww-perl
  cpan-adhoc> list
 
-This command lists the files in the given packages, which must have been
-previously downloaded. If no package is specified, the current package
-is listed.
+This command lists the files in the given distributions, which must have
+been previously downloaded. If no distribution is specified, the current
+distribution is listed.
 
 =head2 metadata
 
-This command displays the metadata for the given packages, which must
-have been peviously downloaded. If metadata is not available (i.e. no
-F<META.json> or F<META.yml> was found) a warning will be issued.
+This command displays the metadata for the given distributions, which
+must have been peviously downloaded. If metadata is not available (i.e.
+no F<META.json> or F<META.yml> was found) a warning will be issued.
 
 The metadata is displayed by the L<CPAN::Meta|CPAN::Meta> C<as_string()>
 method.
@@ -615,39 +643,25 @@ method.
  cpan-adhoc> module -fetch LWP::UserAgent
 
 This command looks up the given modules in the module index, and
-displays their version and the package they are contained in.
+displays their version and the distribution they are contained in.
 
-If the C<-fetch> option is specified, the package is fetched, and
+If the C<-fetch> option is specified, the distribution is fetched, and
 stashed locally under the name that appeared in the index, and under its
-package and version (e.g. C<libwww-perl-6.03> for the above examples).
-It is also stashed under the package name if no higher version of the
-same package has been stashed. The last package fetched becomes the
-current package.
-
-=head2 package
-
- cpan-adhoc> package libwww-perl
- cpan-adhoc> package -fetch libwww-perl
-
-This command looks up the given package in the module index (sic), using
-an unanchored regular expression, and displays any matches.
-
-If the C<-fetch> option is specified and exxactly one match is found,
-that package is fetched, and stashed locally under the name that
-appeared in the index, and under its package and version (e.g.
-C<libwww-perl-6.03> for the above examples).  It is also stashed under
-the package name if no higher version of the same package has been
-stashed. The last package fetched becomes the current package.
+distribution and version (e.g. C<libwww-perl-6.03> for the above
+examples).  It is also stashed under the distribution name if no higher
+version of the same distribution has been stashed. The last distribution
+fetched becomes the current distribution.
 
 =head2 perldoc
 
  cpan-adhoc> perldoc libwww-perl-6.03 lib/LWP/UserAgent.pm
  cpan-adhoc> perldoc lib/LWP/UserAgent.pm
 
-This command feeds the specified file from the specified package to
-perldoc.  The package must have been previously downloaded.
+This command feeds the specified file from the specified distribution to
+perldoc. The distribution must have been previously downloaded.
 
-The single-argument form displays the given file in the current package.
+The single-argument form displays the given file in the current
+distribution.
 
 =head2 pwd
 

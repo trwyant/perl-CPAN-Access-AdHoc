@@ -41,16 +41,16 @@ my ( $module_index, $meta ) = $cad->fetch_module_index();
 
 is_deeply $module_index, {
     Johann	=> {
-	package	=> 'B/BA/BACH/Johann-0.001.tar.bz2',
-	version	=> 0.001,
+	distribution	=> 'B/BA/BACH/Johann-0.001.tar.bz2',
+	version		=> 0.001,
     },
     PDQ		=> {
-	package	=> 'B/BA/BACH/PDQ-0.000_01.zip',
-	version => '0.000_01',
+	distribution	=> 'B/BA/BACH/PDQ-0.000_01.zip',
+	version		=> '0.000_01',
     },
     Yehudi => {
-	package	=> 'M/ME/MENUHIN/Yehudi-0.001.tar.gz',
-	version	=> 0.001,
+	distribution	=> 'M/ME/MENUHIN/Yehudi-0.001.tar.gz',
+	version		=> 0.001,
     },
 }, 'Contents of the repository index';
 
@@ -155,7 +155,7 @@ EOD
 
 # Test access to CHECKSUMS.
 
-is_deeply $cad->fetch_package_checksums( 'BACH' ),
+is_deeply $cad->fetch_distribution_checksums( 'BACH' ),
     do 'mock/repos/authors/id/B/BA/BACH/CHECKSUMS',
     'BACH/CHECKSUMS';
 
@@ -164,12 +164,12 @@ is_deeply $cad->fetch_package_checksums( 'BACH' ),
 SKIP: {
     my $tests = 8;
 
-    my $pkg = $module_index->{Yehudi}{package}
+    my $pkg = $module_index->{Yehudi}{distribution}
 	or skip q{Module 'Yehudi' not indexed}, $tests;
 
-    my $kit = $cad->fetch_package_archive( $pkg );
+    my $kit = $cad->fetch_distribution_archive( $pkg );
 
-    ok $kit, "Fetch package '$pkg'";
+    ok $kit, "Fetch distribution '$pkg'";
 
     is $kit->path(), 'authors/id/M/ME/MENUHIN/Yehudi-0.001.tar.gz',
 	'Path to Yehudi-0.001.tar.gz';
@@ -221,12 +221,12 @@ SKIP: {
 SKIP: {
     my $tests = 5;
 
-    my $pkg = $module_index->{Johann}{package}
+    my $pkg = $module_index->{Johann}{distribution}
 	or skip q{Module 'Johann' not indexed}, $tests;
 
-    my $kit = $cad->fetch_package_archive( $pkg );
+    my $kit = $cad->fetch_distribution_archive( $pkg );
 
-    ok $kit, "Fetch package '$pkg'";
+    ok $kit, "Fetch distribution '$pkg'";
 
     is $kit->path(), 'authors/id/B/BA/BACH/Johann-0.001.tar.bz2',
 	'Path to Johann-0.001.tar.bz2';
@@ -246,12 +246,12 @@ SKIP: {
 SKIP: {
     my $tests = 8;
 
-    my $pkg = $module_index->{PDQ}{package}
+    my $pkg = $module_index->{PDQ}{distribution}
 	or skip q{Module 'PDQ' not indexed}, $tests;
 
-    my $kit = $cad->fetch_package_archive( $pkg );
+    my $kit = $cad->fetch_distribution_archive( $pkg );
 
-    ok $kit, "Fetch package '$pkg'";
+    ok $kit, "Fetch distribution '$pkg'";
 
     is $kit->path(), 'authors/id/B/BA/BACH/PDQ-0.000_01.zip',
 	'Path to PDQ-0.000_01.zip';

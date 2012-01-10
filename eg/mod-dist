@@ -24,7 +24,7 @@ my $index = $cad->fetch_module_index();
 
 foreach my $module ( @ARGV ) {
     if ( my $data = $index->{$module} ) {
-	print "$module\t$data->{version}\t$data->{package}\n";
+	print "$module\t$data->{version}\t$data->{distribution}\n";
     } else {
 	print "$module not found\n";
     }
@@ -59,8 +59,8 @@ This option displays the version of this script. The script then exits.
 
 =head1 DETAILS
 
-This Perl script queries the package index of the desired CPAN
-repository, and reports which package contains each of the modules
+This Perl script queries the distribution index of the desired CPAN
+repository, and reports which distribution contains each of the modules
 specified on the command line.
 
 =head1 AUTHOR

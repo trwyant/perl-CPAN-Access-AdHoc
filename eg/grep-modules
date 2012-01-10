@@ -31,7 +31,7 @@ foreach my $module ( sort keys %{ $module_index } )
 	    or next;
 	my $data = $module_index->{$module};
 	say join "\t", $module, $opt{verbose} ?
-	    ( $data->{version}, $data->{package} ) :
+	    ( $data->{version}, $data->{distribution} ) :
 	    ();
 	last;
     }
@@ -62,7 +62,8 @@ exits.
 
 =head2 -verbose
 
-This option causes the module's version and package to be displayed.
+This option causes the module's version and distribution to be
+displayed.
 
 =head2 -version
 

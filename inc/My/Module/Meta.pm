@@ -91,9 +91,9 @@ My::Module::Meta - Information needed to build CPAN::Access::AdHoc
 
 =head1 DETAILS
 
-This module centralizes information needed to build C<CPAN::Access::AdHoc>. It
-is private to the C<CPAN::Access::AdHoc> package, and may be changed or
-retracted without notice.
+This module centralizes information needed to build
+C<CPAN::Access::AdHoc>. It is private to the C<CPAN::Access::AdHoc>
+distribution, and may be changed or retracted without notice.
 
 =head1 METHODS
 
@@ -111,9 +111,10 @@ This method instantiates the class.
  print Dump( $meta->build_requires() );
 
 This method computes and returns a reference to a hash describing the
-modules required to build the C<CPAN::Access::AdHoc> package, suitable for
-use in a F<Build.PL> C<build_requires> key, or a F<Makefile.PL>
-C<< {META_MERGE}->{build_requires} >> or C<BUILD_REQUIRES> key.
+modules required to build the C<CPAN::Access::AdHoc> distribution,
+suitable for use in a F<Build.PL> C<build_requires> key, or a
+F<Makefile.PL> C<< {META_MERGE}->{build_requires} >> or
+C<BUILD_REQUIRES> key.
 
 =head2 distribution
 
@@ -133,7 +134,7 @@ C<MAKING_MODULE_DISTRIBUTION> at the time the object was instantiated.
 
 This method computes and returns a reference to a hash describing
 the modules required to run the C<CPAN::Access::AdHoc>
-package, suitable for use in a F<Build.PL> C<requires> key, or a
+distribution, suitable for use in a F<Build.PL> C<requires> key, or a
 F<Makefile.PL> C<PREREQ_PM> key. Any additional arguments will be
 appended to the generated hash. In addition, unless
 L<distribution()|/distribution> is true, configuration-specific modules
@@ -141,9 +142,10 @@ may be added.
 
 =head2 requires_perl
 
- print 'This package requires Perl ', $meta->requires_perl(), "\n";
+ print 'This distribution requires Perl ',
+     $meta->requires_perl(), "\n";
 
-This method returns the version of Perl required by the package.
+This method returns the version of Perl required by the distribution.
 
 =head1 ATTRIBUTES
 

@@ -52,7 +52,7 @@ sub corpus {
 	$cpan_id;
 
     $re = qr{ \A \Q$re\E / }smx;
-    return ( grep { $_ =~ $re } $self->indexed_packages() );
+    return ( grep { $_ =~ $re } $self->indexed_distributions() );
 }
 
 {
@@ -123,17 +123,17 @@ sub fetch_author_index {
     return ( $self->{_cache}{author_index} = \%author_index );
 }
 
-sub fetch_package_archive {
-    my ( $self, $package ) = @_;
-    my @parts = split qr{ / }smx, $package;
+sub fetch_distribution_archive {
+    my ( $self, $distribution ) = @_;
+    my @parts = split qr{ / }smx, $distribution;
     @parts > 1
-	or _wail( 'Incomplete package name specification' );
+	or _wail( 'Incomplete distribution name specification' );
     my ( $author, $filename ) = @parts[ -2, -1 ];
     my $path = _author_path( $author, $filename );
     return $self->fetch( $path );
 }
 
-sub fetch_package_checksums {
+sub fetch_distribution_checksums {
     my ( $self, $author ) = @_;
     $self->{_cache}{$author} ||= do {
 	my $path = _author_path( $author, 'CHECKSUMS' );
@@ -143,6 +143,16 @@ sub fetch_package_checksums {
 	_eval_string( $self->fetch( $path )->get_item_content() );
     };
     return $self->{_cache}{$author};
+}
+
+sub fetch_package_archive {
+    _deprecated( 'fetch_package_archive' );
+    goto &fetch_distribution_archive;
+}
+
+sub fetch_package_checksums {
+    _deprecated( 'fetch_package_checksums' );
+    goto &fetch_distribution_checksums;
 }
 
 sub fetch_module_index {
@@ -169,8 +179,8 @@ sub fetch_module_index {
 ##	'undef' eq $ver
 ##	    and $ver = undef;
 	$module{$mod} = {
-	    package	=> $pkg,
-	    version	=> $ver,
+	    distribution	=> $pkg,
+	    version		=> $ver,
 	};
     }
 
@@ -214,18 +224,23 @@ sub flush {
 }
 
 sub indexed_packages {
+    _deprecated( 'indexed_packages' );
+    goto &indexed_distributions;
+}
+
+sub indexed_distributions {
     my ( $self ) = @_;
-    $self->{_cache}{indexed_packages}
-	and return @{ $self->{_cache}{indexed_packages} };
+    $self->{_cache}{indexed_distributions}
+	and return @{ $self->{_cache}{indexed_distributions} };
 
     my $inx = $self->fetch_module_index();
 
     my %pkg;
     foreach my $info ( values %{ $inx } ) {
-	$pkg{$info->{package}}++;
+	$pkg{$info->{distribution}}++;
     }
 
-    return @{ $self->{_cache}{indexed_packages} = [ sort keys %pkg ] };
+    return @{ $self->{_cache}{indexed_distributions} = [ sort keys %pkg ] };
 }
 
 # Set up the accessor/mutators. All mutators interpret undef as being a
@@ -388,6 +403,14 @@ sub _author_path {
 	$filename;
 }
 
+sub _deprecated {
+    my ( $deprec, $preferred ) = @_;
+    defined $preferred
+	or ( $preferred = $deprec ) =~ s/ package /distribution/smx;
+    _whinge( "Method $deprec is deprecated in favor of $preferred" );
+    return;
+}
+
 # Eval a string in a sandbox, and return the result. This was cribbed
 # _very_ heavily from CPAN::Distribution CHECKSUM_check_file().
 sub _eval_string {
@@ -502,6 +525,13 @@ sub _read_meta {
     return \%meta;
 }
 
+sub _whinge {
+    my @args = @_;
+    require Carp;
+    Carp::carp( @args );
+    return;
+}
+
 sub _wail {
     my @args = @_;
     require Carp;
@@ -525,10 +555,31 @@ CPAN::Access::AdHoc - Retrieve stuff from an arbitrary CPAN repository
  my $cad = CPAN::Access::AdHoc->new();
  my $index = $cad->fetch_module_index();
  if ( $index->{$module} ) {
-     print "$module is in $index->{package}\n";
+     print "$module is in $index->{distribution}\n";
  } else {
      print "$module is not indexed\n";
  }
+
+=head1 NOTICE
+
+In C<CPAN::Access::AdHoc> version 0.000_02 and earlier, the word
+'package' was used to describe the tarball (or whatever) that CPAN
+modules came in. Beginning with this release, the word is
+'distribution', and all method names are modified accordingly. That is:
+
+=over
+
+=item fetch_package_archive becomes fetch_distribution_archive
+
+=item fetch_package_checksums becomes fetch_distribution_checksums
+
+=back
+
+The old methods still work, but will issue a deprecation notice whenever
+they are called. The old methods will be removed before the first
+production release, which will be at least a week after the release of
+version 0.000_03. Yes, this is short notice, but this B<is> a
+development release, and I have not publicized this distribution.
 
 =head1 DESCRIPTION
 
@@ -544,11 +595,11 @@ least a configuration-optional system.
 
 Attributes can be specified explicitly either when the object is
 instantiated or afterwards. The default is from the global section of a
-L<Config::Tiny|Config::Tiny> configuration file, F<CPAN-Access-AdHoc.ini>,
-which is found in directory
-C<< File::HomeDir->my_dist_config( 'CPAN-Access-AdHoc' ) >>. The named sections
-are currently unused, though C<CPAN-Access-AdHoc> reserves to itself all
-section names which contain no uppercase letters.
+L<Config::Tiny|Config::Tiny> configuration file,
+F<CPAN-Access-AdHoc.ini>, which is found in directory
+C<< File::HomeDir->my_dist_config( 'CPAN-Access-AdHoc' ) >>. The named
+sections are currently unused, though C<CPAN-Access-AdHoc> reserves to
+itself all section names which contain no uppercase letters.
 
 In addition, it is possible to take the default CPAN repository URL from
 the user's L<CPAN::Mini|CPAN::Mini>, L<cpanm|cpanm>, L<CPAN|CPAN>, or
@@ -601,10 +652,11 @@ object.
 
 When called with an argument, this method acts as a mutator. If the
 argument is a L<Config::Tiny|Config::Tiny> object it becomes the new
-configuration. If the argument is C<undef>, file F<CPAN-Access-AdHoc.ini> in
-C<< File::HomeDir->my_dist_config( 'CPAN-Access-AdHoc' ) >> is read for the
-configuration. If this file does not exist, the configuration is set to
-an empty L<Config::Tiny|Config::Tiny> object.
+configuration. If the argument is C<undef>, file
+F<CPAN-Access-AdHoc.ini> in
+C<< File::HomeDir->my_dist_config( 'CPAN-Access-AdHoc' ) >> is read for
+the configuration. If this file does not exist, the configuration is set
+to an empty L<Config::Tiny|Config::Tiny> object.
 
 =head3 cpan
 
@@ -630,7 +682,7 @@ When called with an argument, this method acts as a mutator, and sets
 the list of default CPAN sources. This list is a comma-delimited string,
 and consists of the names of zero or more
 C<CPAN::Access::AdHoc::Default::CPAN::*> classes, with the common
-prefix removed.  object. See the documentation of these classes for more
+prefix removed. See the documentation of these classes for more
 information.
 
 If any of the elements in the string does not represent an existing
@@ -647,10 +699,10 @@ These methods are what all the rest is in aid of.
 
 =head3 corpus
 
-This convenience method returns a list of the indexed packages by the
-author with the given CPAN ID. This information is derived from the
-output of L<indexed_packages()|/indexed_packages>. The argument is
-converted to upper case before use.
+This convenience method returns a list of the indexed distributions by
+the author with the given CPAN ID. This information is derived from the
+output of L<indexed_distributions()|/indexed_distributions>. The
+argument is converted to upper case before use.
 
 =head3 fetch
 
@@ -668,7 +720,9 @@ with a consistent interface. These classes will be initialized with
  encoding => the MIME encoding used to decode the archive,
  path => the path to the archive, relative to the base URL.
 
-If the fetched file is not an archive, the file contents are returned.
+If the fetched file is not an archive, it is wrapped in a
+L<CPAN::Access::AdHoc::Archive::Null|CPAN::Access::AdHoc::Archive::Null>
+object and returned.
 
 All other fetch functionality is implemented in terms of this method.
 
@@ -699,8 +753,8 @@ each module is an anonymous hash with the following keys:
 
 =over
 
-=item package => the name of the package that contains the module,
-relative to the F<authors/id/> directory;
+=item distribution => the name of the distribution that contains the
+module, relative to the F<authors/id/> directory;
 
 =item version => the version of the module.
 
@@ -713,30 +767,41 @@ top of the expanded index file.
 The results of the first fetch are cached; subsequent calls are supplied
 from cache.
 
-=head3 fetch_package_archive
+=head3 fetch_distribution_archive
 
-This method takes as its argument the name of a package file relative to
-the archive's F<authors/id/> directory, and returns the package as a
-C<CPAN::Access::AdHoc::Archive::*> object.
+This method takes as its argument the name of a distribution file
+relative to the archive's F<authors/id/> directory, and returns the
+distribution as a C<CPAN::Access::AdHoc::Archive::*> object.
 
 Note that since this method is implemented in terms of
 L<fetch()|/fetch>, the archive method's C<path> attribute will be set to
 its path relative to the base URL of the CPAN repository, not its path
 relative to the F<authors/id/> directory. So, for example,
 
- $arc = $cad->fetch_package_archive( 'B/BA/BACH/PDQ-0.000_01.zip
+ $arc = $cad->fetch_distribution_archive(
+     'B/BA/BACH/PDQ-0.000_01.zip' );
  say $arc->path(); # authors/id/B/BA/BACH/PDQ-0.000_01.zip
 
-=head3 fetch_package_checksums
+=head3 fetch_distribution_checksums
 
  use YAML::Any;
- print Dump( $cad->fetch_package_checksums( 'BACH' ) );
+ print Dump( $cad->fetch_distribution_checksums( 'BACH' ) );
 
 This method takes as its argument a CPAN ID, and returns a reference to
 a hash representing the author's F<CHECKSUMS> file.
 
 The result of the first fetch for a given author is cached, and
 subsequent calls for the same author are supplied from cache.
+
+=head3 fetch_package_archive
+
+B<This method is deprecated.> It is a synonym for
+L<fetch_distribution_archive()|/fetch_distribution_archive>.
+
+=head3 fetch_package_checksums
+
+B<This method is deprecated.> It is a synonym for
+L<fetch_distribution_checksums()|/fetch_distribution_checksums>.
 
 =head3 fetch_registered_module_index
 
@@ -757,11 +822,16 @@ from cache.
 This method deletes all cached results, causing them to be re-fetched
 when needed.
 
-=head3 indexed_packages
+=head3 indexed_distributions
 
-This convenience method returns a list of all indexed packages in
+This convenience method returns a list of all indexed distributions in
 ASCIIbetical order. This information is derived from the results of
 L<fetch_module_index()|/fetch_module_index>, and is cached.
+
+=head3 indexed_packages
+
+B<This method is deprecated.> It is a synonym for
+L<indexed_distributions()|/indexed_distributions>.
 
 =head1 SEE ALSO
 

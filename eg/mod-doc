@@ -43,7 +43,7 @@ my $index = $cad->fetch_module_index();
 my $info = $index->{$module},
     or die "$module not in index";
 
-my $di = CPAN::DistnameInfo->new( $info->{package} );
+my $di = CPAN::DistnameInfo->new( $info->{distribution} );
 
 my $url = $opt{url};
 defined $canned_url{$url}
@@ -57,7 +57,7 @@ __END__
 
 =head1 TITLE
 
-mod-doc - Given a module name, display its package documentation
+mod-doc - Given a module name, display its distribution documentation
 
 =head1 SYNOPSIS
 
@@ -87,8 +87,8 @@ exits.
 =head2 url
 
 This option specifies the URL of the documentation root. The name of the
-package containing this will be appended, and the result passed to the
-selected browser.
+distribution containing this will be appended, and the result passed to
+the selected browser.
 
 There are three canned URLs that can be specified by name:
 

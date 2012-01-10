@@ -153,7 +153,7 @@ This static method instantiates the object. It is actually implemented
 on the subclasses, and may not be called on this class. In use, it is
 expected that the user will not call this method directly, but get the
 archive objects from L<CPAN::Access::AdHoc|CPAN::Access::AdHoc>'s
-L<fetch_package_archive()|CPAN::Access::AdHoc/fetch_package_archive> method. See
+L<fetch_distribution_archive()|CPAN::Access::AdHoc/fetch_distribution_archive> method. See
 that method's documentation for how it initialized this object.
 
 This method takes arguments as name/value pairs. The following are
@@ -182,7 +182,7 @@ This optional argument is intended to contain the path to the archive.
 Subclasses may (but need not) default it to the value of the C<content>
 argument, provided the C<content> argument is not a reference.
 
-The intent is that the various components of this package should
+The intent is that the various components of this distribution should
 conspire to make this the path to the file relative to the CPAN URL.
 
 =back
@@ -197,8 +197,8 @@ These methods retrieve or modify the attributes of the class.
 =head3 archive
 
 This method is an accessor for the object representing the archive that
-actually contains the CPAN package. This attribute is read-only, so it
-is an error to pass an argument.
+actually contains the CPAN distribution. This attribute is read-only, so
+it is an error to pass an argument.
 
 =head3 path
 
@@ -213,8 +213,8 @@ consistent interface to the underlying archive object.
 
 =head3 base_directory
 
-This method returns the natural base directory of the package, as
-computed from the directories contained in the package.
+This method returns the natural base directory of the distribution, as
+computed from the directories contained in the distribution.
 
 =head3 extract
 
@@ -262,16 +262,16 @@ relative to C<< $self->base_directory() >>.
 
 =head3 list_items
 
-This method lists the items in the package. Only files are listed.
+This method lists the items in the distribution. Only files are listed.
 
 =head3 metadata
 
-This method returns the package's metadata as a L<CPAN::Meta|CPAN::Meta>
-object. The return of this method is the decoding of the package's
-F<META.json> or F<META.yml> files, taken in that order. If neither is
-present, or neither contains valid metadata as determined by
-L<CPAN::Meta|CPAN::Meta>, nothing is returned -- this method makes no
-further effort to establish what the metadata are.
+This method returns the distribution's metadata as a
+L<CPAN::Meta|CPAN::Meta> object. The return of this method is the
+decoding of the distribution's F<META.json> or F<META.yml> files, taken
+in that order. If neither is present, or neither contains valid metadata
+as determined by L<CPAN::Meta|CPAN::Meta>, nothing is returned -- this
+method makes no further effort to establish what the metadata are.
 
 =head1 SUPPORT
 
