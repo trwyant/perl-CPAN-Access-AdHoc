@@ -400,6 +400,7 @@ sub _attr_cpan {
 # Given a CPAN ID and the name of a file, compute the path to the file.
 sub _author_path {
     my ( $author, $filename ) = @_;
+    $author = uc $author;	# CPAN IDs are all upper-case.
     return join '/', qw{ authors id },
 	substr( $author, 0, 1 ),
 	substr( $author, 0, 2 ),
@@ -792,13 +793,22 @@ relative to the F<authors/id/> directory. So, for example,
      'B/BA/BACH/PDQ-0.000_01.zip' );
  say $arc->path(); # authors/id/B/BA/BACH/PDQ-0.000_01.zip
 
+For convenience, all but the rightmost two components of the path can be
+omitted, since they can be reconstructed from the rest. So the above
+example can also be written as
+
+ $arc = $cad->fetch_distribution_archive(
+     'BACH/PDQ-0.000_01.zip' );
+ say $arc->path(); # authors/id/B/BA/BACH/PDQ-0.000_01.zip
+
 =head3 fetch_distribution_checksums
 
  use YAML::Any;
  print Dump( $cad->fetch_distribution_checksums( 'BACH' ) );
 
 This method takes as its argument a CPAN ID, and returns a reference to
-a hash representing the author's F<CHECKSUMS> file.
+a hash representing the author's F<CHECKSUMS> file. The argument is
+converted to upper case before use.
 
 The result of the first fetch for a given author is cached, and
 subsequent calls for the same author are supplied from cache.
