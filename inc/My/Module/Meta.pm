@@ -46,6 +46,7 @@ sub requires {
 	'Config::Tiny'		=> 0,
 	'CPAN::Meta'		=> 0,
 	'Cwd'			=> 0,
+	'Digest::SHA'		=> 0,
 	'File::Find'		=> 0,
 	'File::HomeDir'		=> 0,
 	'File::Path'		=> 2.07,

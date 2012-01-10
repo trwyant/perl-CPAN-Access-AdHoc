@@ -8,6 +8,7 @@ use warnings;
 use Config::Tiny ();
 use CPAN::Access::AdHoc::Util;
 use CPAN::Meta;
+use Digest::SHA ();
 use File::HomeDir ();
 use File::Spec ();
 use IO::File ();
@@ -80,6 +81,8 @@ sub corpus {
 	$rslt->header( 'Content-Location' => $path );
 
 	$self->_normalize_mime_info( $url, $rslt );
+
+	$self->_checksum( $rslt );
 
 	foreach my $archiver ( @archivers ) {
 	    my $archive;
@@ -364,6 +367,34 @@ sub _attr_cpan {
     $self->flush();
 
     return $value;
+}
+
+# Check the file's checksum if appropriate.
+#
+# The argument is the HTTP::Response object that contains the data to
+# check. This object is expected to have its Content-Location set to the
+# path relative to the root of the site.
+#
+# Files are not checked unless they are in authors/id/, and are not
+# named CHECKSUM.
+sub _checksum {
+    my ( $self, $rslt ) = @_;
+    my $path = $rslt->header( 'Content-Location' );
+    $path =~ m{ \A authors/id/ ( [^/] ) / ( \1 [^/] ) / \2 }smx
+	or return;
+    $path =~ m{ /CHECKSUMS \z }smx
+	and return;
+    my $cks_path = $path;
+    $cks_path =~ s{ \A authors/id/ }{}smx
+	or return;
+    my $cksum = $self->fetch_distribution_checksums( $cks_path )
+	or return;
+    $cksum->{sha256}
+	or return;
+    my $got = Digest::SHA::sha256_hex( $rslt->content() );
+    $got eq $cksum->{sha256}
+	or _wail( "Checksum failure on $path" );
+    return;
 }
 
 {
