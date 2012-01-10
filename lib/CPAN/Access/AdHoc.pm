@@ -125,34 +125,22 @@ sub fetch_author_index {
 
 sub fetch_distribution_archive {
     my ( $self, $distribution ) = @_;
-    my @parts = split qr{ / }smx, $distribution;
-    @parts > 1
-	or _wail( 'Incomplete distribution name specification' );
-    my ( $author, $filename ) = @parts[ -2, -1 ];
-    my $path = _author_path( $author, $filename );
-    return $self->fetch( $path );
+    my $path = _distribution_path( $distribution );
+    return $self->fetch( "authors/id/$path" );
 }
 
 sub fetch_distribution_checksums {
-    my ( $self, $author ) = @_;
-    $self->{_cache}{$author} ||= do {
-	my $path = _author_path( $author, 'CHECKSUMS' );
-	my $cksum;
-	# Unfortunately, the CHECKSUMS file is a Data::Dumper dump, so
-	# the only way to find out what's in it is to eval() it.
-	_eval_string( $self->fetch( $path )->get_item_content() );
-    };
-    return $self->{_cache}{$author};
+    my ( $self, $directory ) = @_;
+    $directory =~ s{ (?<= [^/] ) \z }{/}smx;
+    my $path = _distribution_path( $directory . 'CHECKSUMS' );
+    ( my $base = $path ) =~ s{ [^/]* \z }{}smx;
+    return ( $self->{_cache}{checksums}{$base} ||= _eval_string(
+	    $self->fetch( "authors/id/$path" )->get_item_content() ) );
 }
 
 sub fetch_package_archive {
     _deprecated( 'fetch_package_archive' );
     goto &fetch_distribution_archive;
-}
-
-sub fetch_package_checksums {
-    _deprecated( 'fetch_package_checksums' );
-    goto &fetch_distribution_checksums;
 }
 
 sub fetch_module_index {
@@ -408,6 +396,23 @@ sub _author_path {
 	$filename;
 }
 
+# Given a distribution path relative to authors/id/, but possibly
+# missing one or both of the two levels between that and the actual
+# author directory, supply the missing stuff if it is in fact missing.
+
+sub _distribution_path {
+    my ( $path ) = @_;
+    $path =~ m{ \A ( [^/] ) / ( \1 [^/] ) / ( \2 [^/]* ) / }smx
+	and return $path;
+    $path =~ m< \A ( [^/]{2} ) / ( \1 [^/]* ) / >smx
+	and return join '/', substr( $1, 0, 1 ), $path;
+    $path =~ m< \A ( [^/]+ ) / >smx
+	and return join '/', substr( $1, 0, 1 ),
+	    substr( $1, 0, 2 ), $path;
+    _wail( "Invalid distribution path '$path'" );
+    return;	# We can't get here, but Perl::Critic does not know.
+}
+
 sub _deprecated {
     my ( $deprec, $preferred ) = @_;
     defined $preferred
@@ -575,8 +580,6 @@ modules came in. Beginning with this release, the word is
 =over
 
 =item fetch_package_archive becomes fetch_distribution_archive
-
-=item fetch_package_checksums becomes fetch_distribution_checksums
 
 =back
 
@@ -793,7 +796,7 @@ relative to the F<authors/id/> directory. So, for example,
      'B/BA/BACH/PDQ-0.000_01.zip' );
  say $arc->path(); # authors/id/B/BA/BACH/PDQ-0.000_01.zip
 
-For convenience, all but the rightmost two components of the path can be
+For convenience, either the top or the top two directories can be
 omitted, since they can be reconstructed from the rest. So the above
 example can also be written as
 
@@ -804,24 +807,22 @@ example can also be written as
 =head3 fetch_distribution_checksums
 
  use YAML::Any;
- print Dump( $cad->fetch_distribution_checksums( 'BACH' ) );
+ print Dump( $cad->fetch_distribution_checksums( 'B/BA/BACH' ) );
 
-This method takes as its argument a CPAN ID, and returns a reference to
-a hash representing the author's F<CHECKSUMS> file. The argument is
-converted to upper case before use.
+This method takes as its argument a directory name relative to
+F<authors/id/>, and returns a hash representing that directory's
+F<CHECKSUMS> file.
 
-The result of the first fetch for a given author is cached, and
+For convenience, either the top or the top two directories can be
+omitted, since they can be reconstructed from the rest.
+
+The result of the first fetch for a given directory is cached, and
 subsequent calls for the same author are supplied from cache.
 
 =head3 fetch_package_archive
 
 B<This method is deprecated.> It is a synonym for
 L<fetch_distribution_archive()|/fetch_distribution_archive>.
-
-=head3 fetch_package_checksums
-
-B<This method is deprecated.> It is a synonym for
-L<fetch_distribution_checksums()|/fetch_distribution_checksums>.
 
 =head3 fetch_registered_module_index
 
