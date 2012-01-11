@@ -16,8 +16,11 @@ use Getopt::Long 2.33;
 use IO::Compress::Gzip qw{ gzip $GzipError };
 use IO::File;
 use Pod::Usage;
+use Time::Local;
 
 our $VERSION = '0.000_01';
+
+my $base_time = timegm( 0, 0, 0, 1, 0, 100 );
 
 my %opt;
 
@@ -36,6 +39,7 @@ my $top_dir = cwd();
 
 my %author_index;
 my %module_index;
+my %mtime;
 
 # Pack up the individual distributions, accumulating indexing
 # information along the way.
@@ -69,6 +73,14 @@ foreach my $user ( bsd_glob( 'mock/src/repos/*' ) ) {
 
 	    chdir $dist
 		or die "Can not change directory to $dist: $!";
+
+	    my $manifest = maniread() || {};
+	    foreach my $file ( keys %{ $manifest } ) {
+		my @stat = stat $file
+		    or next;
+		$mtime{"$cpan_id/$dist_name/$file"} = $stat[9] -
+		    $base_time;
+	    }
 
 	    my $kit_file;
 
@@ -142,6 +154,17 @@ foreach my $user ( bsd_glob( 'mock/src/repos/*' ) ) {
 
     updatedir( $dest_dir );
 
+}
+
+# Generate the mtimes file
+
+{
+    open my $fh, '>', 'mock/repos/mtimes.dat'
+	or die "Unable to open mock/repos/mtimes.dat: $!\n";
+    foreach my $file ( sort keys %mtime ) {
+	print { $fh } "$file\t$mtime{$file}\n";
+    }
+    close $fh;
 }
 
 # Generate modules/02packages.details.txt and

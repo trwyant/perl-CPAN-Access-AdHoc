@@ -63,6 +63,7 @@ sub requires {
 	'Safe'			=> 0,
 	'strict'		=> 0,
 	'Text::ParseWords'	=> 0,
+	'Time::Local'		=> 0,
 	'warnings'		=> 0,
 	@extra,
     };

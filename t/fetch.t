@@ -7,12 +7,24 @@ use warnings;
 
 use POSIX ();
 use Test::More 0.88;	# Because of done_testing();
+use Time::Local;
 
 use lib qw{ mock };
 
 use CPAN::Access::AdHoc;
 
-my %maybe_bad_mtime = map { $_ => 1 } qw{ DOS MSWin32 cygwin };
+my %mtime;
+eval {
+    my $base_time = timegm( 0, 0, 0, 1, 0, 100 );
+    open my $fh, '<', 'mock/repos/mtimes.dat'
+	or die "Failed to open mock/repos/mtimes.dat: $!";
+    while ( <$fh> ) {
+	my ( $file, $time ) = split qr{ \s+ }smx;
+	$mtime{$file} = $time + $base_time;
+    }
+    close $fh;
+    1;
+} or diag $@;
 
 my $text = slurp( 'mock/repos/modules/02packages.details.txt' );
 
@@ -163,12 +175,9 @@ SKIP: {
 	slurp( 'mock/src/repos/MENUHIN/Yehudi/Makefile.PL' ),
 	"Can extract Makefile.PL from $pkg";
 
-TODO: {
-
-	local $TODO = 'Does not work on kit expanded from tarball';
-
+    {
 	my $got = $kit->get_item_mtime( 'Makefile.PL' );
-	my $want = ( stat 'mock/src/repos/MENUHIN/Yehudi/Makefile.PL' )[9];
+	my $want = $mtime{ 'MENUHIN/Yehudi/Makefile.PL' };
 	ok abs( $got - $want ) < 2,
 	"Can get Makefile.PL mod time from $pkg"
 	    or mtime_diag( $got, $want );
@@ -248,11 +257,9 @@ SKIP: {
 	slurp( 'mock/src/repos/BACH/PDQ/Makefile.PL' ),
 	"Can extract Makefile.PL from $pkg";
 
-TODO: {
-	local $TODO = 'Does not work on kit expanded from tarball';
-
+    {
 	my $got = $kit->get_item_mtime( 'Makefile.PL' );
-	my $want = ( stat 'mock/src/repos/BACH/PDQ/Makefile.PL' )[9];
+	my $want = $mtime{ 'BACH/PDQ/Makefile.PL' };
 	ok abs( $got - $want ) < 2,
 	"Can get Makefile.PL mod time from $pkg"
 	    or mtime_diag( $got, $want );
