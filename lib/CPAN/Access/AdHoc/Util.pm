@@ -8,7 +8,7 @@ use warnings;
 use File::Find;
 use File::Spec;
 
-our $VERSION = '0.000_02';
+our $VERSION = '0.000_03';
 
 my %loaded;
 

@@ -8,7 +8,7 @@ use warnings;
 use CPAN::Access::AdHoc::Util;
 use Getopt::Long 2.33;
 
-our $VERSION = '0.000_02';
+our $VERSION = '0.000_03';
 
 my $configured = eval {
     CPAN::Access::AdHoc::Util::load( 'App::cpanminus' );
