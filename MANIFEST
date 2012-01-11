@@ -1,4 +1,5 @@
 Build.PL
+Build_Repos.PL
 Changes
 eg/README
 eg/corpus
@@ -44,7 +45,6 @@ mock/repos/modules/02packages.details.txt.gz
 mock/repos/modules/03modlist.data.gz
 mock/repos/mtimes.dat
 mock/src/03modlist.data
-mock/src/Build_Repos.PL
 mock/src/repos/BACH/Johann/lib/Johann.pm
 mock/src/repos/BACH/Johann/Makefile.PL
 mock/src/repos/BACH/Johann/MANIFEST

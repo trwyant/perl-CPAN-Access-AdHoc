@@ -17,7 +17,7 @@ my %args = (
     VERSION_FROM => 'lib/CPAN/Access/AdHoc.pm',
     PREREQ_PM => $meta->requires(),
     PL_FILES => {
-	'mock/src/Build_Repos.PL' => 'mock/repos',
+	'Build_Repos.PL' => 'mock/repos',
     },
     'dist' => {COMPRESS => 'gzip', SUFFIX => '.gz'},
 #   realclean => { FILES => join ' ', qw{ mock/repos/ } },

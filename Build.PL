@@ -25,7 +25,7 @@ my %args = (
 #   add_to_cleanup	=> [ qw{ mock/repos/ } ],
     add_to_cleanup =>[ qw{ xt/author/optionals } ],
     PL_files => {
-	'mock/src/Build_Repos.PL' => 'mock/repos',
+	'Build_Repos.PL' => 'mock/repos',
     },
 );
 
