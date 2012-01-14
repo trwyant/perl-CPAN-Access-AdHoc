@@ -5,9 +5,13 @@ use 5.008;
 
 use lib qw{ inc };
 
+use Config;
 use Module::Build;
 use My::Module::Build;
 use My::Module::Meta;
+
+$Config{useperlio}
+    or die "PerlIO is required\n";
 
 (my $mbv = Module::Build->VERSION()) =~ s/_//g;
 

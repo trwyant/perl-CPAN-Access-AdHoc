@@ -5,8 +5,12 @@ use warnings;
 
 use lib qw{ inc };
 
+use Config;
 use ExtUtils::MakeMaker;
 use My::Module::Meta;
+
+$Config{useperlio}
+    or die "PerlIO is required\n";
 
 (my $mmv = ExtUtils::MakeMaker->VERSION) =~ s/_//g;
 
