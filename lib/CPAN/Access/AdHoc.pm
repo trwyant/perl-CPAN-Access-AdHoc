@@ -760,6 +760,11 @@ argument is converted to upper case before use.
 
 This method fetches the named file from the CPAN repository. Its
 argument is the name of the file relative to the root of the repository.
+
+If this method determines that there might be checksums for this file,
+it attempts to retrieve them, and if successful will compare the
+C<SHA256> checksum of the retrieved data to the retrieved value.
+
 If the file is compressed in some way it will be decompressed.
 
 If the fetched file is an archive of some sort, an object representing
@@ -854,12 +859,11 @@ This method takes as its argument either a file name or a directory name
 relative to F<authors/id/>. A directory is indicated by a trailing
 slash.
 
-If the request if for the F<CHECKSUMS> file, a reference the return is a
-reference to a hash which contains the interpreted contents of the
-entire file.
+If the request if for the F<CHECKSUMS> file, the return is a reference
+to a hash which contains the interpreted contents of the entire file.
 
 If the argument is a file name other than F<CHECKSUMS>, the return is a
-reference to the F<CHECKSUMS> entry for that file.
+reference to the F<CHECKSUMS> entry for that file, provided it exists.
 
 If the argument is a directory name, it is treated like a request for
 the F<CHECKSUMS> file in that directory.

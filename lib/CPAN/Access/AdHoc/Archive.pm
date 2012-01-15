@@ -168,13 +168,20 @@ assumed to be the literal content. A non-reference is assumed to be the
 file name. Any other value is unsupported.
 
 Passing content to a subclass that is not designed to support that
-content is unsupported.
+content is unsupported. That is to say, if you pass the contents of a
+C<Zip> file to C<< CPAN::Access::AdHoc::Archive::Tar->new() >>, nothing
+good will happen.
 
 =item encoding
 
 This is the MIME encoding of the content. It is ignored if the content
-is not present. Subclasses are expected to support encodings C<'gzip'>
-and C<'x-bzip2'>.
+is not present. If the content is not encoded, this argument can be
+omitted or passed a value of C<undef>.
+
+Subclasses are expected to support encodings C<'gzip'> and C<'x-bzip2'>.
+
+Again, nothing good will happen if the content is not actually encoded
+this way.
 
 =item path
 
