@@ -411,14 +411,21 @@ sub _fetch_distribution {
     my $dn = $di->dist();
     my $dv = $di->distvname();
     my $version = version->parse( $di->version() );
-    $dist{+CURRENT_PACKAGE} = $dist{$pkg} = $dist{$dv} = {
+    $dist{+CURRENT_PACKAGE} = $dist{$pkg} = {
 	name	=> $pkg,
 	archive	=> $archive,
 	version	=> $version,
 	dist	=> $dn,
 	info	=> $di,
     };
-    $dist{$dn}
+
+    # $dv and $dn may not be defined if we are dealimg with, e.g., one
+    # of Tom Christiansen's unpackaged .pm files, say
+    # T/TO/TOMC/scripts/whenon.dir/LastLog/File.pm.gz
+    defined $dv
+	and $dist{$dv} = $dist{$pkg};
+    not defined $dn
+	or $dist{$dn}
 	and $dist{$dn}{version} > $version
 	or $dist{$dn} = $dist{$pkg};
     return;
