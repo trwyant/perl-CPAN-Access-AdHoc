@@ -175,7 +175,7 @@ sub list_contents {
     $re = qr{ \A \Q$re\E }smx;
 
     my @rslt;
-    foreach my $file ( sort keys %{ $attr->{content} } ) {
+    foreach my $file ( sort keys %{ $attr->{contents} } ) {
 	$file =~ s/ $re //smx
 	    or next;
 	push @rslt, $file;
