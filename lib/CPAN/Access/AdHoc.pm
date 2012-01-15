@@ -12,6 +12,7 @@ use Digest::SHA ();
 use File::HomeDir ();
 use File::Spec ();
 use IO::File ();
+use LWP::MediaTypes ();
 use LWP::UserAgent ();
 use Module::Pluggable::Object;
 use Safe;
@@ -78,9 +79,9 @@ sub corpus {
 	$rslt->is_success
 	    or _wail( "Failed to get $url: ", $rslt->status_line() );
 
-	$rslt->header( 'Content-Location' => $path );
+	LWP::MediaTypes::guess_media_type( $url, $rslt );
 
-	$self->_normalize_mime_info( $url, $rslt );
+	$rslt->header( 'Content-Location' => $path );
 
 	$self->_checksum( $rslt );
 
@@ -506,50 +507,6 @@ sub _get_default_url {
     }
 
     _wail( 'No CPAN URL obtained from ' . $self->default_cpan_source() );
-
-    return;
-}
-
-# We would love to rely on the MIME info returned by the CPAN mirror,
-# but sad experience shows that these are a bit haphazard. So we compute
-# our own Content-Type and Content-Encoding based on the URL we fetched,
-# and replace those headers in the HTTP::Result with our computations.
-# The only way the original Content-Type and Content-Encoding survive is
-# if we don't overwrite them.
-#
-# The returned value is to be ignored.
-
-sub _normalize_mime_info {
-    my ( $self, $url, $rslt ) = @_;
-
-    local $_ = $url;
-
-    s/ [.] gz \z //smx
-	and $rslt->header( 'Content-Encoding' => 'gzip' )
-	or s/ [.] bz2 \z //smx
-	and $rslt->header( 'Content-Encoding' => 'x-bzip2' );
-
-    m/ [.] pm \z /smx
-	and return $rslt->header( 'Content-Type' => 'text/plain' );
-
-    m/ [.] txt \z /smx
-	and return $rslt->header( 'Content-Type' => 'text/plain' );
-
-    m/ [.] data \z /smx
-	and return $rslt->header(
-	    'Content-Type' => 'application/octet-stream' );
-
-    m/ [.] tar \z /smx
-	and return $rslt->header( 'Content-Type' => 'application/x-tar' );
-
-    m/ [.] zip \z /smx
-	and return $rslt->header( 'Content-Type' => 'application/zip' );
-
-    m/ [.] tgz \z /smx
-	and return $rslt->header(
-	'Content-Type' => 'application/x-tar',
-	'Content-Encoding' => 'gzip',
-    );
 
     return;
 }

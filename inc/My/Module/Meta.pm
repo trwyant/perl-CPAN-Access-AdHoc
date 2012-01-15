@@ -57,6 +57,7 @@ sub requires {
 	'IO::File'		=> 0,
 	'IO::Uncompress::Bunzip2'	=> 0,
 	'IO::Uncompress::Gunzip'	=> 0,
+	'LWP::MediaTypes'		=> 0,
 	'LWP::UserAgent'		=> 0,
 	'Module::Pluggable::Object'	=> 0,
 	'URI::URL'		=> 0,
