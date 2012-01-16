@@ -74,7 +74,9 @@ sub ACTION_authortest {
 
 sub ACTION_testcover {
     my ( $self, @args ) = @_;
-    local @INC = ( 'mock/safe', @INC );
+    local @INC = @INC;
+    require lib;
+    lib->import( 'mock/cover' );
     return $self->SUPER::ACTION_testcover( @args );
 }
 
