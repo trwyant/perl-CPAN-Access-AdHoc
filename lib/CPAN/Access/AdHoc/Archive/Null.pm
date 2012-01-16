@@ -182,10 +182,8 @@ sub get_item_mtime {
 
 sub item_present {
     my ( $self, $item ) = @_;
-
-    $item = $self->base_directory() . $item;
-
     my $attr = $_attr->( $self );
+
     return defined $attr->{contents}{$item};
 }
 

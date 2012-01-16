@@ -5,9 +5,22 @@ use 5.008;
 use strict;
 use warnings;
 
+use Cwd;
 use POSIX ();
 use Test::More 0.88;	# Because of done_testing();
 use Time::Local;
+
+my $no_temp_dir;
+
+BEGIN {
+    eval {
+	require File::Temp;
+	File::Temp->can( 'newdir' );
+	1;
+    } or do {
+	$no_temp_dir = 'File::Temp unavailable, or does not support newdir()';
+    };
+}
 
 use lib qw{ mock };
 
@@ -26,28 +39,76 @@ eval {
     1;
 } or diag $@;
 
-my $text = slurp( 'mock/repos/modules/02packages.details.txt' );
+my $default_dir = cwd();
 
 my $cad = CPAN::Access::AdHoc->new();
 
 # Test access to module index
 
-is $cad->fetch( 'modules/02packages.details.txt' )->get_item_content(),
-    $text,
-    'Fetch the un-compressed packages details';
-
 {
-    my $got = $cad->fetch( 'modules/02packages.details.txt'
-    )->get_item_mtime(),
-    my $want = ( stat 'mock/repos/modules/02packages.details.txt' )[9];
-    ok abs( $got - $want ) < 2,
-    'Can get modules/02packages.details.txt mod time'
-	or mtime_diag( $got, $want );
-}
 
-is $cad->fetch( 'modules/02packages.details.txt.gz' )->get_item_content(),
-    $text,
-    'Fetch the compressed packages details';
+    my $file_name = '02packages.details.txt';
+
+    my $text = slurp( "mock/repos/modules/$file_name" );
+
+    # First the raw index
+
+    my $arc = $cad->fetch( "modules/$file_name" );
+    ok $arc, "Fetch the archive for $file_name";
+
+    is $arc->base_directory(), 'modules/',
+	'Base directory of null archive.';
+
+    is_deeply [ $arc->list_contents() ], [ $file_name ],
+	"The archive contents are $file_name";
+
+    ok $arc->item_present( $file_name ),
+	"The $file_name file is in the archive";
+
+    is $arc->get_item_content(),
+	$text,
+	"Check the contents of $file_name";
+
+    # Yes, this is the correct modification time, since the null archive
+    # was made up from the raw file. If it comes from the compressed
+    # file it may be another story.
+    my $want = ( stat "mock/repos/modules/$file_name" )[9];
+    my $got = $arc->get_item_mtime();
+    ok abs( $got - $want ) < 2,
+	"Check the modification time of $file_name"
+	or mtime_diag( $got, $want );
+
+    SKIP: {
+	my $tests = 1;
+
+	$no_temp_dir
+	    and skip $no_temp_dir, $tests;
+
+	my $td = File::Temp->newdir()
+	    or skip "Unable to create temp dir: $!", $tests;
+
+	chdir $td
+	    or skip "Unable to cd to temp dir: $!", $tests;
+
+	if ( eval { $arc->extract(); 1; } ) {
+	    is slurp( File::Spec->catfile( $arc->base_directory(),
+		    $file_name ) ), $text,
+	    'Correct extraction from archive';
+	} else {
+	    fail "Unable to extract null archive: $@";
+	}
+
+    }
+
+    chdir $default_dir
+	or die "Unable to cd to $default_dir: $!";
+
+    # Next the compressed index
+
+    is $cad->fetch( "modules/$file_name.gz" )->get_item_content(),
+	$text,
+	"Check the contents of $file_name.gz";
+}
 
 my ( $module_index, $meta ) = $cad->fetch_module_index();
 
@@ -156,6 +217,19 @@ EOD
 	'BACH/Carl-Philipp-Emanuel-0.001.tar.gz has no checksum';
 }
 
+# Test other thingies
+
+is_deeply [ $cad->corpus( 'BACH' ) ], [ qw{
+    B/BA/BACH/Johann-0.001.tar.bz2
+    B/BA/BACH/PDQ-0.000_01.zip
+    } ], q{Corpus of CPAN ID 'BACH'};
+
+is_deeply [ $cad->indexed_distributions() ], [ qw{
+    B/BA/BACH/Johann-0.001.tar.bz2
+    B/BA/BACH/PDQ-0.000_01.zip
+    M/ME/MENUHIN/Yehudi-0.001.tar.gz
+    } ], 'All indexed distributions';
+
 # Test access to .tar.gz archive
 
 SKIP: {
@@ -170,6 +244,19 @@ SKIP: {
 
     is $kit->path(), 'authors/id/M/ME/MENUHIN/Yehudi-0.001.tar.gz',
 	'Path to Yehudi-0.001.tar.gz';
+
+    is $kit->base_directory(), 'Yehudi-0.001/',
+	'Base directory of Yehudi-0.001.tar.gz';
+
+    is_deeply [ $kit->list_contents() ], [ qw{
+	    lib/Yehudi.pm
+	    Makefile.PL
+	    MANIFEST
+	    META.json
+	    META.yml
+	    t/basic.t
+	} ],
+	'Contents of Yehudi-0.001.tar.gz';
 
     is $kit->get_item_content( 'Makefile.PL' ),
 	slurp( 'mock/src/repos/MENUHIN/Yehudi/Makefile.PL' ),
@@ -252,6 +339,19 @@ SKIP: {
 
     is $kit->path(), 'authors/id/B/BA/BACH/PDQ-0.000_01.zip',
 	'Path to PDQ-0.000_01.zip';
+
+    is $kit->base_directory(), 'PDQ-0.000_01/',
+	'Base directory of BACH/PDQ-0.000_01.zip';
+
+    is_deeply [ $kit->list_contents() ], [ qw{
+	lib/PDQ.pm
+	Makefile.PL
+	MANIFEST
+	META.json
+	META.yml
+	t/basic.t
+	} ],
+    'Contents of BACH/PDQ-0.000_01.zip';
 
     is $kit->get_item_content( 'Makefile.PL' ),
 	slurp( 'mock/src/repos/BACH/PDQ/Makefile.PL' ),

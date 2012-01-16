@@ -424,17 +424,6 @@ sub _checksum {
 
 }
 
-# Given a CPAN ID and the name of a file, compute the path to the file.
-sub _author_path {
-    my ( $author, $filename ) = @_;
-    $author = uc $author;	# CPAN IDs are all upper-case.
-    return join '/', qw{ authors id },
-	substr( $author, 0, 1 ),
-	substr( $author, 0, 2 ),
-	$author,
-	$filename;
-}
-
 # Given a distribution path relative to authors/id/, but possibly
 # missing one or both of the two levels between that and the actual
 # author directory, supply the missing stuff if it is in fact missing.
@@ -446,10 +435,9 @@ sub _distribution_path {
     $path =~ m< \A ( [^/]{2} ) / ( \1 [^/]* ) / >smx
 	and return join '/', substr( $1, 0, 1 ), $path;
     $path =~ m< \A ( [^/]+ ) / >smx
-	and return join '/', substr( $1, 0, 1 ),
-	    substr( $1, 0, 2 ), $path;
-    _wail( "Invalid distribution path '$path'" );
-    return;	# We can't get here, but Perl::Critic does not know.
+	or _wail( "Invalid distribution path '$path'" );
+    return join '/', substr( $1, 0, 1 ),
+	substr( $1, 0, 2 ), $path;
 }
 
 sub _deprecated {

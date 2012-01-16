@@ -44,6 +44,7 @@ mock/repos/modules/02packages.details.txt
 mock/repos/modules/02packages.details.txt.gz
 mock/repos/modules/03modlist.data.gz
 mock/repos/mtimes.dat
+mock/safe/Safe.pm
 mock/src/03modlist.data
 mock/src/repos/BACH/Johann/lib/Johann.pm
 mock/src/repos/BACH/Johann/Makefile.PL

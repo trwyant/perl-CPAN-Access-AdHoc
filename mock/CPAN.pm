@@ -42,8 +42,9 @@ CPAN - Mock CPAN class.
 =head1 DESCRIPTION
 
 This class implements whatever parts of CPAN are needed to test
-L<CPAN::Access::AdHoc|CPAN::Access::AdHoc>. It is private to the C<CPAN-Access-AdHoc>
-distribution. All documentation is for the benefit of the author.
+L<CPAN::Access::AdHoc|CPAN::Access::AdHoc>. It is private to the
+C<CPAN-Access-AdHoc> distribution. All documentation is for the benefit
+of the author.
 
 =head1 METHODS
 

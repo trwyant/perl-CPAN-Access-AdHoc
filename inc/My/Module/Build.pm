@@ -72,6 +72,12 @@ sub ACTION_authortest {
     return;
 }
 
+sub ACTION_testcover {
+    my ( $self, @args ) = @_;
+    local @INC = ( 'mock/safe', @INC );
+    return $self->SUPER::ACTION_testcover( @args );
+}
+
 sub _get_tests_without_optional_modules {
     my @args = @_;
     my @cleanup;
