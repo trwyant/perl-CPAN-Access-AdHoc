@@ -17,11 +17,6 @@ use IO::Uncompress::Gunzip ();
 
 our $VERSION = '0.000_03';
 
-my $_attr = sub {
-    my ( $self ) = @_;
-    return ( $self->{+__PACKAGE__} ||= {} );
-};
-
 my %decode = (
     gzip	=> sub {
 	my ( $content ) = @_;
@@ -42,7 +37,7 @@ sub new {
     my ( $class, %arg ) = @_;
 
     my $self = bless {}, ref $class || $class;
-    my $attr = $_attr->( $self );
+    my $attr = $self->__attr();
 
     ref $arg{content}
 	or defined $arg{path}
@@ -97,14 +92,14 @@ sub new {
 
 sub base_directory {
     my ( $self ) = @_;
-    my $attr = $_attr->( $self );
+    my $attr = $self->__attr();
 
     return $attr->{base_dir};
 }
 
 sub extract {
     my ( $self ) = @_;
-    my $attr = $_attr->( $self );
+    my $attr = $self->__attr();
 
     my @dirs = grep { defined $_ and '' ne $_ } File::Spec->splitdir(
 	$self->base_directory() );
@@ -132,7 +127,7 @@ sub extract {
 
 sub get_item_content {
     my ( $self, $file ) = @_;
-    my $attr = $_attr->( $self );
+    my $attr = $self->__attr();
 
     defined $file
 	or ( $file ) = keys %{ $attr->{contents} };
@@ -142,7 +137,7 @@ sub get_item_content {
 
 sub get_item_mtime {
     my ( $self, $file ) = @_;
-    my $attr = $_attr->( $self );
+    my $attr = $self->__attr();
 
     defined $file
 	or ( $file ) = keys %{ $attr->{contents} };
@@ -178,14 +173,14 @@ sub get_item_mtime {
 
 sub item_present {
     my ( $self, $item ) = @_;
-    my $attr = $_attr->( $self );
+    my $attr = $self->__attr();
 
     return defined $attr->{contents}{$item};
 }
 
 sub list_contents {
     my ( $self ) = @_;
-    my $attr = $_attr->( $self );
+    my $attr = $self->__attr();
 
     return ( sort keys %{ $attr->{contents} } );
 }

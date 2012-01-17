@@ -14,11 +14,6 @@ use IO::File ();
 
 our $VERSION = '0.000_03';
 
-my $_attr = sub {
-    my ( $self ) = @_;
-    return ( $self->{+__PACKAGE__} ||= {} );
-};
-
 {
 
     my %decode;
@@ -84,7 +79,6 @@ sub base_directory {
 
 sub extract {
     my ( $self ) = @_;
-    my $attr = $_attr->( $self );
 
     $self->archive()->extractTree();
 

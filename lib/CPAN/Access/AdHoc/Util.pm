@@ -10,7 +10,7 @@ use File::Spec;
 
 use base qw{ Exporter };
 
-our @EXPORT_OK = qw{ __load __whinge __wail __weep };
+our @EXPORT_OK = qw{ __attr __load __whinge __wail __weep };
 
 our %EXPORT_TAGS = (
     all	=> [ @EXPORT_OK ],
@@ -19,7 +19,11 @@ our %EXPORT_TAGS = (
 
 our $VERSION = '0.000_03';
 
-my %loaded;
+sub __attr {
+    my ( $self ) = @_;
+    my $name_space = caller;
+    return ( $self->{$name_space} ||= {} );
+}
 
 sub __load {
     my ( @args ) = @_;
@@ -91,7 +95,14 @@ the author only.
 
 =head1 SUBROUTINES
 
-This module provides the following public subroutines:
+This module provides the following public subroutines (which are
+nonetheless private to the C<CPAN-Access-AdHoc> distribution):
+
+=head2 __attr
+
+This subroutine/method returns the hash element of its argument which is
+named after the caller's name space. This element is initialized to an
+empty hash if necessary.
 
 =head2 __load
 

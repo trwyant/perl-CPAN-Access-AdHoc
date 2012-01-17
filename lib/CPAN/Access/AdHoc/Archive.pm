@@ -5,20 +5,16 @@ use 5.008;
 use strict;
 use warnings;
 
-use CPAN::Access::AdHoc::Util qw{ :carp };
+use CPAN::Access::AdHoc::Util qw{ __attr :carp };
 
 our $VERSION = '0.000_03';
-
-my $_attr = sub {
-    my ( $self ) = @_;
-    return ( $self->{+__PACKAGE__} ||= {} );
-};
 
 # Note that this can be called as a mutator, but the mutator
 # functionality is private to the invocant's class.
 sub archive {
     my ( $self, @value ) = @_;
-    my $attr = $_attr->( $self );
+    my $attr = $self->__attr();
+
     if ( @value ) {
 	caller eq ref $self
 	    or __wail( 'Attribute archive is read-only' );
@@ -87,7 +83,8 @@ sub metadata {
 # functionality is private to the invocant's class.
 sub path {
     my ( $self, @value ) = @_;
-    my $attr = $_attr->( $self );
+    my $attr = $self->__attr();
+
     if ( @value ) {
 	caller eq ref $self
 	    or __wail( 'Attribute path is read-only' );

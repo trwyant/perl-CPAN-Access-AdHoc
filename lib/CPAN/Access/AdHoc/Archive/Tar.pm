@@ -16,11 +16,6 @@ use IO::Uncompress::Gunzip ();
 
 our $VERSION = '0.000_03';
 
-my $_attr = sub {
-    my ( $self ) = @_;
-    return ( $self->{+__PACKAGE__} ||= {} );
-};
-
 {
 
     my %decode = (
