@@ -8,6 +8,7 @@ use warnings;
 use base qw{ CPAN::Access::AdHoc::Archive };
 
 use Archive::Tar ();
+use CPAN::Access::AdHoc::Util qw{ :carp };
 use File::Spec::Unix ();
 use IO::File ();
 use IO::Uncompress::Bunzip2 ();
@@ -18,11 +19,6 @@ our $VERSION = '0.000_03';
 my $_attr = sub {
     my ( $self ) = @_;
     return ( $self->{+__PACKAGE__} ||= {} );
-};
-
-my $_wail = sub {
-    require Carp;
-    Carp::croak( @_ );
 };
 
 {
@@ -51,11 +47,11 @@ my $_wail = sub {
 
 	    if ( my $encoding = delete $arg{encoding} ) {
 		$decode{$encoding}
-		    or $_wail->( "Unsupported encoding '$encoding'" );
+		    or __wail( "Unsupported encoding '$encoding'" );
 		$content = $decode{$encoding}->( $content );
 	    } elsif ( ref $content ) {
 		$content = IO::File->new( $content, '<' )
-		    or $_wail->( "Unable to open string reference: $!" );
+		    or __wail( "Unable to open string reference: $!" );
 	    }
 
 	    ref $content

@@ -64,6 +64,7 @@ mock/src/repos/MENUHIN/Yehudi/t/basic.t
 README
 t/basic.t
 t/config.t
+t/exception.t
 t/fetch.t
 xt/author/basic.t
 xt/author/changes.t

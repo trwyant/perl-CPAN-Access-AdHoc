@@ -8,11 +8,20 @@ use warnings;
 use File::Find;
 use File::Spec;
 
+use base qw{ Exporter };
+
+our @EXPORT_OK = qw{ __load __whinge __wail __weep };
+
+our %EXPORT_TAGS = (
+    all	=> [ @EXPORT_OK ],
+    carp => [ qw{ __whinge __wail __weep } ],
+);
+
 our $VERSION = '0.000_03';
 
 my %loaded;
 
-sub load {
+sub __load {
     my ( @args ) = @_;
     foreach my $module ( @args ) {
 
@@ -20,16 +29,41 @@ sub load {
 	    [[:alpha:]_] \w*
 	    (?: :: [[:alpha:]_] \w* )* \z
 	>smx
-	    or do {
-		require Carp;
-		Carp::croak( "Malformed module name '$module'" );
-	    };
+	    or __wail( "Malformed module name '$module'" );
 
 	( my $fn = $module ) =~ s{ :: }{/}smxg;
 	$fn .= '.pm';
 	require $fn;
     }
     return;
+}
+
+our @CARP_NOT = qw{
+    CPAN::Access::AdHoc
+    CPAN::Access::AdHoc::Archive
+    CPAN::Access::AdHoc::Archive::Null
+    CPAN::Access::AdHoc::Archive::Tar
+    CPAN::Access::AdHoc::Archive::Zip
+};
+
+
+sub __whinge {
+    my @args = @_;
+    require Carp;
+    Carp::carp( @args );
+    return;
+}
+
+sub __wail {
+    my @args = @_;
+    require Carp;
+    Carp::croak( @args );
+}
+
+sub __weep {
+    my @args = @_;
+    require Carp;
+    Carp::confess( 'Programming Error - ', @args );
 }
 
 1;
@@ -59,10 +93,25 @@ the author only.
 
 This module provides the following public subroutines:
 
-=head2 load
+=head2 __load
 
 This subroutine takes as its arguments one or more module names, and
 loads them.
+
+=head2 __whinge
+
+This subroutine loads L<Carp|Carp>, and then passes its arguments to
+C<carp()>.
+
+=head2 __wail
+
+This subroutine loads L<Carp|Carp>, and then passes its arguments to
+C<croak()>.
+
+=head2 __weep
+
+This subroutine loads L<Carp|Carp>, and then passes its arguments to
+C<confess()>, prefixed by the text C<'Programming Error - '>.
 
 =head1 SUPPORT
 

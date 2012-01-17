@@ -18,7 +18,7 @@ my @expect_archive_methods = qw{
 require_ok 'CPAN::Access::AdHoc::Util'
     or BAIL_OUT 'CPAN::Access::AdHoc::Util is required';
 
-can_ok     'CPAN::Access::AdHoc::Util' => qw{ load };
+can_ok     'CPAN::Access::AdHoc::Util' => qw{ __load __whinge __wail };
 
 require_ok 'CPAN::Access::AdHoc::Archive'
     or BAIL_OUT 'CPAN::Access::AdHoc::Archive is required';

@@ -7,6 +7,7 @@ use warnings;
 
 use base qw{ CPAN::Access::AdHoc::Archive };
 
+use CPAN::Access::AdHoc::Util qw{ :carp };
 use File::Path 2.07 ();
 use File::Spec ();
 use HTTP::Date ();
@@ -19,11 +20,6 @@ our $VERSION = '0.000_03';
 my $_attr = sub {
     my ( $self ) = @_;
     return ( $self->{+__PACKAGE__} ||= {} );
-};
-
-my $_wail = sub {
-    require Carp;
-    Carp::croak( @_ );
 };
 
 my %decode = (
@@ -58,12 +54,12 @@ sub new {
 
 	if ( my $encoding = delete $arg{encoding} ) {
 	    $decode{$encoding}
-		or $_wail->( "Unsupported encoding '$encoding'" );
+		or __wail( "Unsupported encoding '$encoding'" );
 	    $content = $decode{$encoding}->( $content );
 	} elsif ( ! ref $content ) {
 	    local $/ = undef;	# Slurp mode
 	    open my $fh, '<', $content
-		or $_wail->( "Unable to open $content: $!" );
+		or __wail( "Unable to open $content: $!" );
 	    my @stat = stat $fh;
 	    $content = <$fh>;
 	    close $fh;
@@ -118,13 +114,13 @@ sub extract {
 	$dir;
 	-d $where
 	    or mkdir $where
-	    or $_wail->( "Unable to mkdir $where: $!" );
+	    or __wail( "Unable to mkdir $where: $!" );
     }
 
     foreach my $name ( keys %{ $attr->{contents} } ) {
 	my $path = File::Spec->catfile( $where, $name );
 	my $fh = IO::File->new( $path, '>' )
-	    or $_wail->( "Unable to open $path for output: $!" );
+	    or __wail( "Unable to open $path for output: $!" );
 	print { $fh } $attr->{contents}{$name}{content};
 	close $fh;
 	my $mtime = $attr->{contents}{$name}{mtime};

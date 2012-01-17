@@ -5,7 +5,7 @@ use 5.008;
 use strict;
 use warnings;
 
-use CPAN::Access::AdHoc::Util;
+use CPAN::Access::AdHoc::Util qw{ __load };
 use Cwd ();
 use File::Spec;
 use File::Spec::Unix;
@@ -13,7 +13,7 @@ use File::Spec::Unix;
 our $VERSION = '0.000_03';
 
 my $configured = eval {
-    CPAN::Access::AdHoc::Util->load( 'CPAN::Mini' );
+    __load( 'CPAN::Mini' );
     1;
 };
 

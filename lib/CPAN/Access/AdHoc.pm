@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 use Config::Tiny ();
-use CPAN::Access::AdHoc::Util;
+use CPAN::Access::AdHoc::Util qw{ :carp };
 use CPAN::Meta;
 use Digest::SHA ();
 use File::HomeDir ();
@@ -39,7 +39,7 @@ sub new {
     }
 
     %arg
-	and _wail( 'Unknown attribute(s): ', join ', ', sort keys %arg );
+	and __wail( 'Unknown attribute(s): ', join ', ', sort keys %arg );
 
     return $self;
 }
@@ -77,7 +77,7 @@ sub corpus {
 	my $rslt = $ua->get( $url );
 
 	$rslt->is_success
-	    or _wail( "Failed to get $url: ", $rslt->status_line() );
+	    or __wail( "Failed to get $url: ", $rslt->status_line() );
 
 	LWP::MediaTypes::guess_media_type( $url, $rslt );
 
@@ -91,10 +91,8 @@ sub corpus {
 		and return $archive;
 	}
 
-	_wail( sprintf q{Unsupported Content-Type '%s'},
+	__wail( sprintf q{Unsupported Content-Type '%s'},
 	    $rslt->header( 'Content-Type' ) );
-
-	return;	# Can't get here, but Perl::Critic does not know this.
     }
 }
 
@@ -109,7 +107,7 @@ sub fetch_author_index {
     )->get_item_content();
 
     my $fh = IO::File->new( \$author_details, '<' )
-	or _wail( "Unable to open string reference: $!" );
+	or __wail( "Unable to open string reference: $!" );
 
     my %author_index;
     while ( <$fh> ) {
@@ -136,7 +134,7 @@ sub fetch_distribution_archive {
 sub fetch_distribution_checksums {
     my ( $self, $distribution ) = @_;
     $distribution =~ m{ \A ( .* / ) ( [^/]* ) \z }smx
-	or _wail( "Invalid distribution '$distribution'" );
+	or __wail( "Invalid distribution '$distribution'" );
     my ( $dir, $file ) = ( $1, $2 );
     $file eq 'CHECKSUMS'
 	and $file = '';
@@ -167,7 +165,7 @@ sub fetch_module_index {
     )->get_item_content();
 
     my $fh = IO::File->new( \$packages_details, '<' )
-	or _wail( "Unable to open string reference: $!" );
+	or __wail( "Unable to open string reference: $!" );
 
     my $meta = $self->_read_meta( $fh );
 
@@ -205,7 +203,7 @@ sub fetch_registered_module_index {
     {
 
 	my $fh = IO::File->new( \$packages_details, '<' )
-	    or _wail( "Unable to open string reference: $!" );
+	    or __wail( "Unable to open string reference: $!" );
 
 	$meta = $self->_read_meta( $fh );
 
@@ -293,7 +291,7 @@ foreach my $info ( @attributes ) {
 		    $value->isa( 'Config::Tiny' );
 		    1;
 		}
-		or _wail(
+		or __wail(
 		    "Attribute '$name' must be a Config::Tiny reference" );
 	# If the config file exists, read it
 	} elsif ( defined $config_path && -f $config_path ) {
@@ -394,7 +392,7 @@ sub _checksum {
 	or return;
     my $got = Digest::SHA::sha256_hex( $rslt->content() );
     $got eq $cksum->{sha256}
-	or _wail( "Checksum failure on $path" );
+	or __wail( "Checksum failure on $path" );
     return;
 }
 
@@ -416,7 +414,7 @@ sub _checksum {
 	my @rslt;
 	foreach my $source ( split qr{ \s* , \s* }smx, $value ) {
 	    defined( my $class = $defaulter{$source} )
-		or _wail( "Unknown default_cpan_source '$source'" );
+		or __wail( "Unknown default_cpan_source '$source'" );
 	    push @rslt, $class;
 	}
 	return @rslt;
@@ -435,7 +433,7 @@ sub _distribution_path {
     $path =~ m< \A ( [^/]{2} ) / ( \1 [^/]* ) / >smx
 	and return join '/', substr( $1, 0, 1 ), $path;
     $path =~ m< \A ( [^/]+ ) / >smx
-	or _wail( "Invalid distribution path '$path'" );
+	or __wail( "Invalid distribution path '$path'" );
     return join '/', substr( $1, 0, 1 ),
 	substr( $1, 0, 2 ), $path;
 }
@@ -444,7 +442,7 @@ sub _deprecated {
     my ( $deprec, $preferred ) = @_;
     defined $preferred
 	or ( $preferred = $deprec ) =~ s/ package /distribution/smx;
-    _whinge( "Method $deprec is deprecated in favor of $preferred" );
+    __whinge( "Method $deprec is deprecated in favor of $preferred" );
     return;
 }
 
@@ -455,7 +453,7 @@ sub _eval_string {
     $string =~ s/ \015? \012 /\n/smxg;
     my $sandbox = Safe->new();
     my $rslt = $sandbox->reval( $string );
-    $@ and _wail( $@ );
+    $@ and __wail( $@ );
     return $rslt;
 }
 
@@ -494,9 +492,7 @@ sub _get_default_url {
 	return $url;
     }
 
-    _wail( 'No CPAN URL obtained from ' . $self->default_cpan_source() );
-
-    return;
+    __wail( 'No CPAN URL obtained from ' . $self->default_cpan_source() );
 }
 
 sub _read_meta {
@@ -516,19 +512,6 @@ sub _read_meta {
 	}
     }
     return \%meta;
-}
-
-sub _whinge {
-    my @args = @_;
-    require Carp;
-    Carp::carp( @args );
-    return;
-}
-
-sub _wail {
-    my @args = @_;
-    require Carp;
-    Carp::croak( @args );
 }
 
 

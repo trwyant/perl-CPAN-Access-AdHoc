@@ -5,27 +5,13 @@ use 5.008;
 use strict;
 use warnings;
 
+use CPAN::Access::AdHoc::Util qw{ :carp };
+
 our $VERSION = '0.000_03';
 
 my $_attr = sub {
     my ( $self ) = @_;
     return ( $self->{+__PACKAGE__} ||= {} );
-};
-
-my $_wail = sub {
-    require Carp;
-    Carp::croak( @_ );
-};
-
-my $_wallow = sub {
-    require Carp;
-    Carp::confess( 'Programming error - ', @_ );
-};
-
-my $_whinge = sub {
-    require Carp;
-    Carp::carp( @_ );
-    return;
 };
 
 # Note that this can be called as a mutator, but the mutator
@@ -35,7 +21,7 @@ sub archive {
     my $attr = $_attr->( $self );
     if ( @value ) {
 	caller eq ref $self
-	    or $_wail->( 'Attribute archive is read-only' );
+	    or __wail( 'Attribute archive is read-only' );
 	$attr->{archive} = $value[0];
 	return $self;
     } else {
@@ -44,38 +30,31 @@ sub archive {
 }
 
 sub base_directory {
-    $_wallow->( 'The base_directory() method must be overridden' );
-    return;	# We can't get here, but Perl::Critic does not know this
+    __weep( 'The base_directory() method must be overridden' );
 }
 
 sub extract {
-    $_wallow->( 'The extract() method must be overridden' );
-    return;	# We can't get here, but Perl::Critic does not know this
+    __weep( 'The extract() method must be overridden' );
 }
 
 sub get_item_content {
-    $_wallow->( 'The get_item_content() method must be overridden' );
-    return;	# We can't get here, but Perl::Critic does not know this
+    __weep( 'The get_item_content() method must be overridden' );
 }
 
 sub get_item_mtime {
-    $_wallow->( 'The get_item_mtime() method must be overridden' );
-    return;	# We can't get here, but Perl::Critic does not know this
+    __weep( 'The get_item_mtime() method must be overridden' );
 }
 
 sub handle_http_response {
-    $_wallow->( 'The handle() method must be overridden' );
-    return;	# We can't get here, but Perl::Critic does not know this
+    __weep( 'The handle_http_response() method must be overridden' );
 }
 
 sub item_present {
-    $_wallow->( 'The item_present() method must be overridden' );
-    return;	# We can't get here, but Perl::Critic does not know this
+    __weep( 'The item_present() method must be overridden' );
 }
 
 sub list_items {
-    $_wallow->( 'The list_items() method must be overridden' );
-    return;	# We can't get here, but Perl::Critic does not know this
+    __weep( 'The list_items() method must be overridden' );
 }
 
 sub metadata {
@@ -93,7 +72,7 @@ sub metadata {
 	    $meta = CPAN::Meta->$method(
 		$self->get_item_content( $file ) );
 	} or do {
-	    $_whinge->( "CPAN::Meta->$method() failed: $@" );
+	    __whinge( "CPAN::Meta->$method() failed: $@" );
 	    next;
 	};
 	return $meta;
@@ -111,7 +90,7 @@ sub path {
     my $attr = $_attr->( $self );
     if ( @value ) {
 	caller eq ref $self
-	    or $_wail->( 'Attribute path is read-only' );
+	    or __wail( 'Attribute path is read-only' );
 	$attr->{path} = $value[0];
 	return $self;
     } else {

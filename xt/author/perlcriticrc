@@ -52,7 +52,7 @@ short_subroutine_statements	= 3
 
 [Perl::Critic::Policy::Subroutines::RequireFinalReturn]
 
-terminal_funcs	= CORE::exit
+terminal_funcs	= CORE::exit __wail __weep
 
 [Perl::Critic::Policy::TestingAndDebugging::ProhibitNoStrict]
 

@@ -575,16 +575,16 @@ used.
 If an argument is specified, this command sets the CPAN URL being used.
 
 If the CPAN URL was specified as C<-default>, a default value is
-computed from the current setting of C<cpan_default_source>, and that
+computed from the current setting of C<default_cpan_source>, and that
 value is both set as the current soure and displayed. If no default can
-be computed from the current C<cpan_default_source>, an error is
+be computed from the current C<default_cpan_source>, an error is
 displayed and the current setting is left unchanged.
 
-=head2 cpan_default_source
+=head2 default_cpan_source
 
- cpan-adhoc> cpan_default_source
- cpan-adhoc> cpan_default_source cpanm,CPAN
- cpan-adhoc> cpan_default_source -default
+ cpan-adhoc> default_cpan_source
+ cpan-adhoc> default_cpan_source cpanm,CPAN
+ cpan-adhoc> default_cpan_source -default
 
 If no argument is specified, this command displays the sources of
 default CPAN URLs being used.

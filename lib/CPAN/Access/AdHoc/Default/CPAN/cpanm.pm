@@ -5,13 +5,13 @@ use 5.008;
 use strict;
 use warnings;
 
-use CPAN::Access::AdHoc::Util;
+use CPAN::Access::AdHoc::Util qw{ __load };
 use Getopt::Long 2.33;
 
 our $VERSION = '0.000_03';
 
 my $configured = eval {
-    CPAN::Access::AdHoc::Util::load( 'App::cpanminus' );
+    __load( 'App::cpanminus' );
     1;
 };
 
