@@ -147,11 +147,6 @@ sub fetch_distribution_checksums {
     return $self->{_cache}{checksums}{$dir}{$file};
 }
 
-sub fetch_package_archive {
-    _deprecated( 'fetch_package_archive' );
-    goto &fetch_distribution_archive;
-}
-
 sub fetch_module_index {
     my ( $self ) = @_;
 
@@ -222,11 +217,6 @@ sub flush {
     my ( $self ) = @_;
     delete $self->{_cache};
     return $self;
-}
-
-sub indexed_packages {
-    _deprecated( 'indexed_packages' );
-    goto &indexed_distributions;
 }
 
 sub indexed_distributions {
@@ -436,14 +426,6 @@ sub _distribution_path {
 	or __wail( "Invalid distribution path '$path'" );
     return join '/', substr( $1, 0, 1 ),
 	substr( $1, 0, 2 ), $path;
-}
-
-sub _deprecated {
-    my ( $deprec, $preferred ) = @_;
-    defined $preferred
-	or ( $preferred = $deprec ) =~ s/ package /distribution/smx;
-    __whinge( "Method $deprec is deprecated in favor of $preferred" );
-    return;
 }
 
 # Eval a string in a sandbox, and return the result. This was cribbed
