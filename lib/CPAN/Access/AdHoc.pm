@@ -520,28 +520,12 @@ CPAN::Access::AdHoc - Retrieve stuff from an arbitrary CPAN repository
 
 =head1 NOTICE
 
-In C<CPAN::Access::AdHoc> version 0.000_02 and earlier, the word
-'package' was used to describe the tarball (or whatever) that CPAN
-modules came in. Beginning with this release, the word is
-'distribution', and all method names are modified accordingly. That is:
+Effective with version 0.000_03:
 
-=over
+* Methods whose names contain C<'package'> are removed. Use the
+correspondingly-named C<'distribution'> methods.
 
-=item fetch_package_archive becomes fetch_distribution_archive
-
-=back
-
-The old methods still work, but will issue a deprecation notice whenever
-they are called. The old methods will be removed before the first
-production release, which will be at least a week after the release of
-version 0.000_03. Yes, this is short notice, but this B<is> a
-development release, and I have not publicized this distribution.
-
-Also, in version 0.000_02 and earlier,
-L<fetch_registered_module_index()|/fetch_registered_module_index>
-returned a string that had to be C<eval>-ed to generate the index. As of
-version 0.000_03, the C<eval> is done for you, and a reference to the
-hash containing the index is returned.
+* Method fetch_registered_module_index() now returns a hash.
 
 =head1 DESCRIPTION
 
@@ -788,11 +772,6 @@ omitted, since they can be reconstructed from the rest.
 The result of the first fetch for a given directory is cached, and
 subsequent calls for the same author are supplied from cache.
 
-=head3 fetch_package_archive
-
-B<This method is deprecated.> It is a synonym for
-L<fetch_distribution_archive()|/fetch_distribution_archive>.
-
 =head3 fetch_registered_module_index
 
 This method fetches the registered module index,
@@ -816,11 +795,6 @@ when needed.
 This convenience method returns a list of all indexed distributions in
 ASCIIbetical order. This information is derived from the results of
 L<fetch_module_index()|/fetch_module_index>, and is cached.
-
-=head3 indexed_packages
-
-B<This method is deprecated.> It is a synonym for
-L<indexed_distributions()|/indexed_distributions>.
 
 =head1 SEE ALSO
 
