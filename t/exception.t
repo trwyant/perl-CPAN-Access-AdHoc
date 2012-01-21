@@ -146,10 +146,6 @@ exception get_item_mtime => [],
     qr{\A\QProgramming Error - The get_item_mtime() method must be overridden},
     'Must override the CPAN::Access::AdHoc::Archive get_item_mtime method';
 
-exception handle_http_response => [],
-    qr{\A\QProgramming Error - The handle_http_response() method must be overridden},
-    'Must override the CPAN::Access::AdHoc::Archive handle_http_response method';
-
 exception item_present => [],
     qr{\A\QProgramming Error - The item_present() method must be overridden},
     'Must override the CPAN::Access::AdHoc::Archive item_present method';

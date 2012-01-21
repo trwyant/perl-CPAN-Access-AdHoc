@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use Config::Tiny ();
+use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{ :carp };
 use CPAN::Meta;
 use Digest::SHA ();
@@ -57,43 +58,32 @@ sub corpus {
     return ( grep { $_ =~ $re } $self->indexed_distributions() );
 }
 
-{
+sub fetch {
+    my ( $self, $path ) = @_;
 
-    my @archivers = Module::Pluggable::Object->new(
-	search_path	=> 'CPAN::Access::AdHoc::Archive',
-	inner	=> 0,
-	require	=> 1,
-    )->plugins();
+    $path =~ s{ \A / }{}smx;
 
-    sub fetch {
-	my ( $self, $path ) = @_;
+    my $ua = LWP::UserAgent->new();
 
-	$path =~ s{ \A / }{}smx;
+    my $url = $self->cpan() . $path;
 
-	my $ua = LWP::UserAgent->new();
+    my $rslt = $ua->get( $url );
 
-	my $url = $self->cpan() . $path;
+    $rslt->is_success
+	or __wail( "Failed to get $url: ", $rslt->status_line() );
 
-	my $rslt = $ua->get( $url );
+    LWP::MediaTypes::guess_media_type( $url, $rslt );
 
-	$rslt->is_success
-	    or __wail( "Failed to get $url: ", $rslt->status_line() );
+    $rslt->header( 'Content-Location' => $path );
 
-	LWP::MediaTypes::guess_media_type( $url, $rslt );
+    $self->_checksum( $rslt );
 
-	$rslt->header( 'Content-Location' => $path );
+    my $archive =
+	CPAN::Access::AdHoc::Archive->handle_http_response( $rslt )
+	or __wail( sprintf q{Unsupported Content-Type '%s'},
+	$rslt->header( 'Content-Type' ) );
 
-	$self->_checksum( $rslt );
-
-	foreach my $archiver ( @archivers ) {
-	    my $archive;
-	    defined( $archive = $archiver->handle_http_response( $rslt ) )
-		and return $archive;
-	}
-
-	__wail( sprintf q{Unsupported Content-Type '%s'},
-	    $rslt->header( 'Content-Type' ) );
-    }
+    return $archive;
 }
 
 sub fetch_author_index {
@@ -368,7 +358,8 @@ sub _attr_cpan {
 # named CHECKSUM.
 sub _checksum {
     my ( $self, $rslt ) = @_;
-    my $path = $rslt->header( 'Content-Location' );
+    defined( my $path = $rslt->header( 'Content-Location' ) )
+	or return;
     $path =~ m{ \A authors/id/ ( [^/] ) / ( \1 [^/] ) / \2 }smx
 	or return;
     $path =~ m{ /CHECKSUMS \z }smx

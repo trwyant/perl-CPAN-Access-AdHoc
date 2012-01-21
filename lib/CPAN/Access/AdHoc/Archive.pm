@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use CPAN::Access::AdHoc::Util qw{ __attr :carp };
+use Module::Pluggable::Object;
 
 our $VERSION = '0.000_03';
 
@@ -41,8 +42,24 @@ sub get_item_mtime {
     __weep( 'The get_item_mtime() method must be overridden' );
 }
 
-sub handle_http_response {
-    __weep( 'The handle_http_response() method must be overridden' );
+{
+    my @archivers = Module::Pluggable::Object->new(
+	search_path	=> 'CPAN::Access::AdHoc::Archive',
+	inner	=> 0,
+	require	=> 1,
+    )->plugins();
+
+    sub handle_http_response {
+	my ( $class, $resp ) = @_;
+
+	foreach my $archiver ( @archivers ) {
+	    my $archive;
+	    defined( $archive = $archiver->handle_http_response( $resp ) )
+		and return $archive;
+	}
+
+	return;
+    }
 }
 
 sub item_present {
@@ -228,11 +245,20 @@ This static method takes as its argument an
 L<HTTP::Response|HTTP::Response> object. If this method determines that
 it can handle the response object, it does so, returning the
 C<CPAN::Access::AdHoc::Archive> object derived from the content of the
-L<HTTP::Response|HTTP::Response> object.  Otherwise, it simply returns.
+L<HTTP::Response|HTTP::Response> object. Otherwise, it simply returns.
 
 The method can do anything it wants to evaluate its argument, but
 typically it examines the C<Content-Type>, C<Content-Encoding>, and
-C<Content-Location> headers.
+C<Content-Location> headers. The expected values of these headers are
+those loaded by C<LWP::MediaTypes::guess_media_type()>.
+
+For this class (i.e. C<CPAN::Access::AdHoc::Archive>, the method simply
+calls C<handle_http_response()> on all the
+C<CPAN::Access::AdHoc::Archive::*> classes until one chooses to handle
+the L<HTTP::Response|HTTP::Response> object by returning a
+C<CPAN::Access::AdHoc::Archive> object. If none of the subclasses
+handles the L<HTTP::Response|HTTP::Response> object, nothing is
+returned.
 
 =head3 item_present
 
