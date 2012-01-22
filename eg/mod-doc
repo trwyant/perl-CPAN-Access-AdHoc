@@ -11,7 +11,7 @@ use Pod::Usage;
 
 use CPAN::Access::AdHoc;
 
-our $VERSION = '0.000_03';
+our $VERSION = '0.000_04';
 
 my %canned_url = (
     kobes	=> 'http://cpan.uwinnipeg.ca/dist',

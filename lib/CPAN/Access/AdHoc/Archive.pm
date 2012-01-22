@@ -8,7 +8,7 @@ use warnings;
 use CPAN::Access::AdHoc::Util qw{ __attr :carp };
 use Module::Pluggable::Object;
 
-our $VERSION = '0.000_03';
+our $VERSION = '0.000_04';
 
 # Note that this can be called as a mutator, but the mutator
 # functionality is private to the invocant's class.

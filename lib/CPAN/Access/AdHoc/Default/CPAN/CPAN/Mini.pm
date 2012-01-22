@@ -10,7 +10,7 @@ use Cwd ();
 use File::Spec;
 use File::Spec::Unix;
 
-our $VERSION = '0.000_03';
+our $VERSION = '0.000_04';
 
 my $configured = eval {
     __load( 'CPAN::Mini' );

@@ -1,3 +1,32 @@
+0.000_04	2012-01-21	T. R. Wyant
+  INCOMPATIBLE CHANGES
+  Remove all methods deprecated in 0.000_03.
+  Change the way CPAN::Access::AdHoc::Archive::Null looks at its
+    contents. Specifically:
+    * base_directory() now returns the directory portion of the path()
+      attribute -- unless this looks like the path of a distribution, in
+      which case it returns the directory relative to the authors/id/
+      directory.
+    * list_content() now returns just the base name of the enclosed
+      file.
+    * The get_item_*() and item_present() methods just take the base
+      name of the enclosed file.
+    * extract() creates directories as specified by the base_directory()
+      method.
+  OTHER CHANGES
+  Add to CPAN::Access::AdHoc::Archive an umbrella handle_http_response()
+    method that iterates over the subclasses returning the first archive
+    object actually manufactures, or nothing if none of the subclasses
+    know how to handle the argument.
+  Rely on LWP::MediaTypes for MIME information, rathr than doing our own
+    guessing.
+  Guard against undefined value warnings when fetching unpackaged
+    distributions such as
+    T/TO/TOMC/scripts/whenon.dir/LastLog/File.pm.gz
+  Abort the build if $Config{useperlio} is false, since we use this to
+    make a file handle out of the data returned from the CPAN
+    repository.
+
 0.000_03	2012-01-10	T. R. Wyant
   INCOMPATIBLE CHANGES
   The CPAN::Access::AdHoc::Archive::Null handle_http_response() static
