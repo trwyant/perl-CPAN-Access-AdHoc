@@ -279,6 +279,11 @@ returned.
 Note that the arguments are reversed from
 C<LWP::MediaTypes::guess_media_type()>.
 
+The whole C<guess_media_type()>/C<handle_http_response()> thing seems
+like a crock to me, but I have not been able to think of anything
+better. If they make it into a production release, they B<will> go
+through a deprecation cycle.
+
 =head3 handle_http_response
 
 This static method takes as its argument an
@@ -299,6 +304,11 @@ the L<HTTP::Response|HTTP::Response> object by returning a
 C<CPAN::Access::AdHoc::Archive> object. If none of the subclasses
 handles the L<HTTP::Response|HTTP::Response> object, nothing is
 returned.
+
+The whole C<guess_media_type()>/C<handle_http_response()> thing seems
+like a crock to me, but I have not been able to think of anything
+better. If they make it into a production release, they B<will> go
+through a deprecation cycle.
 
 =head3 item_present
 
