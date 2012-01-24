@@ -90,6 +90,10 @@ my $cad = CPAN::Access::AdHoc->new();
 	chdir $td
 	    or skip "Unable to cd to temp dir: $!", $tests;
 
+	# DO NOT CALL skip() below this point. We have to chdir out of
+	# the temp directory in the same block where we create it,
+	# otherwise the deletaion may fail.
+
 	if ( eval { $arc->extract(); 1; } ) {
 	    is slurp( File::Spec->catfile( $arc->base_directory(),
 		    $file_name ) ), $text,
@@ -98,10 +102,10 @@ my $cad = CPAN::Access::AdHoc->new();
 	    fail "Unable to extract null archive: $@";
 	}
 
-    }
+	chdir $default_dir
+	    or die "Unable to cd to $default_dir: $!";
 
-    chdir $default_dir
-	or die "Unable to cd to $default_dir: $!";
+    }
 
     # Next the compressed index
 
@@ -357,13 +361,17 @@ SKIP: {
 	slurp( 'mock/src/repos/BACH/PDQ/Makefile.PL' ),
 	"Can extract Makefile.PL from $pkg";
 
-    {
-	my $got = $kit->get_item_mtime( 'Makefile.PL' );
-	my $want = $mtime{ 'BACH/PDQ/Makefile.PL' };
-	ok abs( $got - $want ) < 2,
-	"Can get Makefile.PL mod time from $pkg"
-	    or mtime_diag( $got, $want );
-    }
+#   {
+##	Zip file time stamps are in local time. The only way to get this
+##	test to work would be to carry zone information outside the Zip
+##	file. Since in the general case this is not available, the whole
+##	test seems pretty pointless.
+#	my $got = $kit->get_item_mtime( 'Makefile.PL' );
+#	my $want = $mtime{ 'BACH/PDQ/Makefile.PL' };
+#	ok abs( $got - $want ) < 2,
+#	"Can get Makefile.PL mod time from $pkg"
+#	    or mtime_diag( $got, $want );
+#   }
 
     my $meta = $kit->metadata();
 

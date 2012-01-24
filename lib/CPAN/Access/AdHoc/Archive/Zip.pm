@@ -175,7 +175,8 @@ C<CPAN-Access-AdHoc> package.
 =head1 METHODS
 
 This class supports the following public methods over and above those
-supported by its superclass:
+supported by its superclass, or with functionality over and above that
+of the superclass.
 
 =head2 new
 
@@ -204,6 +205,13 @@ argument may only be specified as C<undef>.
 
 This method returns the content of the named item in the archive. It is
 simply a wrapper for C<< Archive::Zip->memberNamed()->contents() >>.
+
+=head2 get_item_mtime
+
+Unfortunately, Zip file entry time stamps are in local time, and there
+is no zone information included. This means that unless this is called
+in the same time zone in which the Zip entry was created you get the
+wrong time. In other words, the results of this method are useless.
 
 =head2 list_contents
 
