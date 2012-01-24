@@ -12,7 +12,7 @@ use CPAN::Access::AdHoc::Util qw{ :carp };
 use File::Spec::Unix ();
 use IO::File ();
 
-our $VERSION = '0.000_04';
+our $VERSION = '0.000_05';
 
 {
 

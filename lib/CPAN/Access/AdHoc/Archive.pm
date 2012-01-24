@@ -9,7 +9,7 @@ use CPAN::Access::AdHoc::Util qw{ __attr :carp };
 use LWP::MediaTypes ();
 use Module::Pluggable::Object;
 
-our $VERSION = '0.000_04';
+our $VERSION = '0.000_05';
 
 # Note that this can be called as a mutator, but the mutator
 # functionality is private to the invocant's class.

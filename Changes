@@ -1,3 +1,13 @@
+0.000_05	2012-01-24	T. R. Wyant
+  Retract the test of get_item_mtime() for Zip archives, since there is
+    no way to make it work in any time zone. Document (briefly) the
+    problems in CPAN::Access::AdHoc::Archive::Zip.
+  Add static method CPAN::Access::AdHoc::Archive->guess_media_type().
+    This (currently) wraps LWP::MediaTypes::guess_media_type(), but
+    provides some ad-hocery to help the latter in cases it can't handle.
+    I'm not real happy with either this or handle_http_response(), but
+    so far have been unable to come up with anything better.
+
 0.000_04	2012-01-21	T. R. Wyant
   INCOMPATIBLE CHANGES
   Remove all methods deprecated in 0.000_03.
