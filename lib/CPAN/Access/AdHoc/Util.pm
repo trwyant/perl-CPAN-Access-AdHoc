@@ -5,9 +5,6 @@ use 5.008;
 use strict;
 use warnings;
 
-use File::Find;
-use File::Spec;
-
 use base qw{ Exporter };
 
 our @EXPORT_OK = qw{ __attr __load __whinge __wail __weep };

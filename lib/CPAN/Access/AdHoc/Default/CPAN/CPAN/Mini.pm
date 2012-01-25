@@ -7,8 +7,7 @@ use warnings;
 
 use CPAN::Access::AdHoc::Util qw{ __load };
 use Cwd ();
-use File::Spec;
-use File::Spec::Unix;
+use URI::file;
 
 our $VERSION = '0.000_05';
 
@@ -30,11 +29,8 @@ sub get_default {
     $local = Cwd::abs_path( $local );
     -d $local
 	or return;
-    my ( $dev, $dir, $base ) = File::Spec->splitpath( $local );
-    defined $dev
-	and $dev =~ s/ : \z /|/smx;	# VMS, Windows
-    my @path = grep { defined $_ && $_ ne '' } File::Spec->splitdir( $dir );
-    return 'file://' .  File::Spec::Unix->catfile( $dev, @path, $base );
+    my $uri = URI::file->new_abs( $local );
+    return $uri;
 }
 
 1;

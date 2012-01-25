@@ -17,7 +17,7 @@ use LWP::UserAgent ();
 use Module::Pluggable::Object;
 use Safe;
 use Text::ParseWords ();
-use URI::URL ();
+use URI ();
 
 our $VERSION = '0.000_05';
 
@@ -323,22 +323,19 @@ sub _attr_cpan {
     defined $value
 	or $value = $self->_get_default_url();
 
-    defined $value
-	and not $value =~ m{ / \z }smx
-	and $value .= '/';
+    $value = "$value";	# Stringify
+    $value =~ s{ (?<! / ) \z }{/}smx;
 
-    my $old_strict = URI::URL::strict( 1 );
-    eval {
-	URI::URL->new( $value );
-	1;
-    } or do {
-	URI::URL::strict( $old_strict );
-	# We re-raise the captured exception after putting strict back
-	# the way it was. Wish there was a scope-sensitive way to make
-	# URI::URL strict.
-	die $@;
-    };
-    URI::URL::strict( $old_strict );
+    my $url = URI->new( $value )
+	or _wail( "Bad URL '$value'" );
+    {
+	my $scheme = $url->scheme();
+	my $ua = LWP::UserAgent->new();
+	$url->can( 'authority' )
+	    and $ua->is_protocol_supported( $scheme )
+	    or __wail ( "URL scheme $scheme: is unsupported" );
+    }
+    $value = $url;
 
     $self->flush();
 
@@ -597,14 +594,21 @@ to an empty L<Config::Tiny|Config::Tiny> object.
 When called with no arguments, this method acts as an accessor, and
 returns the URL of the CPAN repository accessed by this object.
 
-When called with an argument, this method acts as a mutator. It sets
-the URL of the CPAN repository accessed by this object, and (for reasons
-of sanity) calls L<flush()|/flush> to purge any data cached from the old
-repository.
+When called with an argument, this method acts as a mutator. It sets the
+URL of the CPAN repository accessed by this object, and (for reasons of
+sanity) calls L<flush()|/flush> to purge any data cached from the old
+repository. The argument can be either a string or an object that
+stringifies (such as a L<URI|URI> object). To be valid, the scheme must
+be supported by L<LWP::UserAgent|LWP::UserAgent>, and must support a
+hierarchical name space. That is, schemes like C<file:>, C<http:>, and
+C<ftp:> are accepted, but schemes like C<mailto:> are not.
 
 If the argument is C<undef>, the default URL as computed from the
 sources in L<default_cpan_source|/default_cpan_source> is used. If no
 URL can be computed from any source, an exception is thrown.
+
+When called with no argument, the current value of the attribute is
+returned. This will be a L<URI|URI> object.
 
 =head3 default_cpan_source
 

@@ -30,16 +30,7 @@ sub get_default {
 	and @{ $CPAN::Config->{urllist} }
 	or return;
 
-    return _mung_url( @{ $CPAN::Config->{urllist} } );
-}
-
-sub _mung_url {
-    my @arg = @_;
-    foreach my $url ( @arg ) {
-	$url =~ m{ / \z }smx
-	    or $url .= '/';
-    }
-    return @arg;
+    return @{ $CPAN::Config->{urllist} };
 }
 
 1;

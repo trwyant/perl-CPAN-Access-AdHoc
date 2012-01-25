@@ -32,8 +32,10 @@ indices
 instantiator
 merchantability
 metadata
+stringifies
 subclasses
 un
 unpackaged
+uri
 url
 Wyant

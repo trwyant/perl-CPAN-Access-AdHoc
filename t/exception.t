@@ -125,7 +125,7 @@ exception default_cpan_source => 'fubar',
     'Set default_cpan_source() to bad value';
 
 exception cpan => 'fubar://bazzle/',
-    qr{\AUnknown URI::URL scheme fubar:},
+    qr{\AURL scheme fubar: is unsupported},
     'Set cpan() to invalid URL.';
 
 init bless {}, 'CPAN::Access::AdHoc::Archive';

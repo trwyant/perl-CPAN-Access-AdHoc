@@ -38,9 +38,7 @@ sub _make_url {
     my @arg = @_;
     my @rslt;
     foreach my $host ( @arg ) {
-	my $path = $host->{path};
-	$path =~ m{ \A / }smx
-	    or $path = "/$path";
+	( my $path = $host->{path} ) =~ s{ \A (?! / ) }{/}smx;
 	push @rslt, sprintf '%s://%s%s', $host->{scheme}, $host->{host}, $path;
     }
     return @rslt;
