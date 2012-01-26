@@ -14,6 +14,7 @@ use File::HomeDir ();
 use File::Spec ();
 use IO::File ();
 use LWP::UserAgent ();
+use LWP::Protocol ();
 use Module::Pluggable::Object;
 use Safe;
 use Text::ParseWords ();
@@ -317,6 +318,7 @@ sub _attr_literal {
 # Compute the value of the cpan attribute. The actual computation of the
 # default URL is outsourced to _get_default_url(). The attribute needs a
 # trailing slash so we can just slap the path on the end of it.
+
 sub _attr_cpan {
     my ( $self, $name, $value ) = @_;
 
@@ -332,7 +334,7 @@ sub _attr_cpan {
 	my $scheme = $url->scheme();
 	my $ua = LWP::UserAgent->new();
 	$url->can( 'authority' )
-	    and $ua->is_protocol_supported( $scheme )
+	    and LWP::Protocol::implementor( $scheme )
 	    or __wail ( "URL scheme $scheme: is unsupported" );
     }
     $value = $url;
@@ -350,6 +352,7 @@ sub _attr_cpan {
 #
 # Files are not checked unless they are in authors/id/, and are not
 # named CHECKSUM.
+
 sub _checksum {
     my ( $self, $rslt ) = @_;
     defined( my $path = $rslt->header( 'Content-Location' ) )
@@ -370,6 +373,9 @@ sub _checksum {
 	or __wail( "Checksum failure on $path" );
     return;
 }
+
+# Expand the default_cpan_source attribute into a list of class names,
+# each implementing one of the listed defaults.
 
 {
 
@@ -461,6 +467,12 @@ sub _get_default_url {
 
     __wail( 'No CPAN URL obtained from ' . $self->default_cpan_source() );
 }
+
+# modules/02packages.details.txt.gz and modules/03modlist.data.gz have
+# metadata at the top. This metadata is organized as lines of
+#     key: value
+# with the key left-justified. Lines can be wrapped, with leading
+# spaces.
 
 sub _read_meta {
     my ( $self, $fh ) = @_;
@@ -592,23 +604,24 @@ to an empty L<Config::Tiny|Config::Tiny> object.
 =head3 cpan
 
 When called with no arguments, this method acts as an accessor, and
-returns the URL of the CPAN repository accessed by this object.
+returns a L<URI|URI> object representing the URL of the CPAN repository
+being accessed.
 
 When called with an argument, this method acts as a mutator. It sets the
 URL of the CPAN repository accessed by this object, and (for reasons of
 sanity) calls L<flush()|/flush> to purge any data cached from the old
 repository. The argument can be either a string or an object that
 stringifies (such as a L<URI|URI> object). To be valid, the scheme must
-be supported by L<LWP::UserAgent|LWP::UserAgent>, and must support a
-hierarchical name space. That is, schemes like C<file:>, C<http:>, and
-C<ftp:> are accepted, but schemes like C<mailto:> are not.
+be supported by L<LWP::UserAgent|LWP::UserAgent> (that is,
+C<LWP::Protocol::implementor()> must return a true value), and must
+support a hierarchical name space. That means that schemes like
+C<file:>, C<http:>, and C<ftp:> are accepted, but schemes like
+C<mailto:> (non-hierarchical name space) and C<foobar:> (not known to be
+supported by C<LWP::UserAgent>) are not.
 
 If the argument is C<undef>, the default URL as computed from the
 sources in L<default_cpan_source|/default_cpan_source> is used. If no
 URL can be computed from any source, an exception is thrown.
-
-When called with no argument, the current value of the attribute is
-returned. This will be a L<URI|URI> object.
 
 =head3 default_cpan_source
 
