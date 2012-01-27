@@ -19,4 +19,5 @@ CVS/
 \.swp$
 ^tools/
 ^TODO$
+^tplt/
 ^xt/author/optionals/
