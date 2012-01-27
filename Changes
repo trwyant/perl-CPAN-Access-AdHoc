@@ -1,3 +1,18 @@
+0.000_06	2012-01-27	T. R. Wyant
+  Add method CPAN::Access::AdHoc::Archive->wrap_archive(), which
+    instantiates an archive object from an archive file and optional
+    CPAN ID. This seems to remove the need to expose guess_media_type()
+    and handle_http_response(), so their functionality has become
+    private to the package.
+  CPAN::Access::AdHoc::Archive->guess_media_type() and
+    handle_http_response() are deprecated and will warn on use. Because
+    they have never appeared in a production release they will be
+    removed after a week.
+  Make the CPAN::Access::AdHoc cpan() attribute a URI object, both
+    internally and extrnally. The mutator takes either a stringifiable
+    object or a string. The scheme must be supported according to
+    LWP::Protocol::implementor(), and support a hierarchical name space.
+
 0.000_05	2012-01-24	T. R. Wyant
   Retract the test of get_item_mtime() for Zip archives, since there is
     no way to make it work in any time zone. Document (briefly) the

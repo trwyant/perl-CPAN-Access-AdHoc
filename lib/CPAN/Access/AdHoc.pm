@@ -21,7 +21,7 @@ use Safe;
 use Text::ParseWords ();
 use URI ();
 
-our $VERSION = '0.000_05';
+our $VERSION = '0.000_06';
 
 my @attributes = (
     [ config		=> \&_attr_config,	],	# Must be first
