@@ -8,7 +8,6 @@ use warnings;
 use Config::Tiny ();
 use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{ :carp __expand_distribution_path };
-use CPAN::Meta;
 use Digest::SHA ();
 use File::HomeDir ();
 use File::Spec ();

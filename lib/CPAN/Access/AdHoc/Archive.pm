@@ -5,7 +5,11 @@ use 5.008;
 use strict;
 use warnings;
 
-use CPAN::Access::AdHoc::Util qw{ __attr :carp };
+use CPAN::Access::AdHoc::Util qw{
+    __attr __expand_distribution_path :carp
+};
+use CPAN::Meta ();
+use HTTP::Response ();
 use LWP::MediaTypes ();
 use Module::Pluggable::Object;
 
@@ -129,6 +133,41 @@ sub path {
     } else {
 	return $attr->{path};
     }
+}
+
+sub wrap_archive {
+    my ( $self, $fn, $author_dir ) = @_;
+    -f $fn
+	or __wail( "File $fn not found" );
+    my $content;
+    {
+	local $/ = undef;
+	open my $fh, '<', $fn or __wail( "Unable to open $fn: $!" );
+	binmode $fh;
+	$content = <$fh>;
+	close $fh;
+    }
+    my $path;
+    if ( defined $author_dir ) {
+	my $author_path = __expand_distribution_path( $author_dir );
+	$author_path =~ s{ / \z }{}smx;
+	$path = join '/', 'authors/id', $author_path,
+	    ( File::Spec->splitpath( $fn ) )[2];
+    } else {
+	my ( $dev, $dir, $base ) = File::Spec->splitpath( $fn );
+	my @dirs = grep { $_ ne '' } File::Spec->splitdir( $dir );
+	@dirs
+	    or @dirs = grep { $_ ne '' } Cwd::cwd();
+	if ( @dirs ) {
+	    $path = join '/', 'authors/id', __expand_distribution_path(
+		"$dirs[-1]/$base" );
+	} else {
+	    $path = $fn;
+	}
+    }
+    my $resp = HTTP::Response->new( 200, 'OK', undef, $content );
+    $self->guess_media_type( $resp, $path );
+    return $self->handle_http_response( $resp );
 }
 
 1;
@@ -331,6 +370,17 @@ decoding of the distribution's F<META.json> or F<META.yml> files, taken
 in that order. If neither is present, or neither contains valid metadata
 as determined by L<CPAN::Meta|CPAN::Meta>, nothing is returned -- this
 method makes no further effort to establish what the metadata are.
+
+=head2 wrap_archive
+
+ my $archive = CPAN::Access::AdHoc::Archive->wrap_archive(
+     'foo/MyDistrib-0.001.tar.gz', 'MYCPANID' );
+
+This method (either normal or static) makes a
+C<CPAN::Access::AdHoc::Archive> object out of a local file, and returns
+it. The second argument is the CPAN ID to assign to the archive. If this
+is omitted the directory the file is in will provide the CPAN ID, which
+is probably not what you want.
 
 =head1 SUPPORT
 

@@ -66,6 +66,7 @@ t/basic.t
 t/config.t
 t/exception.t
 t/fetch.t
+t/wrap.t
 xt/author/basic.t
 xt/author/changes.t
 xt/author/critic.t

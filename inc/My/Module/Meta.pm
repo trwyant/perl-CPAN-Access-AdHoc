@@ -54,6 +54,7 @@ sub requires {
 	'File::Spec::Unix'	=> 0,
 	'Getopt::Long'		=> 2.33,
 	'HTTP::Date'		=> 0,
+	'HTTP::Response'	=> 0,
 	'IO::File'		=> 0,
 	'IO::Uncompress::Bunzip2'	=> 0,
 	'IO::Uncompress::Gunzip'	=> 0,
