@@ -39,22 +39,33 @@ sub __expand_distribution_path {
 	substr( $1, 0, 2 ), $path;
 }
 
-sub __guess_media_type {
-    my ( $resp, $path ) = @_;
+{
 
-    if ( defined $path ) {
-	$resp->header( 'Content-Location' => $path );
-    } else {
-	defined( $path = $resp->header( 'Content-Location' ) )
-	    or __wail( 'No path provided, and none in Content-Location' );
+    my %expand_ending = (
+	tbz	=> 'tar.bz2',
+	tgz	=> 'tar.gz',
+    );
+
+    sub __guess_media_type {
+	my ( $resp, $path ) = @_;
+
+	if ( defined $path ) {
+	    $resp->header( 'Content-Location' => $path );
+	} else {
+	    defined( $path = $resp->header( 'Content-Location' ) )
+		or __wail(
+		'No path provided, and none in Content-Location' );
+	}
+
+	# LWP::MediaTypes needs help with some paths.
+	$path =~ s{ (?<= [.] ) ( [^.]+ ) \z }
+	{ $expand_ending{$1} || $1 }smxie;
+
+	LWP::MediaTypes::guess_media_type( $path, $resp );
+
+	return;
     }
 
-    # LWP::MediaTypes needs help with some paths.
-    $path =~ s/ [.] tgz \z /.tar.gz/smxi;
-
-    LWP::MediaTypes::guess_media_type( $path, $resp );
-
-    return;
 }
 
 sub __load {
