@@ -7,7 +7,10 @@ use warnings;
 
 use base qw{ Exporter };
 
-our @EXPORT_OK = qw{ __attr __load __whinge __wail __weep };
+our @EXPORT_OK = qw{
+    __attr __expand_distribution_path
+    __load __whinge __wail __weep
+};
 
 our %EXPORT_TAGS = (
     all	=> [ @EXPORT_OK ],
@@ -20,6 +23,18 @@ sub __attr {
     my ( $self ) = @_;
     my $name_space = caller;
     return ( $self->{$name_space} ||= {} );
+}
+
+sub __expand_distribution_path {
+    my ( $path ) = @_;
+    $path =~ m{ \A ( [^/] ) / ( \1 [^/] ) / ( \2 [^/]* ) }smx
+	and return $path;
+    $path =~ m< \A ( [^/]{2} ) / ( \1 [^/]* ) >smx
+	and return join '/', substr( $1, 0, 1 ), $path;
+    $path =~ m< \A ( [^/]+ ) >smx
+	or __wail( "Invalid distribution path '$path'" );
+    return join '/', substr( $1, 0, 1 ),
+	substr( $1, 0, 2 ), $path;
 }
 
 sub __load {
@@ -100,6 +115,13 @@ nonetheless private to the C<CPAN-Access-AdHoc> distribution):
 This subroutine/method returns the hash element of its argument which is
 named after the caller's name space. This element is initialized to an
 empty hash if necessary.
+
+=head2 __expand_distribution_path
+
+This subroutine takes as its argument a putative distribution path
+relative to the F<authors/id/> directory. If it does not begin with the
+two levels of directory that are derived from the author name, these are
+added. The expanded path is returned.
 
 =head2 __load
 

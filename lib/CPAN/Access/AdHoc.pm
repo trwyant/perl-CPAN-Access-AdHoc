@@ -7,7 +7,7 @@ use warnings;
 
 use Config::Tiny ();
 use CPAN::Access::AdHoc::Archive;
-use CPAN::Access::AdHoc::Util qw{ :carp };
+use CPAN::Access::AdHoc::Util qw{ :carp __expand_distribution_path };
 use CPAN::Meta;
 use Digest::SHA ();
 use File::HomeDir ();
@@ -115,7 +115,7 @@ sub fetch_author_index {
 
 sub fetch_distribution_archive {
     my ( $self, $distribution ) = @_;
-    my $path = _distribution_path( $distribution );
+    my $path = __expand_distribution_path( $distribution );
     return $self->fetch( "authors/id/$path" );
 }
 
@@ -126,7 +126,7 @@ sub fetch_distribution_checksums {
     my ( $dir, $file ) = ( $1, $2 );
     $file eq 'CHECKSUMS'
 	and $file = '';
-    my $path = _distribution_path( $dir . 'CHECKSUMS' );
+    my $path = __expand_distribution_path( $dir . 'CHECKSUMS' );
     ( $dir = $path ) =~ s{ [^/]* \z }{}smx;
     $self->{_cache}{checksums}{$dir} ||= _eval_string(
 	$self->fetch( "authors/id/$path" )->get_item_content() );
@@ -401,22 +401,6 @@ sub _checksum {
 	return @rslt;
     }
 
-}
-
-# Given a distribution path relative to authors/id/, but possibly
-# missing one or both of the two levels between that and the actual
-# author directory, supply the missing stuff if it is in fact missing.
-
-sub _distribution_path {
-    my ( $path ) = @_;
-    $path =~ m{ \A ( [^/] ) / ( \1 [^/] ) / ( \2 [^/]* ) / }smx
-	and return $path;
-    $path =~ m< \A ( [^/]{2} ) / ( \1 [^/]* ) / >smx
-	and return join '/', substr( $1, 0, 1 ), $path;
-    $path =~ m< \A ( [^/]+ ) / >smx
-	or __wail( "Invalid distribution path '$path'" );
-    return join '/', substr( $1, 0, 1 ),
-	substr( $1, 0, 2 ), $path;
 }
 
 # Eval a string in a sandbox, and return the result. This was cribbed
