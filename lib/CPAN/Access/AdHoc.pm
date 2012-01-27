@@ -78,7 +78,7 @@ sub fetch {
     $self->_checksum( $rslt );
 
     my $archive =
-	CPAN::Access::AdHoc::Archive->handle_http_response( $rslt )
+	CPAN::Access::AdHoc::Archive->__handle_http_response( $rslt )
 	or __wail( sprintf q{Unsupported Content-Type '%s'},
 	$rslt->header( 'Content-Type' ) );
 
@@ -499,15 +499,6 @@ CPAN::Access::AdHoc - Retrieve stuff from an arbitrary CPAN repository
  } else {
      print "$module is not indexed\n";
  }
-
-=head1 NOTICE
-
-Effective with version 0.000_03:
-
-* Methods whose names contain C<'package'> are removed. Use the
-correspondingly-named C<'distribution'> methods.
-
-* Method fetch_registered_module_index() now returns a hash.
 
 =head1 DESCRIPTION
 
