@@ -173,6 +173,10 @@ sub wrap_archive {
     return $self->__handle_http_response( $resp );
 }
 
+sub write : method {	## no critic (ProhibitBuiltInHomonyms)
+    __weep( 'The write() method must be overridden' );
+}
+
 1;
 
 __END__
@@ -396,6 +400,20 @@ C<CPAN::Access::AdHoc::Archive> object out of a local file, and returns
 it. The second argument is the CPAN ID to assign to the archive. If this
 is omitted the directory the file is in will provide the CPAN ID, which
 is probably not what you want.
+
+=head2 write
+
+ $archive->write( $file_name );
+ $archive->write();
+
+This method writes the contents of the archive to the given file name.
+If the name indicates that the file should be encoded and the archiver
+supports that encoding, the encoding is applied. For example, a Tar
+archive written to a file whose name ends in F<.gz> will be compressed
+with gzip.
+
+If the file name is omitted, it defaults to the base name of
+C<< $archive->path() >>.
 
 =head1 SUPPORT
 

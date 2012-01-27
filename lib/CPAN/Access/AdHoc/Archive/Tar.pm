@@ -163,6 +163,33 @@ sub list_contents {
     return @rslt;
 }
 
+{
+    my %known_encoding = (
+	'gzip'		=> Archive::Tar->COMPRESS_GZIP(),
+	'x-bzip2'	=> Archive::Tar->COMPRESS_BZIP(),
+    );
+
+    sub write : method {	## no critic (ProhibitBuiltInHomonyms)
+	my ( $self, $fn ) = @_;
+	if ( ! defined $fn ) {
+	    $fn = ( File::Spec->splitpath( $self->path() ) )[2];
+	}
+	my $resp = HTTP::Response->new();
+	__guess_media_type( $resp, $fn );
+	my $encoding = $resp->header( 'Content-Encoding' );
+	defined $encoding
+	    or $encoding = '';
+	my @args = ( $fn );
+	if ( defined $encoding && '' ne $encoding ) {
+	    exists $known_encoding{$encoding}
+		or __wail( "Encoding $encoding not supported" );
+	    push @args, $known_encoding{$encoding};
+	}
+	$self->archive()->write( @args );
+	return $self;
+    }
+}
+
 sub _construct_name {
     my ( $file ) = @_;
     my $prefix = $file->prefix();

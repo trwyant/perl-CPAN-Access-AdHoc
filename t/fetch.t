@@ -15,10 +15,10 @@ my $no_temp_dir;
 BEGIN {
     eval {
 	require File::Temp;
-	File::Temp->can( 'newdir' );
-	1;
+	File::Temp->can( 'dir' ) && File::Temp->can( 'newdir' );
     } or do {
-	$no_temp_dir = 'File::Temp unavailable, or does not support newdir()';
+	$no_temp_dir =
+	'File::Temp unavailable, or does not support new() or newdir()';
     };
 }
 
@@ -237,7 +237,7 @@ is_deeply [ $cad->indexed_distributions() ], [ qw{
 # Test access to .tar.gz archive
 
 SKIP: {
-    my $tests = 8;
+    my $tests = 11;
 
     my $pkg = $module_index->{Yehudi}{distribution}
 	or skip q{Module 'Yehudi' not indexed}, $tests;
@@ -302,12 +302,43 @@ SKIP: {
 
     }
 
+    SKIP: {
+
+	my $nested_tests = 1;
+
+	$no_temp_dir
+	    and skip $no_temp_dir, $nested_tests;
+
+	my $want = slurp_bin(
+	    'mock/repos/authors/id/M/ME/MENUHIN/Yehudi-0.001.tar.gz'
+	);
+
+	my $td = File::Temp->newdir()
+	    or skip "Unable to create temp dir: $!", $nested_tests;
+
+	chdir $td
+	    or skip "Unable to cd to temp dir: $!", $nested_tests;
+
+	# DO NOT CALL skip() below this point. We have to chdir out of
+	# the temp directory in the same block where we create it,
+	# otherwise the deletaion may fail.
+
+	$kit->write();
+
+	my $got = slurp_bin( 'Yehudi-0.001.tar.gz' );
+
+	chdir $default_dir
+	    or die "Unable to cd to $default_dir: $!";
+
+	ok $want == $got, 'Written Yehudi-0.001.tar.gz equals original';
+    }
+
 }
 
 # Test access to .tar.bz2 archive
 
 SKIP: {
-    my $tests = 5;
+    my $tests = 6;
 
     my $pkg = $module_index->{Johann}{distribution}
 	or skip q{Module 'Johann' not indexed}, $tests;
@@ -326,6 +357,37 @@ SKIP: {
     is $meta->name(), 'Johann', q{Module name is 'Johann'};
 
     is $meta->version(), '0.001', q{Module version is 0.001};
+
+    SKIP: {
+
+	my $nested_tests = 1;
+
+	$no_temp_dir
+	    and skip $no_temp_dir, $nested_tests;
+
+	my $want = slurp_bin(
+	    'mock/repos/authors/id/B/BA/BACH/Johann-0.001.tar.bz2'
+	);
+
+	my $td = File::Temp->newdir()
+	    or skip "Unable to create temp dir: $!", $nested_tests;
+
+	chdir $td
+	    or skip "Unable to cd to temp dir: $!", $nested_tests;
+
+	# DO NOT CALL skip() below this point. We have to chdir out of
+	# the temp directory in the same block where we create it,
+	# otherwise the deletaion may fail.
+
+	$kit->write();
+
+	my $got = slurp_bin( 'Johann-0.001.tar.bz2' );
+
+	chdir $default_dir
+	    or die "Unable to cd to $default_dir: $!";
+
+	ok $want == $got, 'Written Johann-0.001.tar.bz2 equals original';
+    }
 
 }
 
@@ -420,6 +482,17 @@ sub slurp {
     local $/ = undef;
     open my $fh, '<', $fn
 	or die "Unable to open $fn for input: $!\n";
+    my $text = <$fh>;
+    close $fh;
+    return $text;
+}
+
+sub slurp_bin {
+    my ( $fn ) = @_;
+    local $/ = undef;
+    open my $fh, '<', $fn
+	or die "Unable to open $fn for input: $!\n";
+    binmode $fh;
     my $text = <$fh>;
     close $fh;
     return $text;
