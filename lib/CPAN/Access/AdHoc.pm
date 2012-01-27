@@ -7,7 +7,9 @@ use warnings;
 
 use Config::Tiny ();
 use CPAN::Access::AdHoc::Archive;
-use CPAN::Access::AdHoc::Util qw{ :carp __expand_distribution_path };
+use CPAN::Access::AdHoc::Util qw{
+    :carp __expand_distribution_path __guess_media_type
+};
 use Digest::SHA ();
 use File::HomeDir ();
 use File::Spec ();
@@ -71,7 +73,7 @@ sub fetch {
     $rslt->is_success
 	or __wail( "Failed to get $url: ", $rslt->status_line() );
 
-    CPAN::Access::AdHoc::Archive->guess_media_type( $rslt, $path );
+    __guess_media_type( $rslt, $path );
 
     $self->_checksum( $rslt );
 

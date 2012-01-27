@@ -7,8 +7,10 @@ use warnings;
 
 use base qw{ Exporter };
 
+use LWP::MediaTypes ();
+
 our @EXPORT_OK = qw{
-    __attr __expand_distribution_path
+    __attr __expand_distribution_path __guess_media_type
     __load __whinge __wail __weep
 };
 
@@ -35,6 +37,24 @@ sub __expand_distribution_path {
 	or __wail( "Invalid distribution path '$path'" );
     return join '/', substr( $1, 0, 1 ),
 	substr( $1, 0, 2 ), $path;
+}
+
+sub __guess_media_type {
+    my ( $resp, $path ) = @_;
+
+    if ( defined $path ) {
+	$resp->header( 'Content-Location' => $path );
+    } else {
+	defined( $path = $resp->header( 'Content-Location' ) )
+	    or __wail( 'No path provided, and none in Content-Location' );
+    }
+
+    # LWP::MediaTypes needs help with some paths.
+    $path =~ s/ [.] tgz \z /.tar.gz/smxi;
+
+    LWP::MediaTypes::guess_media_type( $path, $resp );
+
+    return;
 }
 
 sub __load {
@@ -122,6 +142,28 @@ This subroutine takes as its argument a putative distribution path
 relative to the F<authors/id/> directory. If it does not begin with the
 two levels of directory that are derived from the author name, these are
 added. The expanded path is returned.
+
+=head3 __guess_media_type
+
+ __guess_media_type( $resp, $path );
+
+This subroutine guesses the media type and encoding.
+
+The first argument is an L<HTTP::Response|HTTP::Response> object such as
+would have been returned by a successful fetch of the data.
+
+The second argument is optional, and is the URL or path used to fetch
+the data. If the second argument is defined, it sets the
+C<Content-Location> header in C<$resp>.  If C<$path> is not defined, it
+defaults to C<< $resp->header( 'Content-Location' ) >>, and an exception
+is thrown if there is none.
+
+The method loads the C<Content-Type> and C<Content-Encoding> headers of
+the C<$resp> object with its best guess at what they are. Nothing is
+returned.
+
+Note that the arguments are reversed from
+C<LWP::MediaTypes::guess_media_type()>.
 
 =head2 __load
 

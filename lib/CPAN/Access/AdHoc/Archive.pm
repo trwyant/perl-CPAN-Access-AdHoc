@@ -6,11 +6,10 @@ use strict;
 use warnings;
 
 use CPAN::Access::AdHoc::Util qw{
-    __attr __expand_distribution_path :carp
+    __attr __expand_distribution_path __guess_media_type :carp
 };
 use CPAN::Meta ();
 use HTTP::Response ();
-use LWP::MediaTypes ();
 use Module::Pluggable::Object;
 
 our $VERSION = '0.000_05';
@@ -50,17 +49,13 @@ sub get_item_mtime {
 sub guess_media_type {
     my ( $class, $resp, $path ) = @_;
 
-    if ( defined $path ) {
-	$resp->header( 'Content-Location' => $path );
-    } else {
-	defined( $path = $resp->header( 'Content-Location' ) )
-	    or __wail( 'No path provided, and none in Content-Location' );
-    }
+    __whinge( join ' ',
+	'CPAN::Access::AdHoc::Archive::guess_media_type() is',
+	'deprecated in favor of',
+	'CPAN::Access::AdHoc::Util::__guess_media_type()'
+    );
 
-    # LWP::MediaTypes needs help with some paths.
-    $path =~ s/ [.] tgz \z /.tar.gz/smxi;
-
-    LWP::MediaTypes::guess_media_type( $path, $resp );
+    __guess_media_type( $resp, $path );
 
     return;
 }
@@ -166,7 +161,7 @@ sub wrap_archive {
 	}
     }
     my $resp = HTTP::Response->new( 200, 'OK', undef, $content );
-    $self->guess_media_type( $resp, $path );
+    __guess_media_type( $resp, $path );
     return $self->handle_http_response( $resp );
 }
 
@@ -301,27 +296,12 @@ C<< $arc->base_directory() >>.
 
  CPAN::Access::AdHoc::Archive->guess_media_type( $resp, $path );
 
-This static method guesses the media type and encoding.
+This static method is deprecated. It is a wrapper for
+C<CPAN::Access::AdHoc::__guess_media_type()>.
 
-The first argument is an L<HTTP::Response|HTTP::Response> object such as
-would have been returned by a successful fetch of the data. The second
-argument is optional, and is the URL or path used to fetch the data. If
-the second argument is defined, it sets the C<Content-Location> header
-in C<$resp>.  If C<$path> is not defined, it defaults to
-C<< $resp->header( 'Content-Location' ) >>, and an exception is thrown
-if there is none.
-
-The method loads the C<Content-Type> and C<Content-Encoding> headers of
-the C<$resp> object with its best guess at what they are. Nothing is
-returned.
-
-Note that the arguments are reversed from
-C<LWP::MediaTypes::guess_media_type()>.
-
-The whole C<guess_media_type()>/C<handle_http_response()> thing seems
-like a crock to me, but I have not been able to think of anything
-better. If they make it into a production release, they B<will> go
-through a deprecation cycle.
+Because this method has never appeared in a production release, it will
+be removed a week after the next release, which will be a development
+release.
 
 =head3 handle_http_response
 
