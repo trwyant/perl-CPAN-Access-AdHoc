@@ -68,6 +68,7 @@ t/exception.t
 t/fetch.t
 t/media_type.t
 t/wrap.t
+t/write.t
 xt/author/basic.t
 xt/author/changes.t
 xt/author/critic.t

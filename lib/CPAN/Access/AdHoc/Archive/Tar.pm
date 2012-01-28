@@ -8,7 +8,7 @@ use warnings;
 use base qw{ CPAN::Access::AdHoc::Archive };
 
 use Archive::Tar ();
-use CPAN::Access::AdHoc::Util qw{ :carp };
+use CPAN::Access::AdHoc::Util qw{ :carp __guess_media_type };
 use File::Spec::Unix ();
 use IO::File ();
 use IO::Uncompress::Bunzip2 ();

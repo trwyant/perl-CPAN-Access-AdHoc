@@ -8,7 +8,7 @@ use warnings;
 use base qw{ CPAN::Access::AdHoc::Archive };
 
 use Archive::Zip;
-use CPAN::Access::AdHoc::Util qw{ :carp };
+use CPAN::Access::AdHoc::Util qw{ :carp __guess_media_type };
 use File::Spec::Unix ();
 use IO::File ();
 
@@ -151,6 +151,30 @@ sub list_contents {
     }
 
     return @rslt;
+}
+
+{
+    my %known_encoding = (
+    );
+
+    sub write : method {	## no critic (ProhibitBuiltInHomonyms)
+	my ( $self, $fn ) = @_;
+	if ( ! defined $fn ) {
+	    $fn = ( File::Spec->splitpath( $self->path() ) )[2];
+	}
+	my $resp = HTTP::Response->new();
+	__guess_media_type( $resp, $fn );
+	my $encoding = $resp->header( 'Content-Encoding' );
+	defined $encoding
+	    or $encoding = '';
+	if ( defined $encoding && '' ne $encoding ) {
+	    __wail( "Encoding $encoding not supported" );
+	}
+	my $status = $self->archive()->writeToFileNamed( $fn );
+	$status == Archive::Zip::AZ_OK()
+	    or __wail( 'Zip write error' );
+	return $self;
+    }
 }
 
 1;
