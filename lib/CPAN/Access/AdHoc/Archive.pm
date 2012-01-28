@@ -92,8 +92,8 @@ sub item_present {
     __weep( 'The item_present() method must be overridden' );
 }
 
-sub list_items {
-    __weep( 'The list_items() method must be overridden' );
+sub list_contents {
+    __weep( 'The list_contents() method must be overridden' );
 }
 
 sub metadata {
@@ -377,7 +377,7 @@ This method returns a true value if the named item is present in the
 archive, and a false value otherwise. The name of the item is specified
 relative to C<< $self->base_directory() >>.
 
-=head3 list_items
+=head3 list_contents
 
 This method lists the items in the distribution. Only files are listed.
 

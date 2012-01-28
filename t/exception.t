@@ -150,9 +150,9 @@ exception item_present => [],
     qr{\A\QProgramming Error - The item_present() method must be overridden},
     'Must override the CPAN::Access::AdHoc::Archive item_present method';
 
-exception list_items => [],
-    qr{\A\QProgramming Error - The list_items() method must be overridden},
-    'Must override the CPAN::Access::AdHoc::Archive list_items method';
+exception list_contents => [],
+    qr{\A\QProgramming Error - The list_contents() method must be overridden},
+    'Must override the CPAN::Access::AdHoc::Archive list_contents method';
 
 done_testing;
 
