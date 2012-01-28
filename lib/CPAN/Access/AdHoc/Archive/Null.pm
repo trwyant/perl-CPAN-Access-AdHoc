@@ -231,7 +231,7 @@ sub list_contents {
 
 	my ( $file ) = keys %{ $attr->{contents} };
 	if ( ! defined $fn ) {
-	    $fn = $file;
+	    $fn = ( File::Spec->splitpath( $self->path() ) )[2];
 	}
 	my $resp = HTTP::Response->new();
 	__guess_media_type( $resp, $fn );

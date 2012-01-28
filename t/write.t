@@ -127,7 +127,7 @@ SKIP: {
     # temp directory in the same block where we create it, otherwise the
     # deletaion may fail.
 
-    $arc1->write( $name );
+    $arc1->write();
 
     my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive( $name,
 	\'modules' );
