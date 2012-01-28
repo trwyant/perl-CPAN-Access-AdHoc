@@ -5,12 +5,14 @@ use 5.008;
 use strict;
 use warnings;
 
+use Cwd ();
 use CPAN::Access::AdHoc::Util qw{
     __attr __expand_distribution_path __guess_media_type :carp
 };
 use CPAN::Meta ();
 use HTTP::Response ();
 use Module::Pluggable::Object;
+use URI::file;
 
 our $VERSION = '0.000_06';
 
@@ -151,22 +153,20 @@ sub wrap_archive {
 	close $fh;
     }
     my $path;
-    if ( defined $author_dir ) {
+    if ( 'SCALAR' eq ref $author_dir ) {
+	$path = ${ $author_dir };
+	$path =~ s{ (?<! / ) \z }{/}smx;
+	$path .= ( File::Spec->splitpath( $fn ) )[2];
+    } elsif ( defined $author_dir ) {
 	my $author_path = __expand_distribution_path( $author_dir );
 	$author_path =~ s{ / \z }{}smx;
 	$path = join '/', 'authors/id', $author_path,
 	    ( File::Spec->splitpath( $fn ) )[2];
     } else {
-	my ( $dev, $dir, $base ) = File::Spec->splitpath( $fn );
-	my @dirs = grep { $_ ne '' } File::Spec->splitdir( $dir );
-	@dirs
-	    or @dirs = grep { $_ ne '' } Cwd::cwd();
-	if ( @dirs ) {
-	    $path = join '/', 'authors/id', __expand_distribution_path(
-		"$dirs[-1]/$base" );
-	} else {
-	    $path = $fn;
-	}
+	my $uri = URI::file->new( Cwd::abs_path( $fn ) );
+	$path = $uri->as_string();
+	$path =~ s{ \A .* / (?= authors/ | modules/ ) }{}smx
+	    or $path =~ s{ \A [^/]* // }{}smx;
     }
     my $resp = HTTP::Response->new( 200, 'OK', undef, $content );
     __guess_media_type( $resp, $path );
@@ -390,18 +390,26 @@ in that order. If neither is present, or neither contains valid metadata
 as determined by L<CPAN::Meta|CPAN::Meta>, nothing is returned -- this
 method makes no further effort to establish what the metadata are.
 
-=head2 wrap_archive
+=head3 wrap_archive
 
  my $archive = CPAN::Access::AdHoc::Archive->wrap_archive(
      'foo/MyDistrib-0.001.tar.gz', 'MYCPANID' );
 
 This method (either normal or static) makes a
 C<CPAN::Access::AdHoc::Archive> object out of a local file, and returns
-it. The second argument is the CPAN ID to assign to the archive. If this
-is omitted the directory the file is in will provide the CPAN ID, which
-is probably not what you want.
+it.
 
-=head2 write
+The second argument specifies the path to the item in a CPAN archive.
+This is combined with the base name of the file and the result is used
+to populate the C<path> attribute of the archive. A string specifies a
+CPAN ID directory; this will be expanded and C<'authors/id/'> prepended.
+A string reference specifies a literal path from the archive root. An
+undefined (or omitted) value causes the full path name of the file to be
+made into a C<file:> URL, and any prefix before C</authors/> or
+C</modules/> is removed; if these are not found, the full path name of
+the file is used.
+
+=head3 write
 
  $archive->write( $file_name );
  $archive->write();

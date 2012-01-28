@@ -7,7 +7,7 @@ use warnings;
 
 use base qw{ CPAN::Access::AdHoc::Archive };
 
-use CPAN::Access::AdHoc::Util qw{ :carp };
+use CPAN::Access::AdHoc::Util qw{ :carp __guess_media_type };
 use File::Path 2.07 ();
 use File::Spec ();
 use HTTP::Date ();
@@ -191,6 +191,59 @@ sub list_contents {
     my $attr = $self->__attr();
 
     return ( sort keys %{ $attr->{contents} } );
+}
+
+{
+    my %known_encoding = (
+	# The null encoder does a binmode() on its file handle because I
+	# believe that is equivalent to what happens with the
+	# IO::Compress::* packages - i.e. they compress bytes, not
+	# characters.
+	''		=> sub {
+	    my ( $fn, $content ) = @_;
+	    open my $fh, '>', $fn or __wail( "Open $fn failed: $!" );
+	    binmode $fh;
+	    print { $fh } $content;
+	    close $fh;
+	    return;
+	},
+	'gzip'		=> sub {
+	    my ( $fn, $content ) = @_;
+	    require IO::Compress::Gzip;
+	    IO::Compress::Gzip::gzip( \$content, $fn, AutoClose => 1 )
+		or __wail("gzip $fn failed: $IO::Compress::Gzip::GzipError"
+	    );
+	    return;
+	},
+	'x-bzip2'	=> sub {
+	    my ( $fn, $content ) = @_;
+	    require IO::Compress::Bzip2;
+	    IO::Compress::Bzip2::bzip2( \$content, $fn )
+		or __wail("bzip2 $fn failed: $IO::Compress::Bzip2::Bzip2Error"
+	    );
+	    return;
+	},
+    );
+
+    sub write : method {	## no critic (ProhibitBuiltInHomonyms)
+	my ( $self, $fn ) = @_;
+	my $attr = $self->__attr();
+
+	my ( $file ) = keys %{ $attr->{contents} };
+	if ( ! defined $fn ) {
+	    $fn = $file;
+	}
+	my $resp = HTTP::Response->new();
+	__guess_media_type( $resp, $fn );
+	my $encoding = $resp->header( 'Content-Encoding' );
+	my @args = ( $fn );
+	defined $encoding
+	    or $encoding = '';
+	my $code = $known_encoding{$encoding}
+	    or __wail( "Encoding $encoding not supported" );
+	$code->( $fn, $attr->{contents}{$file}{content} );
+	return $self;
+    }
 }
 
 1;

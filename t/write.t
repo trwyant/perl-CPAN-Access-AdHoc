@@ -42,8 +42,8 @@ SKIP: {
     my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive( $name,
 	'MENUHIN' );
 
-    are_archives_same "original $name" => $arc1,
-	"rewritten $name" => $arc2;
+    are_archives_same "rewritten $name" => $arc2,
+	"original $name" => $arc1;
 
     chdir $default_dir
 	or die "Unable to cd to default dir: $!";
@@ -72,8 +72,8 @@ SKIP: {
     my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive( $name,
 	'BACH' );
 
-    are_archives_same "original $name" => $arc1,
-	"rewritten $name" => $arc2;
+    are_archives_same "rewritten $name" => $arc2,
+	"original $name" => $arc1;
 
     chdir $default_dir
 	or die "Unable to cd to default dir: $!";
@@ -102,8 +102,38 @@ SKIP: {
     my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive( $name,
 	'BACH' );
 
-    are_archives_same "original $name" => $arc1,
-	"rewritten $name" => $arc2;
+    are_archives_same "rewritten $name" => $arc2,
+	"original $name" => $arc1;
+
+    chdir $default_dir
+	or die "Unable to cd to default dir: $!";
+}
+
+SKIP: {
+    my $tests = 1;
+    my $name = '02packages.details.txt.gz';
+
+    my $arc1 = CPAN::Access::AdHoc::Archive->wrap_archive(
+	"mock/repos/modules/$name" )
+	or skip "Can not wrap original $name", $tests;
+
+    my $td = File::Temp->newdir()
+	or skip "Unable to create temp dir: $!", $tests;
+
+    chdir $td
+	or skip "Unable to cd to temp dir: $!", $tests;
+
+    # DO NOT CALL skip() below this point. We have to chdir out of the
+    # temp directory in the same block where we create it, otherwise the
+    # deletaion may fail.
+
+    $arc1->write( $name );
+
+    my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive( $name,
+	\'modules' );
+
+    are_archives_same "rewritten $name" => $arc2,
+	"original $name" => $arc1;
 
     chdir $default_dir
 	or die "Unable to cd to default dir: $!";
