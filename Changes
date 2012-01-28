@@ -1,3 +1,13 @@
+0.000_07	2012-01-28	T. R. Wyant
+  Add a write() method to the CPAN::Access::AdHoc::Archive::* classes.
+    This writes the archive, compressing it if need be. The file name
+    written can be specified as an argument, defaulting to the base name
+    of the original file.
+  Modify method CPAN::Access::AdHoc::Archive->wrap_archive() so that its
+    second argument can be either an author directory, or a scalar
+    reference which dereferences to the directory relative to the
+    repository root.
+
 0.000_06	2012-01-27	T. R. Wyant
   Add method CPAN::Access::AdHoc::Archive->wrap_archive(), which
     instantiates an archive object from an archive file and optional
