@@ -16,12 +16,12 @@ sub new {
     # Because our configuration file may or may not exist under testing
     # conditions, new() also needs to return $CONFIG, so that we get the
     # desired result no matter which path we take through the code.
-    return $CONFIG;
+    return bless { %{ $CONFIG } }, __PACKAGE__;
 }
 
 sub read {
     my ( $class, $file ) = @_;
-    return $CONFIG;
+    return $class->new();
 }
 
 

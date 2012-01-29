@@ -117,7 +117,7 @@ SKIP: {
 }
 
 exception config => {},
-    qr{\AAttribute 'config' must be a Config::Tiny reference},
+    qr{\AAttribute 'config' must be a file name or a Config::Tiny reference},
     'Set config() to invalid configuration';
 
 exception default_cpan_source => 'fubar',

@@ -101,7 +101,13 @@ my $cad = CPAN::Access::AdHoc->new(
     cpan	=> 'http://someone/',
 );
 
-is $cad->default_cpan_source(), 'CPAN::Mini,cpanm,CPAN,CPANPLUS',
+is_deeply $cad->default_cpan_source(),
+    [ qw{ 
+	CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini
+	CPAN::Access::AdHoc::Default::CPAN::cpanm
+	CPAN::Access::AdHoc::Default::CPAN::CPAN
+	CPAN::Access::AdHoc::Default::CPAN::CPANPLUS
+	} ],
     'Confirm default_cpan_source() is set up correctly';
 
 is $cad->cpan(), 'http://someone/', 'Explicit cpan';

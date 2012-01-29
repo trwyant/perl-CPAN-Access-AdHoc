@@ -195,8 +195,13 @@ sub verb_default_cpan_source {
     my @arg = _expand_default( @_ );
     @arg
 	and $cad->default_cpan_source( @arg );
-    defined $arg[0]
-	or say $cad->default_cpan_source();
+    if ( ! defined $arg[0] ) {
+	my @src = @{ $cad->default_cpan_source() };
+	foreach ( @src ) {
+	    s/ \A CPAN::Access::AdHoc::Default::CPAN:: //smx;
+	}
+	say join ',', @src;
+    }
     return;
 }
 

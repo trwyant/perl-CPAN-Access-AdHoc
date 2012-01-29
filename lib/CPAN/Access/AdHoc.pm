@@ -8,7 +8,7 @@ use warnings;
 use Config::Tiny ();
 use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{
-    :carp __expand_distribution_path __guess_media_type
+    :carp __attr __expand_distribution_path __guess_media_type
 };
 use Digest::SHA ();
 use File::HomeDir ();
@@ -34,6 +34,12 @@ sub new {
     my ( $class, %arg ) = @_;
 
     my $self = bless {}, ref $class || $class;
+
+    return $self->__init( %arg );
+}
+
+sub __init {
+    my ( $self, %arg ) = @_;
 
     foreach my $attr ( @attributes ) {
 	my $name = $attr->[0];
@@ -227,24 +233,34 @@ sub indexed_distributions {
 # request to restore the default, from the configuration if that exists,
 # or from the configured default code.
 
-foreach my $info ( @attributes ) {
-    my ( $name, $mutator ) = @{ $info };
-    __PACKAGE__->can( $name ) and next;
-    no strict qw{ refs };
-    *$name = sub {
-	my ( $self, @arg ) = @_;
-	if ( @arg ) {
-	    my $value = $arg[0];
-	    if ( ! defined $value ) {
-		my $config = $self->config();
-		$value = $config->{_}{$name};
+__PACKAGE__->__create_accessor_mutators( @attributes );
+
+sub __create_accessor_mutators {
+    my ( $class, @attrs ) = @_;
+    foreach my $info ( @attrs ) {
+	my ( $name, $mutator ) = @{ $info };
+	__PACKAGE__->can( $name ) and next;
+	no strict qw{ refs };
+	*$name = sub {
+	    my ( $self, @arg ) = @_;
+	    my $attr = $self->__attr();
+	    if ( @arg ) {
+		my $value = $arg[0];
+		not defined $value
+		    and 'config' ne $name
+		    and $value = $self->config()->{_}{$name};
+		my $code;
+		not defined $value
+		    and $code = $self->can( "__default_$name" )
+		    and $value = $code->( $self );
+		$attr->{$name} = $mutator->( $self, $name, $value );
+		return $self;
+	    } else {
+		return $attr->{$name};
 	    }
-	    $self->{$name} = $mutator->( $self, $name, $value );
-	    return $self;
-	} else {
-	    return $self->{$name};
-	}
-    };
+	};
+    }
+    return;
 }
 
 # Compute the value of the config attribute.
@@ -263,29 +279,34 @@ foreach my $info ( @attributes ) {
     sub _attr_config {
 	my ( $self, $name, $value ) = @_;
 
-	# If the new value is defined, it must be a Config::Tiny object
-	if ( defined $value ) {
-	    ref $value
-		and eval {
-		    $value->isa( 'Config::Tiny' );
-		    1;
-		}
-		or __wail(
-		    "Attribute '$name' must be a Config::Tiny reference" );
-	# If the config file exists, read it
-	} elsif ( defined $config_path && -f $config_path ) {
-	    $value = Config::Tiny->read( $config_path );
-
-	# Otherwise generate an empty configuration
+	my $err = "Attribute '$name' must be a file name or a " .
+	    "Config::Tiny reference";
+	if ( ref $value ) {
+	    eval {
+		$value->isa( 'Config::Tiny' );
+	    } or __wail( $err );
 	} else {
-	    $value = Config::Tiny->new();
+	    -f $value
+		or __wail( $err );
+	    $value = Config::Tiny->read( $value );
 	}
 
-	# Disallow the config key.
-	delete $value->{_}{config};
-
-	return $value;
+	return $self->__validate_config( $value );
     }
+
+    sub __default_config {
+	my ( $self ) = @_;
+	defined $config_path
+	    and -f $config_path
+	    and return Config::Tiny->read( $config_path );
+	return Config::Tiny->new();
+    }
+}
+
+sub __validate_config {
+    my ( $self, $value ) = @_;
+    delete $value->{_}{config};
+    return $value;
 }
 
 # Compute the value of the default_cpan_source attribute
@@ -293,56 +314,78 @@ foreach my $info ( @attributes ) {
 sub _attr_default_cpan_source {
     my ( $self, $name, $value ) = @_;
 
-    # The rationale of the default order is:
-    # 1) Mini cpan: guaranteed to be local, and since it is non-core,
-    #    the user had to install it, and can be presumed to be using it.
-    # 2) CPAN minus: since it is non-core, the user had to install it,
-    #    and can be presumed to be using it.
-    # 3) CPAN: It is core, but it needs to be set up to be used, and the
-    #    wrapper will detect if it has not been set up.
-    # 4) CPANPLUS: It is core as of 5.10, and works out of the box, so
-    #    we can not presume that the user actually uses it.
-    defined $value
-	or $value = 'CPAN::Mini,cpanm,CPAN,CPANPLUS';
-    $self->_expand_default_cpan_source( $value );
+    ref $value
+	or $value = [ split qr{ \s* , \s* }smx, $value ];
 
-    return $value;
+    return $self->__validate_default_cpan_source( $value );
+}
+
+# The rationale of the default order is:
+# 1) Mini cpan: guaranteed to be local, and since it is non-core,
+#    the user had to install it, and can be presumed to be using it.
+# 2) CPAN minus: since it is non-core, the user had to install it,
+#    and can be presumed to be using it.
+# 3) CPAN: It is core, but it needs to be set up to be used, and the
+#    wrapper will detect if it has not been set up.
+# 4) CPANPLUS: It is core as of 5.10, and works out of the box, so
+#    we can not presume that the user actually uses it.
+sub __default_default_cpan_source {
+    return 'CPAN::Mini,cpanm,CPAN,CPANPLUS';
 }
 
 # Compute the value of a literal attribute
 
 sub _attr_literal {
-    my ( $self, $name, $value );
+    my ( $self, $name, $value ) = @_;
+    if ( my $code = $self->can( "__validate_$name" ) ) {
+	return $code->( $self, $value );
+    } else {
+	return $value;
+    }
+}
+
+sub __default___debug {
+    return;
+}
+
+sub __validate___debug {
+    my ( $self, $value ) = @_;
     return $value;
 }
 
 # Compute the value of the cpan attribute. The actual computation of the
-# default URL is outsourced to _get_default_url(). The attribute needs a
+# default URL is outsourced to __default_cpan(). The attribute needs a
 # trailing slash so we can just slap the path on the end of it.
 
 sub _attr_cpan {
     my ( $self, $name, $value ) = @_;
 
     defined $value
-	or $value = $self->_get_default_url();
+	or $value = $self->__default_cpan();
 
     $value = "$value";	# Stringify
     $value =~ s{ (?<! / ) \z }{/}smx;
 
     my $url = URI->new( $value )
 	or _wail( "Bad URL '$value'" );
-    {
-	my $scheme = $url->scheme();
-	my $ua = LWP::UserAgent->new();
-	$url->can( 'authority' )
-	    and LWP::Protocol::implementor( $scheme )
-	    or __wail ( "URL scheme $scheme: is unsupported" );
-    }
-    $value = $url;
+
+    $value = $self->__validate_cpan( $url );
 
     $self->flush();
 
     return $value;
+}
+
+sub __validate_cpan {
+    my ( $self, $url ) = @_;
+
+    my $scheme = $url->scheme();
+    my $ua = LWP::UserAgent->new();
+    $url->can( 'authority' )
+	and LWP::Protocol::implementor( $scheme )
+	or __wail ( "URL scheme $scheme: is unsupported" );
+
+    return $url;
 }
 
 # Check the file's checksum if appropriate.
@@ -381,25 +424,27 @@ sub _checksum {
 {
 
     my $search_path = 'CPAN::Access::AdHoc::Default::CPAN';
-    my %defaulter = map {
-	substr( $_, length( $search_path ) + 2 ) => $_
-    } Module::Pluggable::Object->new(
+    my %defaulter = map { (
+        $_ => $_,
+	substr( $_, length( $search_path ) + 2 ) => $_,
+    ) } Module::Pluggable::Object->new(
 	search_path	=> $search_path,
 	inner	=> 0,
 	require	=> 1,
     )->plugins();
 
-    sub _expand_default_cpan_source {
+    sub __validate_default_cpan_source {
 	my ( $self, $value ) = @_;
-	defined $value
-	    or $value = $self->default_cpan_source();
+	'ARRAY' eq ref $value
+	    or __wail( q{Attribute 'default_cpan_source' takes an array } .
+	    q{reference or a comma-delimited string} );
 	my @rslt;
-	foreach my $source ( split qr{ \s* , \s* }smx, $value ) {
+	foreach my $source ( @{ $value } ) {
 	    defined( my $class = $defaulter{$source} )
 		or __wail( "Unknown default_cpan_source '$source'" );
 	    push @rslt, $class;
 	}
-	return @rslt;
+	return \@rslt;
     }
 
 }
@@ -416,20 +461,20 @@ sub _eval_string {
 }
 
 # Get the repository URL from the first source that actually supplies
-# it. The CPAN::Access::AdHoc::Default::CPAN plug-ins are called in the order
-# specified in the default_cpan_source attribute, and the first source
-# that actually supplies a URL is used. If that source provides a file:
-# URL, the first such is returned. Otherwise the first URL is returned,
-# whatever its scheme. If no URL can be determined, we die.
+# it. The CPAN::Access::AdHoc::Default::CPAN plug-ins are called in the
+# order specified in the default_cpan_source attribute, and the first
+# source that actually supplies a URL is used. If that source provides a
+# file: URL, the first such is returned. Otherwise the first URL is
+# returned, whatever its scheme. If no URL can be determined, we die.
 
-sub _get_default_url {
+sub __default_cpan {
     my ( $self ) = @_;
 
     my $url;
 
     my $debug = $self->__debug();
 
-    foreach my $class ( $self->_expand_default_cpan_source() ) {
+    foreach my $class ( @{ $self->default_cpan_source() } ) {
 
 	my @url_list = $class->get_default()
 	    or next;
@@ -602,15 +647,17 @@ URL can be computed from any source, an exception is thrown.
 =head3 default_cpan_source
 
 When called with no arguments, this method acts as an accessor, and
-returns the current list of default CPAN sources as a comma-delimited
-string.
+returns the current list of default CPAN sources as an array reference.
+B<This is incompatible with version 0.000_08 and before>, where the
+return was a comma-delimited string.
 
 When called with an argument, this method acts as a mutator, and sets
-the list of default CPAN sources. This list is a comma-delimited string,
-and consists of the names of zero or more
-C<CPAN::Access::AdHoc::Default::CPAN::*> classes, with the common
-prefix removed. See the documentation of these classes for more
-information.
+the list of default CPAN sources. This list is either an array reference
+or a comma-delimited string, and consists of the names of zero or more
+C<CPAN::Access::AdHoc::Default::CPAN::*> classes. With either mechanism
+the names of the classes may be passed without the common prefix, which
+will be added back if needed. See the documentation of these classes for
+more information.
 
 If any of the elements in the string does not represent an existing
 C<CPAN::Access::AdHoc::Default::CPAN::> class, an exception is thrown
@@ -776,6 +823,106 @@ when needed.
 This convenience method returns a list of all indexed distributions in
 ASCIIbetical order. This information is derived from the results of
 L<fetch_module_index()|/fetch_module_index>, and is cached.
+
+=head2 Subclass Methods
+
+The following methods exist for the benefit of subclasses, and should
+not be considered part of the public interface. I am willing to make
+this interface public on request, but until the request comes I will
+consider myself at liberty to modify it without notice.
+
+=head3 __attr
+
+This method returns a hash containing all attributes specific to the
+class that makes the call. This hash may be modified, and in fact must
+be to store new attribute values.
+
+=head3 __default_config
+
+This method returns a default value for the C<config> attribute. It must
+return a L<Config::Tiny> object.
+
+This method is called if someone (such as C<new()>) calls
+C<< $cad->config( undef ) >>. The only argument is the invocant.
+
+Subclasses can override this. The override probably should not call
+C<< $self->SUPER::__default_config( $value ) >>.
+
+=head3 __default_default_cpan_source
+
+This method returns a default value for the C<default_cpan_source>
+attribute. It must return an array reference.
+
+This method is analogous to L<__default_config()|/__default_config>.
+
+=head3 __default_cpan
+
+This method returns a default value for the C<cpan> attribute. It must
+return a URL, either a string or a L<URI|URI> object.
+
+This method is analogous to L<__default_config()|/__default_config>.
+
+=head3 __init
+
+This method is called when a new object is instantiated. Its arguments
+are a series of name/value pairs. The subclass should override this, and
+the override should make use of any arguments it
+recognizes, deleting them from the argument hash as it does so. The
+override should then call C<< $self->SUPER::__init( %args ) >>, passing
+the superclass all unused arguments.
+
+=head3 __validate_config
+
+ $self->__validate_config( $value );
+
+This method is called when the C<config> attribute is to be modified.
+Its arguments are the invocant and a L<Config::Tiny|Config::Tiny> object
+representing the potential new value. This method must return the
+L<Config::Tiny|Config::Tiny> object to be stored in the C<config>
+attribute, but this need not be the same object that was passed in. If
+the method decides it does not like the potential new value, it must
+throw an exception, preferably by calling C<__wail()>.
+
+Overrides to this method B<must> call
+C<< $self->SUPER::__validate_config( $url ) >>, preferably first thing.
+They also B<must>, below the call to C<SUPER::__validate_config()>,
+operate on the L<Config::Tiny|Config::Tiny> object returned by
+C<SUPER::__validate_config()>.
+
+=head3 __validate_default_cpan_source
+
+ $self->__validate_default_cpan_source( $value );
+
+This method is called when the C<default_cpan_source> attribute is to be
+modified.  Its arguments are the invocant and an array reference
+representing the potential new value. This method must return the array
+reference to be stored in the C<default_cpan_source> attribute, but this
+need not be the same array reference that was passed in. If the method
+decides it does not like the potential new value, it must throw an
+exception, preferably by calling C<__wail()>.
+
+Overrides to this method B<must> call
+C<< $self->SUPER::__validate_default_cpan_source( $url ) >>, preferably
+first thing. They also B<must>, below the call to
+C<SUPER::__validate_default_cpan_source()>, operate on the array
+reference returned by C<SUPER::__validate_default_cpan_source()>.
+
+=head3 __validate_cpan
+
+ $self->__validate_cpan( URI->new( 'http://foo/bar/' );
+
+This method is called when the C<cpan> attribute is to be modified. Its
+arguments are the invocant and a L<URI|URI> object representing the
+potential new value. The method must return the L<URI|URI> object to be
+stored in the C<cpan> attribute, but this need not be the same object
+that was passed in. If the method decides it does not like the potential
+new value, it must throw an exception, preferably by calling
+C<__wail()>.
+
+Overrides to this method B<must> call
+C<< $self->SUPER::__validate_cpan( $url ) >>, preferably first thing.
+They also B<must>, below the call to SUPER::, operate on the URL
+returned by SUPER::.
 
 =head1 SEE ALSO
 

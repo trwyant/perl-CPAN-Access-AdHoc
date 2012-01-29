@@ -30,6 +30,7 @@ GPL
 hocery
 indices
 instantiator
+invocant
 merchantability
 metadata
 stringifies
