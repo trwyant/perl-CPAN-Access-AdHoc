@@ -1,3 +1,7 @@
+0.000_08	2012-01-28	T. R. Wyant
+  Don't have Build_Repos.PL load CPAN::Checksums until we _know_ we need
+    to rebuild the mock repository.
+
 0.000_07	2012-01-28	T. R. Wyant
   Add a write() method to the CPAN::Access::AdHoc::Archive::* classes.
     This writes the archive, compressing it if need be. The file name
