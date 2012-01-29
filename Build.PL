@@ -29,18 +29,18 @@ my %args = (
 #   add_to_cleanup	=> [ qw{ mock/repos/ } ],
     add_to_cleanup =>[ qw{ xt/author/optionals } ],
     PL_files => {
-	'Build_Repos.PL' => [ qw{
-	    mock/repos/authors/01mailrc.txt.gz
-	    mock/repos/authors/id/B/BA/BACH/CHECKSUMS
-	    mock/repos/authors/id/B/BA/BACH/Johann-0.001.tar.bz2
-	    mock/repos/authors/id/B/BA/BACH/PDQ-0.000_01.zip
-	    mock/repos/authors/id/M/ME/MENUHIN/CHECKSUMS
-	    mock/repos/authors/id/M/ME/MENUHIN/Yehudi-0.001.tar.gz
-	    mock/repos/modules/02packages.details.txt
-	    mock/repos/modules/02packages.details.txt.gz
-	    mock/repos/modules/03modlist.data.gz
-	    mock/repos/mtimes.dat
-	    } ],
+#	'Build_Repos.PL' => [ qw{
+#	    mock/repos/authors/01mailrc.txt.gz
+#	    mock/repos/authors/id/B/BA/BACH/CHECKSUMS
+#	    mock/repos/authors/id/B/BA/BACH/Johann-0.001.tar.bz2
+#	    mock/repos/authors/id/B/BA/BACH/PDQ-0.000_01.zip
+#	    mock/repos/authors/id/M/ME/MENUHIN/CHECKSUMS
+#	    mock/repos/authors/id/M/ME/MENUHIN/Yehudi-0.001.tar.gz
+#	    mock/repos/modules/02packages.details.txt
+#	    mock/repos/modules/02packages.details.txt.gz
+#	    mock/repos/modules/03modlist.data.gz
+#	    mock/repos/mtimes.dat
+#	    } ],
     },
 );
 
