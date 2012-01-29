@@ -87,6 +87,25 @@ sub verb_alias {
     return;
 }
 
+sub verb_author {
+    my @ids = @_;
+
+    my $author_index = $cad->fetch_author_index();
+    @ids
+	or @ids = sort keys %{ $author_index };
+
+    foreach my $id ( @ids ) {
+	$id = uc $id;
+	if ( my $auth = $author_index->{$id} ) {
+	    say join "\t", $id, $auth->{name}, $auth->{address};
+	} else {
+	    warn "Author $id not found\n";
+	}
+    }
+
+    return;
+}
+
 sub verb_base {
     my @args = @_;
     @args or @args = ( CURRENT_PACKAGE );
@@ -518,6 +537,15 @@ alias.
 
 The single-argument version creates an alias for the current
 distribution, if any.
+
+=head2 author
+
+ cpan-adhoc> author
+ cpan-adhoc> author adamk rjbs bingos
+
+This command lists items from the author index
+F<authors/01mailrc.txt.gz>. If no names are given the whole index is
+listed in ASCIIbetical order.
 
 =head2 base
 
