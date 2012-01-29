@@ -3,7 +3,6 @@ use 5.008;
 use strict;
 use warnings;
 
-use CPAN::Checksums qw{ updatedir };
 use CPAN::Meta;
 use Cwd qw{ cwd };
 use ExtUtils::MakeMaker;
@@ -32,6 +31,8 @@ GetOptions( \%opt,
 if ( -d 'mock/repos' && ! $opt{force} ) {
     exit;
 }
+
+require CPAN::Checksums;
 
 my $mail_re = qr{ [\w.-]+ \@ [\w.-]+ }smx;
 
@@ -152,7 +153,7 @@ foreach my $user ( bsd_glob( 'mock/src/repos/*' ) ) {
 	}
     }
 
-    updatedir( $dest_dir );
+    CPAN::Checksums::updatedir( $dest_dir );
 
 }
 
