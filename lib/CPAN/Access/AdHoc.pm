@@ -8,7 +8,7 @@ use warnings;
 use Config::Tiny ();
 use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{
-    :carp __attr __expand_distribution_path __guess_media_type
+    :carp __attr __cache __expand_distribution_path __guess_media_type
 };
 use Digest::SHA ();
 use File::HomeDir ();
@@ -94,8 +94,9 @@ sub fetch {
 sub fetch_author_index {
     my ( $self ) = @_;
 
-    exists $self->{_cache}{author_index}
-	and return $self->{_cache}{author_index};
+    my $cache = $self->__cache();
+    exists $cache->{author_index}
+	and return $cache->{author_index};
 
     my $author_details = $self->fetch(
 	'authors/01mailrc.txt.gz'
@@ -117,7 +118,7 @@ sub fetch_author_index {
 	};
     }
 
-    return ( $self->{_cache}{author_index} = \%author_index );
+    return ( $cache->{author_index} = \%author_index );
 }
 
 sub fetch_distribution_archive {
@@ -135,20 +136,23 @@ sub fetch_distribution_checksums {
 	and $file = '';
     my $path = __expand_distribution_path( $dir . 'CHECKSUMS' );
     ( $dir = $path ) =~ s{ [^/]* \z }{}smx;
-    $self->{_cache}{checksums}{$dir} ||= _eval_string(
+    my $cache = $self->__cache();
+    $cache->{checksums}{$dir} ||= _eval_string(
 	$self->fetch( "authors/id/$path" )->get_item_content() );
     $file eq ''
-	and return $self->{_cache}{checksums}{$dir};
-    return $self->{_cache}{checksums}{$dir}{$file};
+	and return $cache->{checksums}{$dir};
+    return $cache->{checksums}{$dir}{$file};
 }
 
 sub fetch_module_index {
     my ( $self ) = @_;
 
-    exists $self->{_cache}{module_index}
+    my $cache = $self->__cache();
+
+    exists $cache->{module_index}
 	and return wantarray ?
-	    @{ $self->{_cache}{module_index} } :
-	    $self->{_cache}{module_index}[0];
+	    @{ $cache->{module_index} } :
+	    $cache->{module_index}[0];
 
     my $packages_details = $self->fetch(
 	'modules/02packages.details.txt.gz'
@@ -171,7 +175,7 @@ sub fetch_module_index {
 	};
     }
 
-    $self->{_cache}{module_index} = [ \%module, $meta ];
+    $cache->{module_index} = [ \%module, $meta ];
 
     return wantarray ? ( \%module, $meta ) : \%module;
 }
@@ -179,10 +183,11 @@ sub fetch_module_index {
 sub fetch_registered_module_index {
     my ( $self ) = @_;
 
-    exists $self->{_cache}{registered_module_index}
+    my $cache = $self->__cache();
+    exists $cache->{registered_module_index}
 	and return wantarray ?
-	    @{ $self->{_cache}{registered_module_index} } :
-	    $self->{_cache}{registered_module_index}[0];
+	    @{ $cache->{registered_module_index} } :
+	    $cache->{registered_module_index}[0];
 
     my $packages_details = $self->fetch(
 	'modules/03modlist.data.gz'
@@ -203,21 +208,24 @@ sub fetch_registered_module_index {
 
     my $hash = _eval_string( "$reg\nCPAN::Modulelist->data();" );
 
-    $self->{_cache}{registered_module_index} = [ $hash, $meta ];
+    $cache->{registered_module_index} = [ $hash, $meta ];
 
     return wantarray ? ( $hash, $meta ) : $hash;
 }
 
 sub flush {
     my ( $self ) = @_;
-    delete $self->{_cache};
+    delete $self->{'.cache'};
     return $self;
 }
 
 sub indexed_distributions {
     my ( $self ) = @_;
-    $self->{_cache}{indexed_distributions}
-	and return @{ $self->{_cache}{indexed_distributions} };
+
+    my $cache = $self->__cache();
+
+    $cache->{indexed_distributions}
+	and return @{ $cache->{indexed_distributions} };
 
     my $inx = $self->fetch_module_index();
 
@@ -226,7 +234,7 @@ sub indexed_distributions {
 	$pkg{$info->{distribution}}++;
     }
 
-    return @{ $self->{_cache}{indexed_distributions} = [ sort keys %pkg ] };
+    return @{ $cache->{indexed_distributions} = [ sort keys %pkg ] };
 }
 
 # Set up the accessor/mutators. All mutators interpret undef as being a
