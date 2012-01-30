@@ -1,3 +1,14 @@
+0.000_09	2012-01-30	T. R. Wyant
+  INCOMPATIBLE CHANGE
+  * The default_cpan_source attribute is now carried internally as a
+    reference to an array of the expanded class names, and this is what
+    is returned by the accessor.
+
+  COMPATIBLE CHANGES
+  * The mutator logic has been rewritten in terms of hooks to supply
+    defaults, validate, and do post-assignment processing. This is still
+    package-private, though it is documented.
+
 0.000_08	2012-01-28	T. R. Wyant
   Don't have Build_Repos.PL load CPAN::Checksums until we _know_ we need
     to rebuild the mock repository.

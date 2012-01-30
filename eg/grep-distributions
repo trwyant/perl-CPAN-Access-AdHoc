@@ -9,7 +9,7 @@ use CPAN::Access::AdHoc;
 use Getopt::Long 2.33;
 use Pod::Usage;
 
-our $VERSION = '0.000_08';
+our $VERSION = '0.000_09';
 
 my %opt;
 
