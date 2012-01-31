@@ -25,10 +25,10 @@ warning   \&__whinge, 'Awww', qr{\AAwww\b}, 'Check __whinge';
 exception \&__wail, 'Pfui', qr{\APfui\b}, 'Check __wail';
 
 exception \&__weep, 'Fubar', qr{\AProgramming Error - Fubar},
-'Check __weep';
+    'Check __weep';
 
 exception \&__load, '1module', qr{\AMalformed module name '1module'},
-'Check __load';
+    'Check __load';
 
 exception new => [ fubar => 'bazzle' ],
     qr{\A\QUnknown attribute(s): fubar},
@@ -37,6 +37,32 @@ exception new => [ fubar => 'bazzle' ],
 exception fetch => 'fubar/bazzle',
     qr{/fubar/bazzle: 404\b},
     'Fetch a non-existant file.';
+
+warning http_error_handler => sub {
+    my ( $self, $url, $resp ) = @_;
+    $url =~ m{ /modules/02packages_details [.] txt [.] gz \z }smx
+	and return;
+    die "$url not found\n"
+}, undef,
+    'Set an alternate HTTP error handler';
+
+exception fetch => 'fubar/bazzle',
+    qr{/fubar/bazzle not found\b},
+    'Fetch a non-existant file and get alternate warning.';
+
+eval {
+    warning fetch => 'fubar/modules/02packages.details.txt.gz', undef,
+	'Can supress exception with HTTP error handler';
+    1;
+} or fail "HTTP error handler allowed unexpected error $@";
+
+warning http_error_handler => undef, undef,
+    'Restore the original HTTP error handler';
+
+exception fetch => 'fubar/bazzle',
+    qr{/fubar/bazzle: 404\b},
+    'Fetch a non-existant file and get original warning.';
+
 
 SKIP: {
     my $tests = 1;
@@ -166,6 +192,10 @@ done_testing;
 	%instantiator = map { $_ => 1 } qw{ new };
     }
 
+    sub object {
+	return $cad;
+    }
+
     sub _xqt {
 	my ( $method, $args ) = @_;
 	'ARRAY' eq ref $args
@@ -222,20 +252,28 @@ done_testing;
     }
 
     sub warning ($$$$) {
-	my ( $method, $args, $exception, $title ) = @_;
+	my ( $method, $args, $warning, $title ) = @_;
 	my $err;
 	{
 	    local $SIG{__WARN__} = sub { $err = $_[0] };
 	    _xqt( $method, $args );
 	}
 	if ( defined $err ) {
-	    @_ = ( $err, $exception, $title );
-	    'Regexp' eq ref $exception
-		and goto &like;
-	    goto &is;
-	} else {
+	    if ( defined $warning ) {
+		@_ = ( $err, $warning, $title );
+		'Regexp' eq ref $warning
+		    and goto &like;
+		goto &is;
+	    } else {
+		@_ = ( "$title gave warning '$err'" );
+		goto &fail;
+	    }
+	} elsif ( defined $warning ) {
 	    @_ = "$method() did not generate a warning";
 	    goto &fail;
+	} else {
+	    @_ = ( $title );
+	    goto &pass;
 	}
     }
 

@@ -27,7 +27,9 @@ our $VERSION = '0.000_09';
 # because it supplies default values for everything else. 'cpan' must be
 # after 'default_cpan_source' because 'default_cpan_source' determines
 # how the default value of 'cpan' is computed.
-my @attributes = qw{ config __debug default_cpan_source cpan };
+my @attributes = qw{
+    config __debug http_error_handler default_cpan_source cpan
+};
 
 sub new {
     my ( $class, %arg ) = @_;
@@ -75,7 +77,7 @@ sub fetch {
     my $rslt = $ua->get( $url );
 
     $rslt->is_success
-	or __wail( "Failed to get $url: ", $rslt->status_line() );
+	or return $self->http_error_handler()->( $self, $url, $rslt );
 
     __guess_media_type( $rslt, $path );
 
@@ -152,25 +154,32 @@ sub fetch_module_index {
 	    @{ $cache->{module_index} } :
 	    $cache->{module_index}[0];
 
-    my $packages_details = $self->fetch(
-	'modules/02packages.details.txt.gz'
-    )->get_item_content();
+    my ( $meta, %module );
 
-    my $fh = IO::File->new( \$packages_details, '<' )
-	or __wail( "Unable to open string reference: $!" );
+    # The only way this can return undef is if the http_error_handler
+    # returns it. We take that as a request to cache an empty index.
+    if ( my $packages_details = $self->fetch(
+	    'modules/02packages.details.txt.gz' ) ) {
+	$packages_details = $packages_details->get_item_content();
 
-    my $meta = $self->_read_meta( $fh );
+	my $fh = IO::File->new( \$packages_details, '<' )
+	    or __wail( "Unable to open string reference: $!" );
 
-    my %module;
-    while ( <$fh> ) {
-	chomp;
-	my ( $mod, $ver, $pkg ) = split qr{ \s+ }smx;
-##	'undef' eq $ver
-##	    and $ver = undef;
-	$module{$mod} = {
-	    distribution	=> $pkg,
-	    version		=> $ver,
-	};
+	$meta = $self->_read_meta( $fh );
+
+	while ( <$fh> ) {
+	    chomp;
+	    my ( $mod, $ver, $pkg ) = split qr{ \s+ }smx;
+##	    'undef' eq $ver
+##		and $ver = undef;
+	    $module{$mod} = {
+		distribution	=> $pkg,
+		version		=> $ver,
+	    };
+	}
+
+    } else {
+	$meta = {};
     }
 
     $cache->{module_index} = [ \%module, $meta ];
@@ -339,8 +348,21 @@ sub __attr__default_cpan_source__default {
     return 'CPAN::Mini,cpanm,CPAN,CPANPLUS';
 }
 
-sub __attr____debug__validate {
+sub DEFAULT_HTTP_ERROR_HANDLER {
+    my ( $self, $url, $resp ) = @_;
+    __wail( "Failed to get $url: ", $resp->status_line() );
+}
+
+sub __attr__http_error_handler__default {
+    return \&DEFAULT_HTTP_ERROR_HANDLER;
+}
+
+sub __attr__http_error_handler__validate {
     my ( $self, $value ) = @_;
+    'CODE' eq ref $value
+	or __wail(
+	q{Attribute 'http_error_handler' must be a code reference}
+    );
     return $value;
 }
 
@@ -654,6 +676,30 @@ If the argument is C<undef>, the default is restored.
 
 The default is C<'CPAN::Mini,cpanm,CPAN,CPANPLUS'>.
 
+=head3 http_error_handler
+
+When called with no arguments, this method acts as an accessor, and
+returns the current HTTP error handler.
+
+When called with an argument, this method acts as a mutator, and sets
+the HTTP error handler. This must be a code reference.
+
+When an HTTP error is encountered, the handler will be called and passed
+three arguments: the C<CPAN::Access::AdHoc> object, the URL, and the
+C<HTTP::Response> object. Whatever it returns will be returned by the
+caller.
+
+If the argument is C<undef>, the default is restored.
+
+The default is C<\&CPAN::Access::AdHoc::DEFAULT_HTTP_ERROR_HANDLER>,
+which throws an exception, giving the URL and the HTTP status line. If
+you do not want to code for every error you might encounter, handle the
+uninteresting errors with
+
+ goto &CPAN::Access::AdHoc::DEFAULT_HTTP_ERROR_HANDLER:
+
+This assumes that you have not modified C<@_>.
+
 =head2 Functionality
 
 These methods are what all the rest is in aid of.
@@ -729,6 +775,10 @@ module, relative to the F<authors/id/> directory;
 If called in list context, the first return is the index, and the second
 is another hash reference containing the metadata that appears at the
 top of the expanded index file.
+
+If an HTTP error is encountered while fetching the index, normally an
+error is thrown. But if the C<http_error_handler> returns nothing, an
+empty index (and empty index metadata) are returned.
 
 The results of the first fetch are cached; subsequent calls are supplied
 from cache.

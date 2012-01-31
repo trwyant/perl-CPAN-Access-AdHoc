@@ -9,6 +9,7 @@ use Cwd;
 use POSIX ();
 use Test::More 0.88;	# Because of done_testing();
 use Time::Local;
+use URI::file;
 
 my $no_temp_dir;
 
@@ -401,6 +402,29 @@ SKIP: {
     }
 
 }
+
+$cad = CPAN::Access::AdHoc->new(
+    http_error_handler => sub {
+	my ( $self, $url, $resp ) = @_;
+	$resp->code() == 404
+	    and $url =~ m{ /modules/02packages[.]details[.]txt[.]gz \z }smx
+	    and return;
+	goto &CPAN::Access::AdHoc::DEFAULT_HTTP_ERROR_HANDLER;
+    },
+    cpan => URI::file->new( Cwd::abs_path( 'mock/src' ) )
+);
+
+is_deeply scalar $cad->fetch_module_index(), {},
+    'Can use HTTP error handler to change non-existant index to empty index';
+
+$cad->flush();				# Flush cache
+$cad->http_error_handler( undef );	# Restore default handler
+
+eval {
+    $cad->fetch_module_index();
+    fail 'Restored HTTP error handler failed to throw error';
+    1;
+} or pass 'Restored HTTP error handler threw error';
 
 done_testing;
 
