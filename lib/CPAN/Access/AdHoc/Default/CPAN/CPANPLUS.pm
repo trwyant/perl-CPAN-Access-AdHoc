@@ -7,7 +7,7 @@ use warnings;
 
 use CPAN::Access::AdHoc::Util qw{ __load };
 
-our $VERSION = '0.000_09';
+our $VERSION = '0.000_10';
 
 my $configured = eval {
     __load( 'CPANPLUS::Configure' );

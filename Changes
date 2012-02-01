@@ -1,3 +1,10 @@
+0.000_10	2012-01-31	T. R. Wyant
+  THIS VERSION NOT RELEASED TO CPAN
+  * Add attribute http_error_handler() to CPAN::Access::AdHoc.
+  * The CPAN::Access::AdHoc fetch_module_index() method takes a return
+    without data from http_error_handler() as a request to return an
+    empty index.
+
 0.000_09	2012-01-30	T. R. Wyant
   INCOMPATIBLE CHANGE
   * The default_cpan_source attribute is now carried internally as a
