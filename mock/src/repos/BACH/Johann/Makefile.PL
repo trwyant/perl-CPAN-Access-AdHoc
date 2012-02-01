@@ -34,6 +34,12 @@ my %args = (
     },
     META_MERGE => {
 ##	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=Encode-RAD50',
+	provides => {
+	    'Johann'	=> {
+		file	=> 'lib/Johann.pm',
+		version	=> '0.001',
+	    },
+	},
 	resources => {
 	    license => 'http://dev.perl.org/licenses/',
 	},
