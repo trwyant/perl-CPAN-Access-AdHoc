@@ -37,7 +37,7 @@ my %args = (
 	provides => {
 	    'Yehudi'	=> {
 		file	=> 'lib/Yehudi.pm',
-		version	=> '0.000_01',
+		version	=> '0.001',
 	    },
 	},
 	resources => {
