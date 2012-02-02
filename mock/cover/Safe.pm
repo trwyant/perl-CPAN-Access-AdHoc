@@ -6,12 +6,19 @@ use strict;
 use warnings;
 
 use Carp;
+use Opcode qw{ invert_opset opmask_add opset };
 
 our $VERSION = '0.000_01';
 
 sub new {
     my ( $class, $root, $mask ) = @_;
     return bless {}, ref $class || $class;
+}
+
+sub permit_only {
+    my ( $self, @ops ) = @_;
+    opmask_add( invert_opset( opset( @ops, ':load' ) ) );
+    return;
 }
 
 sub share {
@@ -69,6 +76,12 @@ This class supports the following public methods:
 
 This static method simply return a blessed hash reference. Any arguments
 are ignored.
+
+=head2 permit_only
+
+ $sandbox->permit_only( OP, ... );
+
+This method simply returns.
 
 =head2 share
 

@@ -464,6 +464,7 @@ sub _eval_string {
     my ( $string ) = @_;
     $string =~ s/ \015? \012 /\n/smxg;
     my $sandbox = Safe->new();
+    $sandbox->permit_only( ':default' );
     my $rslt = $sandbox->reval( $string );
     $@ and __wail( $@ );
     return $rslt;
@@ -956,10 +957,46 @@ the superclass all unused arguments.
 
 =head1 SEE ALSO
 
-L<CPAN::DistnameInfo|CPAN::DistnameInfo>, which parses distribution name
-and version (among other things) from the name of a particular
-distribution archive. This was very helpful in some of my CPAN
-ad-hocery.
+L<App::cpanlistchanges|App::cpanlistchanges> by Tatsuhiko Miaygawa lists
+Changes files -- by default the changes from the version you have
+installed to the most-current CPAN version.
+
+L<CPAN::DistnameInfo|CPAN::DistnameInfo> by Graham Barr, which parses
+distribution name and version (among other things) from the name of a
+particular distribution archive. This was very helpful in some of my
+CPAN ad-hocery.
+
+L<CPAN::Easy|CPAN::Easy> by Chris Weyl, which retrieves dstributions and
+their meta information. As of this writing, it does not support version
+2.0 of the meta spec.
+
+L<CPAN::Index|CPAN::Index> by Adam Kennedy, which accesses the CPAN
+indices, storing them in an SQLite database.
+
+L<CPAN::Inject|CPAN::Inject> by Adam Kennedy, which injects tarballs
+into a F<.cpan/sources> directory for a given CPAN ID.
+
+L<CPAN::Meta|CPAN::Meta> by David Golden, which presents a unified
+interface for the various versions of the CPAN meta-data specification.
+
+L<CPAN::Mini|CPAN::Mini> by Ricardo Signes, which lets you have your own
+personal CPAN, optionally with only the latest distributions.
+
+L<CPAN::Mini::Devel|CPAN::Mini::Devel> by David Golden, which is
+L<CPAN::Mini|CPAN::Mini> with the addition of developer releases.
+
+L<CPAN::Mini::Inject|CPAN::Mini::Inject> by Christian Walde, which
+injects distributions into a Mini-CPAN.
+
+L<CPAN::PackageDetails|CPAN::PackageDetails> by Brian D Foy, which reads
+and writes the CPAN F<modules/02packages.details.txt.gz> file.
+
+L<Parse::CPAN::Packages|Parse::CPAN::Packages> by Christian Wade, which
+parses the CPAN F<modules/02packages.details.txt.gz> file.
+
+L<Parse::CPAN::Packages::Fast|Parse::CPAN::Packages::Fast> by Slaven
+Rezic, non-OO code which parses the CPAN
+F<modules/02packages.details.txt.gz> file.
 
 =head1 SUPPORT
 
