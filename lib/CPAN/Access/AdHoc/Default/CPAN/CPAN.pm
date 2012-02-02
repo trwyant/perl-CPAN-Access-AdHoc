@@ -21,6 +21,25 @@ sub get_default {
 	or return;
 
     {
+	# Okay, here's the deal on the monkey patch.
+	#
+	# There is, to the best of my research, no supported way to
+	# prevent CPAN from initializing itself; there are just various
+	# unsupported ways. As of CPAN::HandleConfig 5.5003 (with CPAN
+	# 1.9800 07-Aug-2011) they are:
+	#
+	# * The monkey patch actually used. This exploits the fact that
+	#   the load() method returns if the do_init argument is false
+	#   (which it is by default) and there are no missing
+	#   configuration items (which the monkey patch takes care of)
+	# * Set $CPAN::HandleConfig::loading to a positive number. This
+	#   is a guard against accidental recursion.
+	#
+	# Parse::CPAN::Packages::Fast by Slaven Rezic seems to make the
+	# assumption you can get the same effect by setting
+	# $CPAN::Be_Silent to a true value, but that is not how I read
+	# the CPAN code.
+
 	no warnings qw{ once redefine };	## no critic (ProhibitNoWarnings)
 	local *CPAN::HandleConfig::missing_config_data = sub { return };
 	CPAN::HandleConfig->load();
