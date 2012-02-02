@@ -77,7 +77,7 @@ sub fetch {
     my $rslt = $ua->get( $url );
 
     $rslt->is_success
-	or return $self->http_error_handler()->( $self, $url, $rslt );
+	or return $self->http_error_handler()->( $self, $path, $rslt );
 
     __guess_media_type( $rslt, $path );
 
@@ -349,7 +349,8 @@ sub __attr__default_cpan_source__default {
 }
 
 sub DEFAULT_HTTP_ERROR_HANDLER {
-    my ( $self, $url, $resp ) = @_;
+    my ( $self, $path, $resp ) = @_;
+    my $url = $self->cpan() . $path;
     __wail( "Failed to get $url: ", $resp->status_line() );
 }
 
@@ -686,9 +687,9 @@ When called with an argument, this method acts as a mutator, and sets
 the HTTP error handler. This must be a code reference.
 
 When an HTTP error is encountered, the handler will be called and passed
-three arguments: the C<CPAN::Access::AdHoc> object, the URL, and the
-C<HTTP::Response> object. Whatever it returns will be returned by the
-caller.
+three arguments: the C<CPAN::Access::AdHoc> object, the path relative to
+the base URL of the CPAN repository, and the C<HTTP::Response> object.
+Whatever it returns will be returned by the caller.
 
 If the argument is C<undef>, the default is restored.
 
@@ -966,9 +967,9 @@ distribution name and version (among other things) from the name of a
 particular distribution archive. This was very helpful in some of my
 CPAN ad-hocery.
 
-L<CPAN::Easy|CPAN::Easy> by Chris Weyl, which retrieves dstributions and
-their meta information. As of this writing, it does not support version
-2.0 of the meta spec.
+L<CPAN::Easy|CPAN::Easy> by Chris Weyl, which retrieves distributions
+and their meta information. As of this writing, it does not support
+version 2.0 of the meta spec.
 
 L<CPAN::Index|CPAN::Index> by Adam Kennedy, which accesses the CPAN
 indices, storing them in an SQLite database.

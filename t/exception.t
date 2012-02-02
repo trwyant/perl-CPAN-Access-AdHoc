@@ -47,7 +47,7 @@ warning http_error_handler => sub {
     'Set an alternate HTTP error handler';
 
 exception fetch => 'fubar/bazzle',
-    qr{/fubar/bazzle not found\b},
+    qr{\Afubar/bazzle not found\b},
     'Fetch a non-existant file and get alternate warning.';
 
 eval {

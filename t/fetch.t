@@ -405,9 +405,9 @@ SKIP: {
 
 $cad = CPAN::Access::AdHoc->new(
     http_error_handler => sub {
-	my ( $self, $url, $resp ) = @_;
+	my ( $self, $path, $resp ) = @_;
 	$resp->code() == 404
-	    and $url =~ m{ /modules/02packages[.]details[.]txt[.]gz \z }smx
+	    and $path eq q{modules/02packages.details.txt.gz}
 	    and return;
 	goto &CPAN::Access::AdHoc::DEFAULT_HTTP_ERROR_HANDLER;
     },
