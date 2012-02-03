@@ -48,34 +48,12 @@ sub get_item_mtime {
     __weep( 'The get_item_mtime() method must be overridden' );
 }
 
-sub guess_media_type {
-    my ( $class, $resp, $path ) = @_;
-
-    __whinge( join ' ',
-	'CPAN::Access::AdHoc::Archive::guess_media_type() is',
-	'deprecated in favor of',
-	'CPAN::Access::AdHoc::Util::__guess_media_type()'
-    );
-
-    __guess_media_type( $resp, $path );
-
-    return;
-}
-
 {
     my @archivers = Module::Pluggable::Object->new(
 	search_path	=> 'CPAN::Access::AdHoc::Archive',
 	inner	=> 0,
 	require	=> 1,
     )->plugins();
-
-    sub handle_http_response {
-	__whinge( join ' ',
-	    'handle_http_response() is deprecated in favor of',
-	    '__handle_http_response()',
-	);
-	goto &__handle_http_response;
-    }
 
     sub __handle_http_response {
 	my ( $class, $resp ) = @_;
@@ -197,10 +175,6 @@ Effective with version 0.000_06:
 moved to C<CPAN::Access::AdHoc::Util> as subroutine
 C<__guess_media_type()>, which is private to the C<CPAN-Access-AdHoc>
 package.
-
-* Static method C<handle_http_response()> is deprecated. The code has
-been renamed to C<__handle_http_response()>, and is considered private
-to the C<CPAN-Access-AdHoc> package.
 
 Because the deprecated methods have never been in a production release,
 they will be removed a week after the publication of version 0.000_06.
@@ -325,21 +299,6 @@ This method returns the modification time of the named item in the
 archive. The name of the item is specified relative to
 C<< $arc->base_directory() >>.
 
-=head3 guess_media_type
-
- CPAN::Access::AdHoc::Archive->guess_media_type( $resp, $path );
-
-This static method is deprecated. It is a wrapper for
-C<CPAN::Access::AdHoc::__guess_media_type()>.
-
-Because this method has never appeared in a production release, it will
-be removed a week after the next release, which will be a development
-release.
-
-=head3 handle_http_response
-
-This static method is deprecated in favor of __handle_http_response().
-
 =head3 __handle_http_response
 
 This static method is private to the C<CPAN-Access-AdHoc> package.
@@ -353,7 +312,7 @@ Otherwise, it simply returns.
 The method can do anything it wants to evaluate its argument, but
 typically it examines the C<Content-Type>, C<Content-Encoding>, and
 C<Content-Location> headers. The expected values of these headers are
-those loaded by C<LWP::MediaTypes::guess_media_type()>.
+those loaded by C<CPAN::Access::AdHoc::Util::__guess_media_type()>.
 
 For this class (i.e. C<CPAN::Access::AdHoc::Archive>), the method simply
 calls C<__handle_http_response()> on all the
@@ -362,11 +321,6 @@ the L<HTTP::Response|HTTP::Response> object by returning a
 C<CPAN::Access::AdHoc::Archive> object. If none of the subclasses
 handles the L<HTTP::Response|HTTP::Response> object, nothing is
 returned.
-
-The whole C<guess_media_type()>/C<__handle_http_response()> thing seems
-like a crock to me, but I have not been able to think of anything
-better. If they make it into a production release, they B<will> go
-through a deprecation cycle.
 
 =head3 item_present
 
