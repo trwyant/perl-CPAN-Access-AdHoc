@@ -119,7 +119,7 @@ sub path {
 }
 
 sub wrap_archive {
-    my ( $self, $fn, $author_dir ) = @_;
+    my ( $class, $fn, $author_dir ) = @_;
     -f $fn
 	or __wail( "File $fn not found" );
     my $content;
@@ -148,7 +148,7 @@ sub wrap_archive {
     }
     my $resp = HTTP::Response->new( 200, 'OK', undef, $content );
     __guess_media_type( $resp, $path );
-    return $self->__handle_http_response( $resp );
+    return $class->__handle_http_response( $resp );
 }
 
 sub write : method {	## no critic (ProhibitBuiltInHomonyms)
