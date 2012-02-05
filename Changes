@@ -1,3 +1,11 @@
+0.000_11	2012-02-04	T. R. Wyant
+  * Remove deprecated CPAN::Access::AdHoc::Archive methods
+    guess_media_type() and handle_http_response().
+  * Change the second argument of the HTTP error handler from an
+    absolute URL to a relative path. The old version was never released
+    to CPAN, so this is technically not an incompatability.
+  * Flesh out the 'SEE ALSO' section of the CPAN::Access::AdHoc docs.
+
 0.000_10	2012-01-31	T. R. Wyant
   THIS VERSION NOT RELEASED TO CPAN
   * Add attribute http_error_handler() to CPAN::Access::AdHoc.

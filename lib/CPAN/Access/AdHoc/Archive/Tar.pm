@@ -14,7 +14,7 @@ use IO::File ();
 use IO::Uncompress::Bunzip2 ();
 use IO::Uncompress::Gunzip ();
 
-our $VERSION = '0.000_10';
+our $VERSION = '0.000_11';
 
 {
 
