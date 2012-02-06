@@ -10,6 +10,7 @@ eg/grep-modules
 eg/mod-dep
 eg/mod-dist
 eg/mod-doc
+inc/File/chdir.pm
 inc/My/Module/Build.pm
 inc/My/Module/Meta.pm
 lib/CPAN/Access/AdHoc.pm

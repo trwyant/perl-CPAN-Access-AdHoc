@@ -7,7 +7,7 @@ use warnings;
 
 use lib qw{ inc };
 
-use Cwd;
+use File::chdir;
 use POSIX ();
 use Test::More 0.88;	# Because of done_testing();
 use Time::Local;
@@ -41,8 +41,6 @@ eval {
     close $fh;
     1;
 } or diag $@;
-
-my $default_dir = cwd();
 
 my $cad = CPAN::Access::AdHoc->new();
 
@@ -90,12 +88,7 @@ my $cad = CPAN::Access::AdHoc->new();
 	my $td = File::Temp->newdir()
 	    or skip "Unable to create temp dir: $!", $tests;
 
-	chdir $td
-	    or skip "Unable to cd to temp dir: $!", $tests;
-
-	# DO NOT CALL skip() below this point. We have to chdir out of
-	# the temp directory in the same block where we create it,
-	# otherwise the deletaion may fail.
+	local $CWD = $td;
 
 	if ( eval { $arc->extract(); 1; } ) {
 	    is slurp( File::Spec->catfile( $arc->base_directory(),
@@ -104,9 +97,6 @@ my $cad = CPAN::Access::AdHoc->new();
 	} else {
 	    fail "Unable to extract null archive: $@";
 	}
-
-	chdir $default_dir
-	    or die "Unable to cd to $default_dir: $!";
 
     }
 

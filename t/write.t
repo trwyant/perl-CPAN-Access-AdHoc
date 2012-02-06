@@ -5,17 +5,17 @@ use 5.008;
 use strict;
 use warnings;
 
+use lib qw{ inc };
+
 use Test::More 0.88;	# Because of done_testing();
 use CPAN::Access::AdHoc::Archive;
-use Cwd;
+use File::chdir;
 
 eval {
     require File::Temp;
     File::Temp->can( 'new' ) && File::Temp->can( 'newdir' );
 } or plan skip_all =>
     'File::Temp unavailable, or does not support new() or newdir()';
-
-my $default_dir = cwd();
 
 sub are_archives_same (@);
 
@@ -30,12 +30,7 @@ SKIP: {
     my $td = File::Temp->newdir()
 	or skip "Unable to create temp dir: $!", $tests;
 
-    chdir $td
-	or skip "Unable to cd to temp dir: $!", $tests;
-
-    # DO NOT CALL skip() below this point. We have to chdir out of the
-    # temp directory in the same block where we create it, otherwise the
-    # deletaion may fail.
+    local $CWD = $td;
 
     $arc1->write();
 
@@ -44,9 +39,6 @@ SKIP: {
 
     are_archives_same "rewritten $name" => $arc2,
 	"original $name" => $arc1;
-
-    chdir $default_dir
-	or die "Unable to cd to default dir: $!";
 }
 
 SKIP: {
@@ -60,12 +52,7 @@ SKIP: {
     my $td = File::Temp->newdir()
 	or skip "Unable to create temp dir: $!", $tests;
 
-    chdir $td
-	or skip "Unable to cd to temp dir: $!", $tests;
-
-    # DO NOT CALL skip() below this point. We have to chdir out of the
-    # temp directory in the same block where we create it, otherwise the
-    # deletaion may fail.
+    local $CWD = $td;
 
     $arc1->write();
 
@@ -75,8 +62,6 @@ SKIP: {
     are_archives_same "rewritten $name" => $arc2,
 	"original $name" => $arc1;
 
-    chdir $default_dir
-	or die "Unable to cd to default dir: $!";
 }
 
 SKIP: {
@@ -90,12 +75,7 @@ SKIP: {
     my $td = File::Temp->newdir()
 	or skip "Unable to create temp dir: $!", $tests;
 
-    chdir $td
-	or skip "Unable to cd to temp dir: $!", $tests;
-
-    # DO NOT CALL skip() below this point. We have to chdir out of the
-    # temp directory in the same block where we create it, otherwise the
-    # deletaion may fail.
+    local $CWD = $td;
 
     $arc1->write();
 
@@ -105,8 +85,6 @@ SKIP: {
     are_archives_same "rewritten $name" => $arc2,
 	"original $name" => $arc1;
 
-    chdir $default_dir
-	or die "Unable to cd to default dir: $!";
 }
 
 SKIP: {
@@ -120,12 +98,7 @@ SKIP: {
     my $td = File::Temp->newdir()
 	or skip "Unable to create temp dir: $!", $tests;
 
-    chdir $td
-	or skip "Unable to cd to temp dir: $!", $tests;
-
-    # DO NOT CALL skip() below this point. We have to chdir out of the
-    # temp directory in the same block where we create it, otherwise the
-    # deletaion may fail.
+    local $CWD = $td;
 
     $arc1->write();
 
@@ -135,8 +108,6 @@ SKIP: {
     are_archives_same "rewritten $name" => $arc2,
 	"original $name" => $arc1;
 
-    chdir $default_dir
-	or die "Unable to cd to default dir: $!";
 }
 
 done_testing;
