@@ -19,7 +19,7 @@ use Term::ReadLine;
 use version 0.77;
 use YAML::Any;
 
-our $VERSION = '0.000_11';
+our $VERSION = '0.000_12';
 
 use constant CURRENT_PACKAGE => 'current';
 

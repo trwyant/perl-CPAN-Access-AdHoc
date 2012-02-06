@@ -1,3 +1,10 @@
+0.000_12	2012-02-06	T. R. Wyant
+  * Change the signature of CPAN::Access::AdHoc::Archive->wrap_archive().
+    The new signature specifies an optional leading hash. The author is
+    specified with the {author} key, or the directory with the
+    {directory} key. The old signature is deprecated, and will be
+    removed a week after publication.
+
 0.000_11	2012-02-04	T. R. Wyant
   * Remove deprecated CPAN::Access::AdHoc::Archive methods
     guess_media_type() and handle_http_response().
