@@ -119,7 +119,18 @@ sub path {
 }
 
 sub wrap_archive {
-    my ( $class, $fn, $author_dir ) = @_;
+    my ( $class, @args ) = @_;
+    my $opt = 'HASH' eq ref $args[0] ? shift @args : {};
+    my ( $fn, $author_dir ) = @args;
+    if ( defined $author_dir ) {
+	if ( 'SCALAR' eq ref $author_dir ) {
+	    __whinge( 'Specifying the directory as the second argument is deprecated in favor of specifying it in a leading options hash' );
+	    $opt->{directory} = ${ $author_dir };
+	} else {
+	    __whinge( 'Specifying the author as the second argument is deprecated in favor of specifying it in a leading options hash' );
+	    $opt->{author} = $author_dir;
+	}
+    }
     -f $fn
 	or __wail( "File $fn not found" );
     my $content;
@@ -131,12 +142,15 @@ sub wrap_archive {
 	close $fh;
     }
     my $path;
-    if ( 'SCALAR' eq ref $author_dir ) {
-	$path = ${ $author_dir };
+    if ( defined $opt->{directory} ) {
+	defined $opt->{author}
+	    and __wail(
+	    q{Specifying both 'author' and 'directory' is ambiguous} );
+	$path = $opt->{directory};
 	$path =~ s{ (?<! / ) \z }{/}smx;
 	$path .= ( File::Spec->splitpath( $fn ) )[2];
-    } elsif ( defined $author_dir ) {
-	my $author_path = __expand_distribution_path( $author_dir );
+    } elsif ( defined $opt->{author} ) {
+	my $author_path = __expand_distribution_path( $opt->{author} );
 	$author_path =~ s{ / \z }{}smx;
 	$path = join '/', 'authors/id', $author_path,
 	    ( File::Spec->splitpath( $fn ) )[2];
@@ -169,20 +183,13 @@ This class is not intended to be used directly.
 
 =head1 NOTICE
 
-Effective with version 0.000_06:
+Effective with version 0.000_12:
 
-* Static method C<__guess_media_type()> is deprecated. The code has been
-moved to C<CPAN::Access::AdHoc::Util> as subroutine
-C<__guess_media_type()>, which is private to the C<CPAN-Access-AdHoc>
-package.
-
-Because the deprecated methods have never been in a production release,
-they will be removed a week after the publication of version 0.000_06.
-
-I have never been real happy about exposing these in the public
-interface, and with the writing of
-C<< CPAN::Access::AdHoc::Archive->wrap_archive() >>, the need to expose
-them appears to me to have gone away.
+Method C<wrap_archive()> takes an optional leading hash. You can use
+either key C<{author}> to specify the CPAN author ID for the archive, or
+key C<{directory}> to specify its archive relative to the CPAN root. The
+argument after the file name is deprecated, and will be removed a week
+after the publication of 0.000_12.
 
 =head1 DESCRIPTION
 
@@ -347,21 +354,28 @@ method makes no further effort to establish what the metadata are.
 =head3 wrap_archive
 
  my $archive = CPAN::Access::AdHoc::Archive->wrap_archive(
-     'foo/MyDistrib-0.001.tar.gz', 'MYCPANID' );
+     { author => 'MYCPANID' },
+     'foo/MyDistrib-0.001.tar.gz' );
 
 This method (either normal or static) makes a
 C<CPAN::Access::AdHoc::Archive> object out of a local file, and returns
 it.
 
-The second argument specifies the path to the item in a CPAN archive.
-This is combined with the base name of the file and the result is used
-to populate the C<path> attribute of the archive. A string specifies a
-CPAN ID directory; this will be expanded and C<'authors/id/'> prepended.
-A string reference specifies a literal path from the archive root. An
-undefined (or omitted) value causes the full path name of the file to be
-made into a C<file:> URL, and any prefix before C</authors/> or
-C</modules/> is removed; if these are not found, the full path name of
-the file is used.
+The leading hash before the file name is optional, and specifies the
+path to the item in a CPAN archive. This is combined with the base name
+of the file and the result is used to populate the C<path> attribute of
+the archive.  Possible keys are
+
+ author => the CPAN author ID for the archive;
+ directory => The directory relative to the CPAN archive root.
+
+You may not specify both C<author> and C<directory>, since this is
+ambiguous.
+
+If no option hash is specified, or neither C<author> nor C<directory> is
+specified in it, the full path name will be made into a C<file:> URL,
+and any prefix before C</authors/> or C</modules/> is removed; if these
+are not found, the full path name of the file is used.
 
 =head3 write
 

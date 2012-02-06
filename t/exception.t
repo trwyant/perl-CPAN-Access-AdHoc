@@ -180,6 +180,13 @@ exception list_contents => [],
     qr{\A\QProgramming Error - The list_contents() method must be overridden},
     'Must override the CPAN::Access::AdHoc::Archive list_contents method';
 
+exception wrap_archive => [
+	{ author => 'NOBODY', directory => 'modules/' },
+	'mock/repos/modules/02packages.details.txt.gz',
+    ],
+    qr{\ASpecifying both 'author' and 'directory' is ambiguous\b},
+    q{Can not specify both 'author and 'directory' to wrap_archive};
+
 done_testing;
 
 {

@@ -39,8 +39,8 @@ SKIP: {
 
     $arc1->write();
 
-    my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive( $name,
-	'MENUHIN' );
+    my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive(
+	{ author => 'MENUHIN' }, $name );
 
     are_archives_same "rewritten $name" => $arc2,
 	"original $name" => $arc1;
@@ -69,8 +69,8 @@ SKIP: {
 
     $arc1->write();
 
-    my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive( $name,
-	'BACH' );
+    my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive(
+	{ author => 'BACH' }, $name );
 
     are_archives_same "rewritten $name" => $arc2,
 	"original $name" => $arc1;
@@ -99,8 +99,8 @@ SKIP: {
 
     $arc1->write();
 
-    my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive( $name,
-	'BACH' );
+    my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive(
+	{ author => 'BACH' }, $name );
 
     are_archives_same "rewritten $name" => $arc2,
 	"original $name" => $arc1;
@@ -129,8 +129,8 @@ SKIP: {
 
     $arc1->write();
 
-    my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive( $name,
-	\'modules' );
+    my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive(
+	{ directory => 'modules' }, $name );
 
     are_archives_same "rewritten $name" => $arc2,
 	"original $name" => $arc1;

@@ -59,8 +59,8 @@ SKIP: {
     my $fn = "mock/repos/authors/id/$pkg";
     my $kit;
     eval {
-	$kit = CPAN::Access::AdHoc::Archive->wrap_archive( $fn,
-	    'SCHICKELE' );
+	$kit = CPAN::Access::AdHoc::Archive->wrap_archive(
+	    { author => 'SCHICKELE' }, $fn );
 	1;
     } or do {
 	fail "Failed to wrap $fn: $@";
