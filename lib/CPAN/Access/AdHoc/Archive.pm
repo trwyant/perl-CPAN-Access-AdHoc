@@ -14,7 +14,7 @@ use HTTP::Response ();
 use Module::Pluggable::Object;
 use URI::file;
 
-our $VERSION = '0.000_12';
+our $VERSION = '0.000_13';
 
 # Note that this can be called as a mutator, but the mutator
 # functionality is private to the invocant's class.
@@ -259,6 +259,10 @@ Subclasses are expected to support encodings C<'gzip'> and C<'x-bzip2'>.
 Again, nothing good will happen if the content is not actually encoded
 this way.
 
+=item mtime
+
+This is the modification time of the archive.
+
 =item path
 
 This optional argument is intended to contain the path to the archive.
@@ -280,8 +284,15 @@ These methods retrieve or modify the attributes of the class.
 =head3 archive
 
 This method is an accessor for the object representing the archive that
-actually contains the CPAN distribution. This attribute is read-only, so
-it is an error to pass an argument.
+actually contains the CPAN distribution.
+
+This attribute is read-only, so it is an error to pass an argument.
+
+=head3 mtime
+
+This method is an accessor for the time the archive was last modified.
+
+This attribute is read-only, so it is an error to pass an argument.
 
 =head3 path
 

@@ -1,3 +1,7 @@
+0.000_13	2012-02-10	T. R. Wyant
+  * Add read-only attribute mtime() to the CPAN::Access::AdHoc::Archive
+    classes. In practice, this comes from the Last-Modified header.
+
 0.000_12	2012-02-06	T. R. Wyant
   * Change the signature of CPAN::Access::AdHoc::Archive->wrap_archive().
     The new signature specifies an optional leading hash. The author is
