@@ -8,6 +8,7 @@ use warnings;
 use lib qw{ inc };
 
 use File::chdir;
+use File::Spec;
 use POSIX ();
 use Test::More 0.88;	# Because of done_testing();
 use Time::Local;
@@ -29,14 +30,14 @@ use lib qw{ mock };
 
 use CPAN::Access::AdHoc;
 
-my %mtime;
+my %archive_member_mtime;
 eval {
     my $base_time = timegm( 0, 0, 0, 1, 0, 100 );
     open my $fh, '<', 'mock/repos/mtimes.dat'
 	or die "Failed to open mock/repos/mtimes.dat: $!";
     while ( <$fh> ) {
 	my ( $file, $time ) = split qr{ \s+ }smx;
-	$mtime{$file} = $time + $base_time;
+	$archive_member_mtime{$file} = $time + $base_time;
     }
     close $fh;
     1;
@@ -55,7 +56,15 @@ my $cad = CPAN::Access::AdHoc->new();
     # First the raw index
 
     my $arc = $cad->fetch( "modules/$file_name" );
-    ok $arc, "Fetch the archive for $file_name";
+    ok $arc, "Fetch the archive for modules/$file_name";
+
+    SKIP: {
+	my $mtime = $cad->__test__file_mtime( "modules/$file_name" );
+	defined $mtime
+	    or skip "Can not get mtime for modules/$file_name", 1;
+	cmp_ok $arc->mtime, '==', $mtime,
+	    "Modification time of modules/$file_name";
+    }
 
     is $arc->base_directory(), 'modules/',
 	'Base directory of null archive.';
@@ -230,7 +239,7 @@ is_deeply [ $cad->indexed_distributions() ], [ qw{
 # Test access to .tar.gz archive
 
 SKIP: {
-    my $tests = 10;
+    my $tests = 11;
 
     my $pkg = $module_index->{Yehudi}{distribution}
 	or skip q{Module 'Yehudi' not indexed}, $tests;
@@ -241,6 +250,14 @@ SKIP: {
 
     is $kit->path(), 'authors/id/M/ME/MENUHIN/Yehudi-0.001.tar.gz',
 	'Path to Yehudi-0.001.tar.gz';
+
+    SKIP: {
+	my $mtime = $cad->__test__file_mtime( $pkg );
+	defined $mtime
+	    or skip "Can not get mtime for $pkg", 1;
+	cmp_ok $kit->mtime, '==', $mtime,
+	    "Modification time of $pkg";
+    }
 
     is $kit->base_directory(), 'Yehudi-0.001/',
 	'Base directory of Yehudi-0.001.tar.gz';
@@ -261,7 +278,7 @@ SKIP: {
 
     {
 	my $got = $kit->get_item_mtime( 'Makefile.PL' );
-	my $want = $mtime{ 'MENUHIN/Yehudi/Makefile.PL' };
+	my $want = $archive_member_mtime{ 'MENUHIN/Yehudi/Makefile.PL' };
 	ok abs( $got - $want ) < 2,
 	"Can get Makefile.PL mod time from $pkg"
 	    or mtime_diag( $got, $want );
@@ -300,7 +317,7 @@ SKIP: {
 # Test access to .tar.bz2 archive
 
 SKIP: {
-    my $tests = 5;
+    my $tests = 6;
 
     my $pkg = $module_index->{Johann}{distribution}
 	or skip q{Module 'Johann' not indexed}, $tests;
@@ -308,6 +325,14 @@ SKIP: {
     my $kit = $cad->fetch_distribution_archive( $pkg );
 
     ok $kit, "Fetch distribution '$pkg'";
+
+    SKIP: {
+	my $mtime = $cad->__test__file_mtime( $pkg );
+	defined $mtime
+	    or skip "Can not get mtime for $pkg", 1;
+	cmp_ok $kit->mtime, '==', $mtime,
+	    "Modification time of $pkg";
+    }
 
     is $kit->path(), 'authors/id/B/BA/BACH/Johann-0.001.tar.bz2',
 	'Path to Johann-0.001.tar.bz2';
@@ -324,7 +349,7 @@ SKIP: {
 # Test access to .zip archive
 
 SKIP: {
-    my $tests = 9;
+    my $tests = 10;
 
     my $pkg = $module_index->{PDQ}{distribution}
 	or skip q{Module 'PDQ' not indexed}, $tests;
@@ -332,6 +357,14 @@ SKIP: {
     my $kit = $cad->fetch_distribution_archive( $pkg );
 
     ok $kit, "Fetch distribution '$pkg'";
+
+    SKIP: {
+	my $mtime = $cad->__test__file_mtime( $pkg );
+	defined $mtime
+	    or skip "Can not get mtime for $pkg", 1;
+	cmp_ok $kit->mtime, '==', $mtime,
+	    "Modification time of $pkg";
+    }
 
     is $kit->path(), 'authors/id/B/BA/BACH/PDQ-0.000_01.zip',
 	'Path to PDQ-0.000_01.zip';
@@ -359,7 +392,7 @@ SKIP: {
 ##	file. Since in the general case this is not available, the whole
 ##	test seems pretty pointless.
 #	my $got = $kit->get_item_mtime( 'Makefile.PL' );
-#	my $want = $mtime{ 'BACH/PDQ/Makefile.PL' };
+#	my $want = $archive_member_mtime{ 'BACH/PDQ/Makefile.PL' };
 #	ok abs( $got - $want ) < 2,
 #	"Can get Makefile.PL mod time from $pkg"
 #	    or mtime_diag( $got, $want );
@@ -454,6 +487,27 @@ sub slurp_bin {
 sub strftime {
     my ( $time ) = @_;
     return POSIX::strftime( '%d-%b-%Y %H:%M:%S GMT', gmtime $time );
+}
+
+sub CPAN::Access::AdHoc::__test__file_mtime {
+    my ( $self, $path ) = @_;
+    defined( my $fqfn = $self->__test__file_name( $path ) )
+	or return;
+    my @stat = stat $fqfn
+	or return;
+    return $stat[9];
+}
+
+sub CPAN::Access::AdHoc::__test__file_name {
+    my ( $self, $path ) = @_;
+    my $uri = $self->cpan();
+    $uri->isa( 'URI::file' )
+	or return;
+    if ( $path =~ m{ / \z }smx ) {
+	return File::Spec->catdir( $uri->dir(), $path );
+    } else {
+	return File::Spec->catfile( $uri->file(), $path );
+    }
 }
 
 1;

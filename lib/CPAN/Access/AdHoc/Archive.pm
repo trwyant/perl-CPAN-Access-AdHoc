@@ -104,6 +104,22 @@ sub metadata {
 
 # Note that this can be called as a mutator, but the mutator
 # functionality is private to the invocant's class.
+sub mtime {
+    my ( $self, @value ) = @_;
+    my $attr = $self->__attr();
+
+    if ( @value ) {
+	caller eq ref $self
+	    or __wail( 'Attribute archive is read-only' );
+	$attr->{mtime} = $value[0];
+	return $self;
+    } else {
+	return $attr->{mtime};
+    }
+}
+
+# Note that this can be called as a mutator, but the mutator
+# functionality is private to the invocant's class.
 sub path {
     my ( $self, @value ) = @_;
     my $attr = $self->__attr();

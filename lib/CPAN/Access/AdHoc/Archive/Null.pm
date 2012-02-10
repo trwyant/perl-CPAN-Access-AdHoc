@@ -43,9 +43,9 @@ sub new {
 	or defined $arg{path}
 	or $arg{path} = $arg{content};
 
-    if ( defined( my $content = delete $arg{content} ) ) {
+    my $mtime = delete $arg{mtime};
 
-	my $mtime = delete $arg{mtime};
+    if ( defined( my $content = delete $arg{content} ) ) {
 
 	if ( my $encoding = delete $arg{encoding} ) {
 	    $decode{$encoding}
@@ -85,6 +85,7 @@ sub new {
 
     }
 
+    $self->mtime( $mtime );
     $self->path( delete $arg{path} );
 
     return $self;
@@ -158,13 +159,11 @@ sub get_item_mtime {
 	    or $content_type =~ m{ \A text/ }smx
 	    or return;
 
-	my $mtime = HTTP::Date::str2time(
-	    scalar $rslt->header( 'Last-Modified' ) );
-
 	return $class->new(
 	    content	=> \( scalar $rslt->content() ),
 	    encoding	=> scalar $rslt->header( 'Content-Encoding' ),
-	    mtime	=> $mtime,
+	    mtime	=> HTTP::Date::str2time(
+		scalar $rslt->header( 'Last-Modified' ) ),
 	    path	=> scalar $rslt->header( 'Content-Location' ),
 	);
     }

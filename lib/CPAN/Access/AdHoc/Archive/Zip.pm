@@ -48,6 +48,7 @@ our $VERSION = '0.000_12';
 
 	}
 
+	$self->mtime( delete $arg{mtime} );
 	$self->path( delete $arg{path} );
 
 	return $self;
@@ -114,6 +115,8 @@ sub get_item_mtime {
 	return $class->new(
 	    content	=> \( scalar $rslt->content() ),
 	    encoding	=> scalar $rslt->header( 'Content-Encoding' ),
+	    mtime	=> HTTP::Date::str2time(
+		scalar $rslt->header( 'Last-Modified' ) ),
 	    path	=> scalar $rslt->header( 'Content-Location' ),
 	);
     }
