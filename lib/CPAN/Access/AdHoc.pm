@@ -36,18 +36,20 @@ sub new {
 
     my $self = bless {}, ref $class || $class;
 
-    return $self->__init( %arg );
-}
-
-sub __init {
-    my ( $self, %arg ) = @_;
-
-    foreach my $name ( @attributes ) {
-	$self->$name( delete $arg{$name} );
-    }
+    $self->__init( \%arg );
 
     %arg
 	and __wail( 'Unknown attribute(s): ', join ', ', sort keys %arg );
+
+    return $self;
+}
+
+sub __init {
+    my ( $self, $arg ) = @_;
+
+    foreach my $name ( @attributes ) {
+	$self->$name( delete $arg->{$name} );
+    }
 
     return $self;
 }
@@ -950,11 +952,13 @@ do not have them at the time it is called.
 =head3 __init
 
 This method is called when a new object is instantiated. Its arguments
-are a series of name/value pairs. The subclass should override this, and
-the override should make use of any arguments it
-recognizes, deleting them from the argument hash as it does so. The
-override should then call C<< $self->SUPER::__init( %args ) >>, passing
-the superclass all unused arguments.
+are the invocant and a reference to a hash containing attribute names
+and values.
+
+If a subclass adds attributes, it B<must> override this method. The
+override B<must> call C<< $self->SUPER::__init( $args ) >> first thing.
+It B<must> then set its own attributes from the C<$args> hash reference,
+deleting them from the hash. The override returns nothing.
 
 =head1 SEE ALSO
 
