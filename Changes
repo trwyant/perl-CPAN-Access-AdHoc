@@ -7,6 +7,9 @@
     arguments. All this is because once I tried to override it I found
     that the previous implementation did not actually work as
     advertised.
+  * Removed old signature of
+    CPAN::Access::AdHoc::Archive->wrap_archive(). This was deprecated in
+    version 0.000_12.
 
 0.000_13	2012-02-10	T. R. Wyant
   * Add read-only attribute mtime() to the CPAN::Access::AdHoc::Archive
