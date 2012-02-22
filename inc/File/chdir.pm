@@ -3,7 +3,7 @@ use 5.004;
 use strict;
 use vars qw($VERSION @ISA @EXPORT $CWD @CWD);
 # ABSTRACT: a more sensible way to change directories
-our $VERSION = '0.000_13'; # VERSION
+our $VERSION = '0.000_14'; # VERSION
 
 require Exporter;
 @ISA = qw(Exporter);

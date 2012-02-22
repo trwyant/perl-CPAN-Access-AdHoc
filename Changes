@@ -1,3 +1,13 @@
+0.000_14	2012-02-21	T. R. Wyant
+  INCOMPATIBLE CHANGE
+  * Changed calling sequence for CPAN::Access::Adhoc __init() method. It
+    now takes the invocant and a hash reference, rather than the
+    invocant and an unrolled hash. It now returns nothing. Overrides
+    must call $self->SUPER::__init( $args ) before processing their own
+    arguments. All this is because once I tried to override it I found
+    that the previous implementation did not actually work as
+    advertised.
+
 0.000_13	2012-02-10	T. R. Wyant
   * Add read-only attribute mtime() to the CPAN::Access::AdHoc::Archive
     classes. In practice, this comes from the Last-Modified header.
@@ -29,6 +39,8 @@
   * The default_cpan_source attribute is now carried internally as a
     reference to an array of the expanded class names, and this is what
     is returned by the accessor.
+  * CPAN::Access::AdHoc method __init() added to initialize attributes.
+    Subclasses override this rather than new().
 
   COMPATIBLE CHANGES
   * The mutator logic has been rewritten in terms of hooks to supply
