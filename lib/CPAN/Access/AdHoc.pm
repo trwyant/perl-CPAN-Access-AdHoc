@@ -171,9 +171,11 @@ sub fetch_module_index {
 
 	while ( <$fh> ) {
 	    chomp;
-	    my ( $mod, $ver, $pkg ) = split qr{ \s+ }smx;
+	    my ( $mod, @info ) = split qr{ \s+ }smx;
 ##	    'undef' eq $ver
 ##		and $ver = undef;
+	    my ( $pkg, $ver ) = reverse @info;
+	    defined $ver or $ver = 'undef';
 	    $module{$mod} = {
 		distribution	=> $pkg,
 		version		=> $ver,
