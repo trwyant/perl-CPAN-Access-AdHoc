@@ -31,7 +31,6 @@ META.json
 META.yml
 mock/App/cpanminus.pm
 mock/Config/Tiny.pm
-mock/cover/Safe.pm
 mock/CPAN.pm
 mock/CPAN/Mini.pm
 mock/CPANPLUS/Configure.pm

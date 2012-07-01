@@ -64,7 +64,7 @@ sub requires {
 	'Module::Pluggable::Object'	=> 0,
 	'URI'			=> 0,
 	'URI::file'		=> 0,
-	'Safe'			=> 0,
+	'Safe'			=> 2.32, # Plays well with Devel::Cover
 	'strict'		=> 0,
 	'Text::ParseWords'	=> 0,
 	'Time::Local'		=> 0,
