@@ -19,7 +19,7 @@ our %EXPORT_TAGS = (
     carp => [ qw{ __whinge __wail __weep } ],
 );
 
-our $VERSION = '0.000_14';
+our $VERSION = '0.000_15';
 
 sub __attr {
     my ( $self ) = @_;

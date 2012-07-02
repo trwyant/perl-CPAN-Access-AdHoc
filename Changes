@@ -1,3 +1,9 @@
+0.000_15	2012-07-02	T. R. Wyant
+  Get rid of mock Safe object. Instead, require a version of Safe that
+    plays nicely with Devel::Cover.
+  Attempt to handle the case where version information is missing from
+    the module index.
+
 0.000_14	2012-02-21	T. R. Wyant
   INCOMPATIBLE CHANGE
   * Changed calling sequence for CPAN::Access::Adhoc __init() method. It
