@@ -706,6 +706,16 @@ becomes the current distribution.
 
 This command causes the script to exit. An end-of-file also works.
 
+=head2 extract
+
+ cpan-adhoc> extract libwww-perl
+ cpan-adhoc> extract
+
+This command extracts the files in the given distributions, which must
+have been previously downloaded, into subdirectories of the current
+directory. If no distribution is specified, the current distribution is
+extracted.
+
 =head2 help
 
  cpan-adhoc> help
