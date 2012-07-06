@@ -1,3 +1,8 @@
+0.000_16	2012-07-06	T. R. Wyant
+  Use URI::file to construct expected repository file: URI in
+    t/config.t, to try to eliminate test failures under MSWin32.
+  Document the 'extract' verb in eg/cpan-adhoc.
+
 0.000_15	2012-07-02	T. R. Wyant
   Get rid of mock Safe object. Instead, require a version of Safe that
     plays nicely with Devel::Cover.
