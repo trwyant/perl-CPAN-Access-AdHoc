@@ -12,6 +12,7 @@ use lib qw{ mock };
 use Cwd();
 use File::Spec;
 use File::Spec::Unix;
+use URI::file;
 
 require_ok 'Config::Tiny';		# Load mock object
 require_ok 'CPAN';			# Load mock object
@@ -131,7 +132,7 @@ is $cad->cpan(), 'http://someone/', 'Explicit cpan';
 	default_cpan_source	=> 'CPAN::Mini',
     );
 
-    my $expect = 'file://' . Cwd::abs_path( 'mock/repos' );
+    my $expect = URI::file->new_abs( 'mock/repos' );
     $expect =~ m{ / \A }smx
 	or $expect .= '/';
 
