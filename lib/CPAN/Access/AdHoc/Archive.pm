@@ -165,7 +165,15 @@ sub wrap_archive {
 	my $uri = URI::file->new( Cwd::abs_path( $fn ) );
 	$path = $uri->as_string();
 	$path =~ s{ \A .* / (?= authors/ | modules/ ) }{}smx
-	    or $path =~ s{ \A [^/]* // }{}smx;
+	    or do {
+	    my @parts = File::Spec->splitpath( $uri->file() );
+	    my @dir = File::Spec->splitdir( $parts[1] );
+	    $dir[-1] eq ''
+		and pop @dir;
+	    my $author_path = __expand_distribution_path( $dir[-1] );
+	    $author_path =~ s{ / \z }{}smx;
+	    $path = join '/', 'authors/id', $author_path, $parts[2];
+	};
     }
     my $resp = HTTP::Response->new( 200, 'OK', undef, $content );
     __guess_media_type( $resp, $path );
