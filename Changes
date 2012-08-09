@@ -1,3 +1,11 @@
+0.000_17	2012-08-09	T. R. Wyant
+  INCOMPATIBLE CHANGE
+  * If the CPAN::Access::AdHoc::Archive wrap_archive() method does not
+    get the {author} or {directory} options, and the file name does not
+    look like a repository file name, infer the author from the
+    directory, and make the path attribute look like a repository file
+    name for that author.
+
 0.000_16	2012-07-06	T. R. Wyant
   Use URI::file to construct expected repository file: URI in
     t/config.t, to try to eliminate test failures under MSWin32.
