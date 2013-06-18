@@ -18,6 +18,7 @@ use LWP::UserAgent ();
 use LWP::Protocol ();
 use Module::Pluggable::Object;
 use Safe;
+use Scalar::Util qw{ blessed };
 use Text::ParseWords ();
 use URI ();
 
@@ -100,9 +101,10 @@ sub fetch_author_index {
     exists $cache->{author_index}
 	and return $cache->{author_index};
 
-    my $author_details = $self->fetch(
-	'authors/01mailrc.txt.gz'
-    )->get_item_content();
+    my $author_details = $self->fetch( 'authors/01mailrc.txt.gz' );
+    _got_archive( $author_details )
+	or return $author_details;
+    $author_details = $author_details->get_item_content();
 
     my $fh = IO::File->new( \$author_details, '<' )
 	or __wail( "Unable to open string reference: $!" );
@@ -131,20 +133,32 @@ sub fetch_distribution_archive {
 
 sub fetch_distribution_checksums {
     my ( $self, $distribution ) = @_;
+
     $distribution =~ m{ \A ( .* / ) ( [^/]* ) \z }smx
 	or __wail( "Invalid distribution '$distribution'" );
     my ( $dir, $file ) = ( $1, $2 );
+
     $file eq 'CHECKSUMS'
 	and $file = '';
     my $path = __expand_distribution_path( $dir . 'CHECKSUMS' );
     ( $dir = $path ) =~ s{ [^/]* \z }{}smx;
+
     my $cache = $self->__cache();
-    $cache->{checksums}{$dir} ||= _eval_string(
-	$self->fetch( "authors/id/$path" )->get_item_content() );
+
+    if ( ! $cache->{checksums}{$dir} ) {
+	my $archive = $self->fetch( "authors/id/$path" );
+	_got_archive( $archive )
+	    or return $archive;
+	$cache->{checksums}{$dir} = _eval_string(
+	    $archive->get_item_content() );
+    }
+
     $file eq ''
 	and return $cache->{checksums}{$dir};
     return $cache->{checksums}{$dir}{$file};
 }
+
+# TODO finish implementing error handling. See above, _got_archive().
 
 sub fetch_module_index {
     my ( $self ) = @_;
@@ -473,6 +487,17 @@ sub _eval_string {
     my $rslt = $sandbox->reval( $string );
     $@ and __wail( $@ );
     return $rslt;
+}
+
+# Return the argument if it is a CPAN::Access::AdHoc::Archive; otherwise
+# just return.
+
+sub _got_archive {
+    my ( $rtn ) = @_;
+    blessed( $rtn )
+	and $rtn->isa( 'CPAN::Access::AdHoc::Archive' )
+	and return $rtn;
+    return;
 }
 
 # Get the repository URL from the first source that actually supplies
