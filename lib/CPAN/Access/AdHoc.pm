@@ -112,7 +112,7 @@ sub fetch_author_index {
     my %author_index;
     while ( <$fh> ) {
 	s/ \s+ \z //smx;
-	my ( $kind, $cpan_id, $address ) = Text::ParseWords::parse_line(
+	my ( undef, $cpan_id, $address ) = Text::ParseWords::parse_line(
 	    qr{ \s+ }smx, 0, $_ );
 	( my $name = $address ) =~ s{ \s+ < (.*) > }{}smx;
 	my $mail_addr = $1;
@@ -404,7 +404,6 @@ sub __attr__cpan__validate {
     $value = $url;
 
     my $scheme = $value->scheme();
-    my $ua = LWP::UserAgent->new();
     $value->can( 'authority' )
 	and LWP::Protocol::implementor( $scheme )
 	or __wail ( "URL scheme $scheme: is unsupported" );

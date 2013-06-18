@@ -227,7 +227,6 @@ sub list_contents {
 	my $resp = HTTP::Response->new();
 	__guess_media_type( $resp, $fn );
 	my $encoding = $resp->header( 'Content-Encoding' );
-	my @args = ( $fn );
 	defined $encoding
 	    or $encoding = '';
 	my $code = $known_encoding{$encoding}

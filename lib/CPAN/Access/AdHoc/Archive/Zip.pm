@@ -148,28 +148,23 @@ sub list_contents {
     return @rslt;
 }
 
-{
-    my %known_encoding = (
-    );
-
-    sub write : method {	## no critic (ProhibitBuiltInHomonyms)
-	my ( $self, $fn ) = @_;
-	if ( ! defined $fn ) {
-	    $fn = ( File::Spec->splitpath( $self->path() ) )[2];
-	}
-	my $resp = HTTP::Response->new();
-	__guess_media_type( $resp, $fn );
-	my $encoding = $resp->header( 'Content-Encoding' );
-	defined $encoding
-	    or $encoding = '';
-	if ( defined $encoding && '' ne $encoding ) {
-	    __wail( "Encoding $encoding not supported" );
-	}
-	my $status = $self->archive()->writeToFileNamed( $fn );
-	$status == Archive::Zip::AZ_OK()
-	    or __wail( 'Zip write error' );
-	return $self;
+sub write : method {	## no critic (ProhibitBuiltInHomonyms)
+    my ( $self, $fn ) = @_;
+    if ( ! defined $fn ) {
+	$fn = ( File::Spec->splitpath( $self->path() ) )[2];
     }
+    my $resp = HTTP::Response->new();
+    __guess_media_type( $resp, $fn );
+    my $encoding = $resp->header( 'Content-Encoding' );
+    defined $encoding
+	or $encoding = '';
+    if ( defined $encoding && '' ne $encoding ) {
+	__wail( "Encoding $encoding not supported" );
+    }
+    my $status = $self->archive()->writeToFileNamed( $fn );
+    $status == Archive::Zip::AZ_OK()
+	or __wail( 'Zip write error' );
+    return $self;
 }
 
 1;
