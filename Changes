@@ -1,3 +1,6 @@
+0.000_18	2013-07-28	T. R. Wyant
+  Get rid of unused variables.
+
 0.000_17	2012-08-09	T. R. Wyant
   INCOMPATIBLE CHANGE
   * If the CPAN::Access::AdHoc::Archive wrap_archive() method does not
