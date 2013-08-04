@@ -68,16 +68,16 @@ sub corpus {
     return ( grep { $_ =~ $re } $self->indexed_distributions() );
 }
 
+sub exists {
+    my ( $self, $path ) = @_;
+
+    return $self->_request_path( head => $path )->is_success();
+}
+
 sub fetch {
     my ( $self, $path ) = @_;
 
-    $path =~ s{ \A / }{}smx;
-
-    my $ua = LWP::UserAgent->new();
-
-    my $url = $self->cpan() . $path;
-
-    my $rslt = $ua->get( $url );
+    my $rslt = $self->_request_path( get => $path );
 
     $rslt->is_success
 	or return $self->http_error_handler()->( $self, $path, $rslt );
@@ -562,6 +562,23 @@ sub _read_meta {
     return \%meta;
 }
 
+# Request a path relative to the root of the CPAN repository. The
+# arguments are the request name (which must be a valid method for
+# LWP::UserAgent, something like 'get' or 'head'. The HTTP::Response
+# object is returned.
+
+sub _request_path {
+    my ( $self, $rqst, $path ) = @_;
+
+    $path =~ s{ \A / }{}smx;
+
+    my $ua = $self->{__user_agent} || LWP::UserAgent->new();
+
+    my $url = $self->cpan() . $path;
+
+    return $ua->$rqst( $url );
+}
+
 
 1;
 
@@ -740,6 +757,15 @@ This convenience method returns a list of the indexed distributions by
 the author with the given CPAN ID. This information is derived from the
 output of L<indexed_distributions()|/indexed_distributions>. The
 argument is converted to upper case before use.
+
+=head3 exists
+
+This method returns true if the named file exists in the CPAN
+repository, and false otherwise. Its argument is the name of the file
+relative to the root of the repository.
+
+This method should be faster than L<fetch()|/fetch>, because it does not
+actually retrieve the archive.
 
 =head3 fetch
 
