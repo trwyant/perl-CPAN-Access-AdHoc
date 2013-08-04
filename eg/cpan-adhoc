@@ -225,7 +225,7 @@ sub verb_diff {
     }
     @d_arg
 	and @d_arg <= 3
-	or die "The diff command requores one to three arguments\n";
+	or die "The diff command requires one to three arguments\n";
     my ( $local, $remote, $pkg ) = reverse @d_arg;
     $remote //= $local;
     my $temp = _fetch_file( $pkg, $remote );
