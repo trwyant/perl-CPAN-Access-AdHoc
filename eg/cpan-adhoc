@@ -81,9 +81,7 @@ sub verb_alias {
 	or die "Package alias must be given\n";
     defined $new
 	or ( $old, $new ) = ( CURRENT_PACKAGE, $old );
-    $dist{$old}
-	or die "Package '$old' not downloaded\n";
-    $dist{$new} = $dist{$old};
+    $dist{$new} = _resolve_unique_distribution( $old, record => 1 );
     return;
 }
 
@@ -110,13 +108,20 @@ sub verb_base {
     my @args = @_;
     @args or @args = ( CURRENT_PACKAGE );
     foreach my $name ( @args ) {
-	if ( $dist{$name} ) {
-	    my $di = $dist{$name}{info};
-	    say sprintf '%s/%s  %s', $di->cpanid(), $di->filename(),
-		$dist{$name}{archive}->base_directory();
-	} else {
-	    say "Package $name not downloaded";
-	}
+	my $pkg = _resolve_unique_distribution( $name,
+	    record	=> 1,
+	    warn	=> 1,
+	) or next;
+	my $di = $pkg->{info};
+	say sprintf '%s/%s  %s', $di->cpanid(), $di->filename(),
+	    _get_archive( $pkg )->base_directory();
+    }
+    return;
+}
+
+sub verb_cache {
+    foreach my $pkg ( sort keys %dist ) {
+	say join "\t", $pkg, $dist{$pkg}{name};
     }
     return;
 }
@@ -138,6 +143,7 @@ sub verb_checksums {
     defined $author
 	or die 'Must specify a CPAN ID';
     my $cksum = $cad->fetch_distribution_checksums( $author );
+    say $author;
     print Dump( $cksum );
     return;
 }
@@ -146,8 +152,9 @@ sub verb_choose {
     my ( @args ) = @_;
     @args == 1
 	or die "The choose command takes exactly one argument.\n";
-    $dist{+CURRENT_PACKAGE} = $dist{$args[0]}
-	or die "Package $args[0] not downloaded.\n";
+    $dist{$args[0]}
+	or die _err_not_requested( $args[0] );
+    $dist{+CURRENT_PACKAGE} = $dist{$args[0]};
     return;
 }
 
@@ -158,20 +165,16 @@ sub verb_clear {
 }
 
 sub verb_corpus {
-    local @ARGV = @_;
+    my @args = @_;
     my %opt;
-    GetOptions( \%opt, qw{ fetch! } )
-	and @ARGV
-	or die;
     my $inx = $cad->fetch_author_index();
-    foreach my $id ( @ARGV ) {
+    foreach my $id ( @args ) {
 	my $uc_id = uc $id;
 	if ( $inx->{$uc_id} ) {
 	    say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
 	    foreach my $dist ( $cad->corpus( $uc_id ) ) {
 		say "    $dist";
-		$opt{fetch}
-		    and _fetch_distribution( $dist );
+		_record_distribution( $dist );
 	    }
 	} else {
 	    warn "CPAN ID $uc_id not found\n";
@@ -235,33 +238,10 @@ sub verb_diff {
 }
 
 sub verb_distribution {
-    local @ARGV = @_;
-    my %opt;
-    GetOptions( \%opt, qw{ direct! fetch! } )
-	and @ARGV == 1
-	or die "The distribution command takes exactly one argument\n";
-    if ( $opt{direct} ) {
-	_fetch_distribution( $ARGV[0] );
-    } else {
-	my $re = qr{ $ARGV[0] }smx;
-	my $count = 0;
-	my $distribution;
-	foreach my $dist ( $cad->indexed_distributions() ) {
-	    $dist =~ $re
-		or next;
-	    say $dist;
-	    $count++
-		or $distribution = $dist;
-	}
-	if ( $opt{fetch} ) {
-	    if ( $count == 1 ) {
-		_fetch_distribution( $distribution );
-	    } elsif ( $count ) {
-		die "Multiple distributions matching $re were found\n";
-	    } else {
-		die "No distributions matching $re were found\n";
-	    }
-	}
+    my @args = @_;
+    foreach my $dist ( _resolve_distributions( @args ) ) {
+	_record_distribution( $dist );
+	say $dist;
     }
     return;
 }
@@ -280,14 +260,14 @@ sub verb_extract {
     my @args = @_;
     @args or @args = ( CURRENT_PACKAGE );
     foreach my $name ( @args ) {
-	if ( $dist{$name} ) {
-	    $dist{$name}{archive}->extract();
-	    my $di = $dist{$name}{info};
-	    say sprintf '%s/%s  %s', $di->cpanid(), $di->filename(),
-		$dist{$name}{archive}->base_directory();
-	} else {
-	    say "Package $name not downloaded";
-	}
+	my $pkg = _resolve_unique_distribution(
+	    $name, record => 1, warn => 1 )
+	    or next;
+	my $archive = _get_archive( $pkg );
+	$archive->extract();
+	my $di = $pkg->{info};
+	say sprintf '%s/%s  %s', $di->cpanid(), $di->filename(),
+	    $archive->base_directory();
     }
     return;
 }
@@ -314,14 +294,12 @@ sub verb_list {
 	or push @args, CURRENT_PACKAGE;
     my $output = $opt{less} ? File::Temp->new() : *STDOUT;
     foreach my $name ( @args ) {
-	if ( $dist{$name} ) {
-	    say { $output } $dist{$name}{name};
-	    foreach my $file ( $dist{$name}{archive}->list_contents() )
-	    {
-		say { $output } '    ', $file;
-	    }
-	} else {
-	    warn "Package '$name' not found\n";
+	my $pkg = _resolve_unique_distribution(
+	    $name, record => 1, warn => 1 )
+	    or next;
+	say { $output } $pkg->{name};
+	foreach my $file ( _get_archive( $pkg )->list_contents() ) {
+	    say { $output } '    ', $file;
 	}
     }
     $opt{less}
@@ -333,36 +311,32 @@ sub verb_metadata {
     my @args = @_;
     @args or push @args, CURRENT_PACKAGE;
     foreach my $name ( @args ) {
-	if ( $dist{$name} ) {
-	    my $dv = $dist{$name}{info}->distvname();
-	    if ( my $meta = $dist{$name}{archive}->metadata() ) {
-		my $ms = $meta->as_string();
-		chomp $ms;
-		say "$dv: $ms";
-	    } else {
-		warn "No metadata found for $dv\n";
-	    }
+	my $pkg = _resolve_unique_distribution(
+	    $name, record => 1, warn => 1 )
+	    or next;
+	my $dv = $pkg->{info}->distvname();
+	if ( my $meta = _get_archive( $pkg )->metadata() ) {
+	    my $ms = $meta->as_string();
+	    chomp $ms;
+	    say "$dv: $ms";
 	} else {
-	    warn "Package '$name' not found\n";
+	    warn "No metadata found for $dv\n";
 	}
     }
     return;
 }
 
 sub verb_module {
-    local @ARGV = @_;
-    my %opt;
-    GetOptions( \%opt, qw{ fetch! } )
-	and @ARGV == 1
-	or die "The module command takes exactly one argument\n";
-    my ( $module ) = @ARGV;
+    my @arg = @_;
     my $inx = $cad->fetch_module_index();
-    $inx->{$module}
-	or die "Module '$module' not indexed\n";
-    my $dist = $inx->{$module}{distribution};
-    say join "\t", $module, $inx->{$module}{version}, $dist;
-    $opt{fetch}
-	and _fetch_distribution( $dist );
+    foreach my $module ( @arg ) {
+	$inx->{$module}
+	    or _flunk( "Module '$module' not indexed" )
+	    or next;	# _flunk returns false
+	my $dist = $inx->{$module}{distribution};
+	say join "\t", $module, $inx->{$module}{version}, $dist;
+	_record_distribution( $dist );
+    }
     return;
 }
 
@@ -375,7 +349,7 @@ sub verb_mtime {
 }
 
 sub verb_perldoc {
-    my ( $pkg, $file ) = @_;
+    my ( $pkg, $file ) = _validate_pkg_file( @_ );
     my $temp = _fetch_file( $pkg, $file );
     _issue( {}, perldoc => $temp );
     return;
@@ -405,39 +379,86 @@ sub _expand_default {
 }
 
 sub _validate_pkg_file {
-    my ( $pkg, $file ) = @_;
-    defined $pkg
+    my ( $name, $file ) = @_;
+    defined $name
 	or defined $file
 	or die "File name must be given\n";
     defined $file
-	or ( $pkg, $file ) = ( CURRENT_PACKAGE, $pkg );
-    $pkg //= CURRENT_PACKAGE;
-    $dist{$pkg}
-	or die "Package '$pkg' not downloaded\n";
-    my $dname = $dist{$pkg}{info}->distvname();
-    $dist{$pkg}{archive}->item_present( $file )
-	or die "File '$file' not in distribution '$dname'\n";
-    return ( $dist{$pkg}, $file );
+	or ( $name, $file ) = ( undef, $name );
+
+    if ( ! defined $name ) {
+	my $inx = $cad->fetch_module_index();
+	$inx->{$file}
+	    and $name = $inx->{$file}{distribution};
+    }
+
+    $name //= CURRENT_PACKAGE;
+
+    my $pkg = _resolve_unique_distribution( $name,
+	record	=> 1 );
+    my $dname = $pkg->{info}->distvname();
+    my $arch = _get_archive( $pkg );
+
+    $arch->item_present( $file )
+	and return ( $pkg->{name}, $file );
+
+    ( my $mp = $file ) =~ s{ :: }{/}smxg;
+    my $re = qr{ / \Q$mp\E [.] pm \z }smx;
+    foreach my $try ( $arch->list_contents() ) {
+	$try =~ $re
+	    or next;
+	return ( $pkg->{name}, $try );
+    }
+
+    die "File '$file' not in distribution '$dname'\n";
+}
+
+sub _err_not_requested {
+    my ( $name ) = @_;
+    return $name eq CURRENT_PACKAGE ?
+	"No current package\n" :
+	"Package $name never requested by name\n";
 }
 
 sub _fetch_file {
     my ( $pkg, $file ) = _validate_pkg_file( @_ );
+    my $content = _get_archive( $pkg )->get_item_content( $file );
     my $temp = File::Temp->new();
-    print { $temp } $pkg->{archive}->get_item_content( $file );
+    print { $temp } $content;
     return $temp;
 }
 
-sub _fetch_distribution {
-    my ( $pkg ) = @_;
-    my $archive = $cad->fetch_distribution_archive( $pkg );
-    my $path = $archive->path();
-    my $di = CPAN::DistnameInfo->new( $path );
+sub _get_archive {
+    my ( $pkg, %arg ) = @_;
+    defined $pkg
+	or $pkg = CURRENT_PACKAGE;
+    if ( ! ref $pkg ) {
+	$pkg = _resolve_unique_distribution( $pkg, %arg, record => 1 );
+    }
+    return (
+	$pkg->{archive} ||= $cad->fetch_distribution_archive(
+	    $pkg->{name} )
+    );
+}
+
+sub _record_distribution {
+    my ( $pkg, %arg ) = @_;
+    defined $pkg
+	or return;
+    $dist{$pkg}
+	and return ( $dist{+CURRENT_PACKAGE} = $dist{$pkg} );
+    my $di = CPAN::DistnameInfo->new( $pkg );
     my $dn = $di->dist();
     my $dv = $di->distvname();
     my $version = version->parse( $di->version() );
-    $dist{+CURRENT_PACKAGE} = $dist{$pkg} = {
+    defined( my $pathname = $di->pathname() )
+	or return _flunk( "$pkg not found", %arg );
+    $pathname =~ m{ \A /authors/id/ }smx
+	or substr $pathname, 0, 0, '/authors/id/';
+    $cad->exists( $pathname )
+	or _flunk ( "$pkg not found", %arg );
+    $dist{+CURRENT_PACKAGE} = $dist{$pkg} ||= {
 	name	=> $pkg,
-	archive	=> $archive,
 	version	=> $version,
 	dist	=> $dn,
 	info	=> $di,
@@ -449,9 +470,71 @@ sub _fetch_distribution {
     defined $dv
 	and $dist{$dv} = $dist{$pkg};
     not defined $dn
-	or $dist{$dn}
-	and $dist{$dn}{version} > $version
+	or $dist{$dn} and $dist{$dn}{version} > $version
 	or $dist{$dn} = $dist{$pkg};
+    return $dist{$pkg};
+}
+
+sub _resolve_distributions {
+    my @args = @_;
+    my %opt;
+    @args
+	and 'HASH' eq ref $args[-1]
+	and %opt = %{ pop @args };
+    my $re = qr< @{[ join ' | ', map { quotemeta } @args ]} >smx;
+    my @rslt;
+    foreach my $dist ( $cad->indexed_distributions() ) {
+	$dist =~ $re
+	    or next;
+	$opt{record}
+	    and $dist = _record_distribution( $dist );
+	push @rslt, $dist;
+    }
+    return @rslt;
+}
+
+# Resolve a distribution name to a unique distribution, or throw an
+# exception. By default the return is the reolved name. If $arg{record}
+# is true, though, the distribution is recorded and a reference to the
+# record is returned.
+
+sub _resolve_unique_distribution {
+    my ( $name, %arg ) = @_;
+    $dist{$name}
+	and return $arg{record} ? $dist{$name} : $name;
+
+    $name eq CURRENT_PACKAGE
+	and _flunk( 'No current package', %arg );
+    my @rslt = _resolve_distributions( $name )
+	or _flunk( "Distribution $name not found", %arg );
+    if ( @rslt > 1 ) {
+	my %base;
+	foreach my $d ( @rslt ) {
+	    my $di = CPAN::DistnameInfo->new( $d );
+	    my $dn = $di->dist();
+	    my $dv = version->parse( $di->version() );
+	    $base{$dn}
+		and $base{$dn}{version} >= $dv
+		or $base{$dn} = {
+		distro	=> $d,
+		version	=> $dv,
+	    };
+	}
+	@rslt = map { $base{$_}{distro} } keys %base;
+    }
+    @rslt > 1
+	and return _flunk( "Distribution $name not unique", %arg );
+    $arg{record}
+	and return _record_distribution( $rslt[0] );
+    return $rslt[0];
+}
+
+sub _flunk {
+    my ( $msg, %arg ) = @_;
+    $msg =~ s/ (?<! \n ) \z /\n/smx;
+    $arg{warn}
+	or die $msg;
+    warn $msg;
     return;
 }
 
@@ -505,7 +588,7 @@ cpan-adhoc - Get arbitrary information from a CPAN mirror.
 
  $ cpan-adhoc
  cpan-adhoc> help
- cpan-adhoc> module -fetch LWP::UserAgent
+ cpan-adhoc> module LWP::UserAgent
  cpan-adhoc> list
  cpan-adhoc> perldoc lib/LWP/UserAgent.pm
  cpan-adhoc> exit
@@ -536,9 +619,9 @@ The following commands are supported:
  cpan-adhoc> alias libwww
 
 This command creates an alias for a distribution in the downloaded
-distribution stash. It is simply a convenience to save typing. The first
-argument is the name of an entry in the stash, and the second is the
-alias.
+distribution stash. It is simply a convenience to save typing if you
+have a long distribution name you will be repeatedly typing. The first
+argument is the name of a distribution, and the second is the alias.
 
 The single-argument version creates an alias for the current
 distribution, if any.
@@ -556,7 +639,13 @@ listed in ASCIIbetical order.
 
 This command displays the base directories for the named distributions.
 If no distribution is specified, the current distribution, if any, is
-displayed.  Distributions must be fetched before they can be displayed.
+displayed.
+
+=head2 cache
+
+This command lists the distribution names encountered since the
+most-recent C<clear>, or since the script started. Each distribution may
+appear under multiple names.
 
 =head2 cd
 
@@ -568,10 +657,11 @@ Without an argument, it changes to the user's home directory.
 
 =head2 checksums
 
- cpan-adhoc> checksums MENUHIN/
+ cpan-adhoc> checksums MENUHIN
+ cpan-adhoc> checksums MENUHIN/Yehudi-0.01.tar.gz
 
-This command displays the checksums for the given directory (ending in a
-slash, as in the example) or file.
+This command displays the checksums for the given author or
+distribution.
 
 =head2 choose
 
@@ -633,6 +723,8 @@ you want to recompute the C<cpan> URL after setting this, you must do
 
  cpan-adhoc> cpan -default
 
+The default is C<'CPAN::Mini,cpanm,CPAN,CPANPLUS'>.
+
 =head2 diff
 
  cpan-adhoc> diff libwww-perl README README
@@ -671,34 +763,9 @@ This is a synonym for L<distribution|/distribution>, for convenience.
 =head2 distribution
 
  cpan-adhoc> distribution libwww-perl
- cpan-adhoc> distribution -fetch libwww-perl
 
-This command looks up the given distribution in the module index (sic),
+This command looks up the given distributions in the module index (sic),
 using an unanchored regular expression, and displays any matches.
-
-The following options may be specified:
-
-=over
-
-=item C<-direct>
-
-If the C<-direct> option is specified, the argument is taken to be a
-path name relative to the F<authors/id/> directory, though possibly
-without the two leftmost components. This file is fetched (if it
-exists), and no index lookup is done. The C<-fetch> option is
-irrelevant.
-
-=item C<-fetch>
-
-If the C<-fetch> option is specified and exactly one match is found,
-that distribution is fetched, and stashed locally under the name that
-appeared in the index, and under its distribution and version (e.g.
-C<libwww-perl-6.03> for the above examples).  It is also stashed under
-the distribution name (e.g. C<libwww-perl>) if no higher version of the
-same distribution has been stashed. The last distribution fetched
-becomes the current distribution.
-
-=back
 
 =head2 exit
 
@@ -711,10 +778,9 @@ This command causes the script to exit. An end-of-file also works.
  cpan-adhoc> extract libwww-perl
  cpan-adhoc> extract
 
-This command extracts the files in the given distributions, which must
-have been previously downloaded, into subdirectories of the current
-directory. If no distribution is specified, the current distribution is
-extracted.
+This command extracts the files in the given distributions into
+subdirectories of the current directory. If no distribution is
+specified, the current distribution is extracted.
 
 =head2 help
 
@@ -725,29 +791,32 @@ This command displays the documentation for this script.
 =head2 less
 
  cpan-adhoc> less libwww-perl lib/LWP/UserAgent.pm
+ cpan-adhoc> less libwww-perl LWP::UserAgent
  cpan-adhoc> less lib/LWP/UserAgent.pm
+ cpan-adhoc> less LWP::UserAgent
 
 This command feeds the specified file from the specified distribution to
-whatever pager was configured when Perl was built. The distribution must
-have been previously downloaded.
+whatever pager was configured when Perl was built. If the file is not
+found, it is assumed to be a module name, and an attempt is made to find
+that module's file.
 
-The single-argument form displays the given file in the current
-distribution.
+The single-argument form attempts to look up the argument in the module
+index. If it is found, that module's file is displayed. Otherwise it
+displays the given file in the current distribution, if any
 
 =head2 list
 
  cpan-adhoc> list libwww-perl
  cpan-adhoc> list
 
-This command lists the files in the given distributions, which must have
-been previously downloaded. If no distribution is specified, the current
-distribution is listed.
+This command lists the files in the given distributions. If no
+distribution is specified, the current distribution is listed.
 
 =head2 metadata
 
-This command displays the metadata for the given distributions, which
-must have been peviously downloaded. If metadata is not available (i.e.
-no F<META.json> or F<META.yml> was found) a warning will be issued.
+This command displays the metadata for the given distributions. If
+metadata is not available (i.e. no F<META.json> or F<META.yml> was
+found) a warning will be issued.
 
 The metadata is displayed by the L<CPAN::Meta|CPAN::Meta> C<as_string()>
 method.
@@ -755,28 +824,24 @@ method.
 =head2 module
 
  cpan-adhoc> module LWP::UserAgent
- cpan-adhoc> module -fetch LWP::UserAgent
 
 This command looks up the given modules in the module index, and
 displays their version and the distribution they are contained in.
 
-If the C<-fetch> option is specified, the distribution is fetched, and
-stashed locally under the name that appeared in the index, and under its
-distribution and version (e.g. C<libwww-perl-6.03> for the above
-examples).  It is also stashed under the distribution name if no higher
-version of the same distribution has been stashed. The last distribution
-fetched becomes the current distribution.
-
 =head2 perldoc
 
  cpan-adhoc> perldoc libwww-perl-6.03 lib/LWP/UserAgent.pm
+ cpan-adhoc> perldoc Libwww-perl LWP::UserAgent
  cpan-adhoc> perldoc lib/LWP/UserAgent.pm
+ cpan-adhoc> perldoc LWP::UserAgent
 
 This command feeds the specified file from the specified distribution to
-perldoc. The distribution must have been previously downloaded.
+perldoc. If the file is not found, it is assumed to be a module name,
+and an attempt is made to find that module's file.
 
-The single-argument form displays the given file in the current
-distribution.
+The single-argument form attempts to look up the argument in the module
+index. If it is found, that module's documentation is displayed.
+Otherwise it displays the given file in the current distribution, if any
 
 =head2 pwd
 
