@@ -120,7 +120,7 @@ SKIP: {
 }
 
 exception fetch_distribution_checksums => 'fubar',
-    qr{\AInvalid distribution 'fubar'},
+    qr{\AFailed to get file:},
     'Fetch checksums for an invalid distribution name';
 
 SKIP: {

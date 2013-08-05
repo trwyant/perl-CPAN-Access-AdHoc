@@ -68,7 +68,7 @@ sub corpus {
     return ( grep { $_ =~ $re } $self->indexed_distributions() );
 }
 
-sub exists {
+sub exists : method {	## no critic (ProhibitBuiltinHomonyms)
     my ( $self, $path ) = @_;
 
     return $self->_request_path( head => $path )->is_success();
@@ -134,6 +134,10 @@ sub fetch_distribution_archive {
 sub fetch_distribution_checksums {
     my ( $self, $distribution ) = @_;
 
+    $distribution =~ s{ \A ( . ) / \1 ( . ) / \1 \2 ( [^/]* ) }
+	{$1$2$3}smx;
+    $distribution =~ m{ / }smx
+	or $distribution .= '/';
     $distribution =~ m{ \A ( .* / ) ( [^/]* ) \z }smx
 	or __wail( "Invalid distribution '$distribution'" );
     my ( $dir, $file ) = ( $1, $2 );
@@ -868,7 +872,11 @@ example can also be written as
  print Dump( $cad->fetch_distribution_checksums(
      'B/BA/BACH/' ) );
  print Dump( $cad->fetch_distribution_checksums(
+     'BACH' ) );        # equivalent to previous
+ print Dump( $cad->fetch_distribution_checksums(
      'B/BA/BACH/Johann-0.001.tar.bz2' ) );
+ print Dump( $cad->fetch_distribution_checksums(
+     'BACH/Johann-0.001.tar.bz2' ) );   # ditto
 
 This method takes as its argument either a file name or a directory name
 relative to F<authors/id/>. A directory is indicated by a trailing
