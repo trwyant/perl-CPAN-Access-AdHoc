@@ -1,3 +1,13 @@
+0.000_19	2013-08-06
+  Substantial rewrite to eg/cpan-adhoc to try to make it much smarter
+    about retrieving distributions. Also make every command that takes a
+    file name take a module name as well.
+  Make CPAN::Access::AdHoc method fetch_distribution_checksums() conform
+    to its documentation.
+  Add CPAN::Access::AdHoc method exists(), which takes the name of a
+    file (relative to the root of the archive) and returns true if it
+    exists, and false otherwise.
+
 0.000_18	2013-07-28	T. R. Wyant
   Get rid of unused variables.
 
