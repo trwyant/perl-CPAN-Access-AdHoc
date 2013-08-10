@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 use CPAN::DistnameInfo;
-use Getopt::Long 2.33;
+use Getopt::Long 2.33 qw{ :config auto_version };
 use Pod::Usage;
 
 use CPAN::Access::AdHoc;
@@ -14,7 +14,7 @@ use CPAN::Access::AdHoc;
 our $VERSION = '0.000_19';
 
 my %canned_url = (
-    kobes	=> 'http://cpan.uwinnipeg.ca/dist',
+#   kobes	=> 'http://cpan.uwinnipeg.ca/dist',	# R.I.P.
     meta	=> 'http://metacpan.org/release',
     search	=> 'http://search.cpan.org/dist',
 );
@@ -90,11 +90,9 @@ This option specifies the URL of the documentation root. The name of the
 distribution containing this will be appended, and the result passed to
 the selected browser.
 
-There are three canned URLs that can be specified by name:
+There are two canned URLs that can be specified by name:
 
 =over
-
-=item kobes => 'http://cpan.uwinnipeg.ca/dist'
 
 =item meta => 'http://metacpan.org/release',
 

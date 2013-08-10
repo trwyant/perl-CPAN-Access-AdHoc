@@ -12,7 +12,7 @@ use CPAN::DistnameInfo;
 use CPAN::Access::AdHoc;
 use Cwd;
 use File::Temp;
-use Getopt::Long 2.33;
+use Getopt::Long 2.33 qw{ :config auto_version };
 use Pod::Usage;
 use POSIX qw{ strftime };
 use Term::ReadLine;
