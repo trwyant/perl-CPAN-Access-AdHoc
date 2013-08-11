@@ -25,14 +25,8 @@ use CPAN::Access::AdHoc;
 # Make sure mock objects work as desired.
 
 # Compute file:// URL for mock repository.
-my $default_mock_repos;
-{
-    my ( $dev, $dir, $base ) = File::Spec->splitpath(
-	Cwd::abs_path( 'mock/repos' ) );
-    my @path = grep { defined $_ && $_ ne '' } File::Spec->splitdir( $dir );
-    $default_mock_repos = 'file://' . File::Spec::Unix->catfile(
-	$dev, @path, $base );
-}
+my $default_mock_repos = URI::file->new( Cwd::abs_path( 'mock/repos' )
+    )->as_string();
 
 # Mock File::HomeDir
 
@@ -132,9 +126,7 @@ is $cad->cpan(), 'http://someone/', 'Explicit cpan';
 	default_cpan_source	=> 'CPAN::Mini',
     );
 
-    my $expect = URI::file->new_abs( 'mock/repos' );
-    $expect =~ m{ / \A }smx
-	or $expect .= '/';
+    ( my $expect = $default_mock_repos ) =~ s{ (?<! / ) \z }{/}smx;
 
     is $cad->cpan(), $expect,
 	'cpan from CPAN::Mini';
@@ -171,6 +163,7 @@ is $cad->cpan(), 'http://someone/', 'Explicit cpan';
     is $cad->cpan(), 'http://somewhere/out/there/',
 	'cpan from CPAN takes first if not file: scheme';
 }
+
 {
     local $ENV{PERL_CPANM_OPT} =
 	'--mirror http://somewhere/out/there/ --mirror file:///here/and/there --fubar';
