@@ -196,16 +196,6 @@ CPAN::Access::AdHoc::Archive - Common archive functionality for CPAN::Access::Ad
 
 This class is not intended to be used directly.
 
-=head1 NOTICE
-
-Effective with version 0.000_12:
-
-Method C<wrap_archive()> takes an optional leading hash. You can use
-either key C<{author}> to specify the CPAN author ID for the archive, or
-key C<{directory}> to specify its archive relative to the CPAN root. The
-argument after the file name is deprecated, and will be removed a week
-after the publication of 0.000_12.
-
 =head1 DESCRIPTION
 
 This class provides common functionality needed by the accessors for the
