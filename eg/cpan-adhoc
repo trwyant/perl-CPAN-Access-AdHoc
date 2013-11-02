@@ -277,6 +277,20 @@ sub verb_help {
     return;
 }
 
+sub verb_info {
+    my @args = @_;
+    @args or @args = ( CURRENT_PACKAGE );
+    foreach my $name ( @args ) {
+	my $pkg = _resolve_unique_distribution(
+	    $name, record => 1, warn => 1 )
+	    or next;
+	my $di = $pkg->{info};
+	say $di->filename();
+	say '    ', $di->cpanid();
+    }
+    return;
+}
+
 sub verb_less {
     my ( $pkg, $file ) = @_;
     my $temp = _fetch_file( $pkg, $file );
@@ -787,6 +801,15 @@ specified, the current distribution is extracted.
  cpan-adhoc> help
 
 This command displays the documentation for this script.
+
+=head2 info
+
+ cpan-adhoc> info libwww-perl
+ cpan-adhoc> info
+
+This command displays the archive name and CPAN ID of the given
+distributions. If no distribution is specified, the current distribution
+is displayed.
 
 =head2 less
 
