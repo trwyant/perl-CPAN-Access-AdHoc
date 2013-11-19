@@ -374,6 +374,21 @@ sub verb_pwd {
     return;
 }
 
+sub verb_write {
+    my @args = @_;
+    @args or @args = ( CURRENT_PACKAGE );
+    foreach my $name ( @args ) {
+	my $pkg = _resolve_unique_distribution(
+	    $name, record => 1, warn => 1 )
+	    or next;
+	my $archive = _get_archive( $pkg );
+	$archive->write();
+	my $di = $pkg->{info};
+	say sprintf '%s', $di->filename();
+    }
+    return;
+}
+
 sub _expand_default {
     local @ARGV = @_;
     my %opt;
@@ -869,6 +884,15 @@ Otherwise it displays the given file in the current distribution, if any
 =head2 pwd
 
 This command displays the current default directory.
+
+=head2 write
+
+ cpan-adhoc> write libwww-perl
+ cpan-adhoc> write
+
+This command writes the archive of the given distributions into the
+current directory. If no distribution is specified, the current
+distribution is written.
 
 =head1 AUTHOR
 
