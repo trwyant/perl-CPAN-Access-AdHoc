@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/env perl
 
 use 5.010;
 
@@ -26,22 +26,13 @@ use constant CURRENT_PACKAGE => 'current';
 my %opt;
 
 GetOptions( \%opt,
+    qw{ verbose! },
     'help|?' => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
 
 my $rl;
-if ( -t STDIN ) {
-    my $trl = Term::ReadLine->new( 'cpan-adhoc' );
-    $rl = sub {
-	return $trl->readline( $_[0] );
-    };
-} elsif ( -t STDOUT ) {
-    $rl = sub { print @_; return scalar <STDIN> };
-} else {
-    $rl = sub { return scalar <STDIN> };
-}
-
--t STDOUT and say <<"EOD";
+{
+    my $banner = <<"EOD";
 
 cpan-adhoc - Get arbitrary information from a CPAN mirror.
 Version $VERSION, based on CPAN::Access::AdHoc version @{[
@@ -50,6 +41,20 @@ Version $VERSION, based on CPAN::Access::AdHoc version @{[
 Use 'help' for documentation, copyright, and license.
 
 EOD
+
+    if ( -t STDIN ) {
+	my $trl = Term::ReadLine->new( 'cpan-adhoc' );
+	$rl = sub {
+	    return $trl->readline( $_[0] );
+	};
+	warn $banner;
+    } elsif ( -t STDOUT && $opt{verbose} ) {
+	$rl = sub { print @_; return scalar <STDIN> };
+	warn $banner;
+    } else {
+	$rl = sub { return scalar <STDIN> };
+    }
+}
 
 my $cad = CPAN::Access::AdHoc->new();
 my %dist;
@@ -73,7 +78,11 @@ while ( defined( my $buffer = $rl->( 'cpan-adhoc> ' ) ) ) {
     }
 }
 
-say '';
+{
+    no warnings qw{ once };
+    -t STOUT
+	and say '';
+}
 
 sub verb_alias {
     my ( $old, $new ) = @_;
@@ -165,15 +174,24 @@ sub verb_clear {
 }
 
 sub verb_corpus {
-    my @args = @_;
+    local @ARGV = @_;
     my %opt;
+    my $go = Getopt::Long::Parser->new();
+    $go->getoptions( \%opt, qw{ full! } )
+	or return;
+    @ARGV
+	or die "No author specified\n";
+    $opt{full} //= @ARGV > 1;
     my $inx = $cad->fetch_author_index();
-    foreach my $id ( @args ) {
+    foreach my $id ( @ARGV ) {
 	my $uc_id = uc $id;
 	if ( $inx->{$uc_id} ) {
-	    say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
+	    $opt{full}
+		and say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
 	    foreach my $dist ( $cad->corpus( $uc_id ) ) {
-		say "    $dist";
+		my $display = $opt{full} ? "    $dist" :
+		    CPAN::DistnameInfo->new( $dist )->dist();
+		say $display;
 		_record_distribution( $dist );
 	    }
 	} else {
@@ -631,6 +649,11 @@ cpan-adhoc - Get arbitrary information from a CPAN mirror.
 
 This option displays the documentation for this script. The script then
 exits.
+
+=head2 -verbose
+
+If asserted, this option causes the banner to be printed and commands
+echoed when not reading commands from a terminal.
 
 =head2 -version
 
