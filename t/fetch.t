@@ -262,7 +262,7 @@ SKIP: {
     is $kit->base_directory(), 'Yehudi-0.001/',
 	'Base directory of Yehudi-0.001.tar.gz';
 
-    is_deeply [ $kit->list_contents() ], [ qw{
+    is_deeply [ sort $kit->list_contents() ], [ sort qw{
 	    lib/Yehudi.pm
 	    Makefile.PL
 	    MANIFEST
