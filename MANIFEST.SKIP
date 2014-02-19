@@ -15,6 +15,8 @@ CVS/
 ^pm_to_blib$
 \.old$
 ^pod2htm.\.tmp$
+\.git/
+\.gitignore$
 \.svn/
 \.swp$
 ^tools/
