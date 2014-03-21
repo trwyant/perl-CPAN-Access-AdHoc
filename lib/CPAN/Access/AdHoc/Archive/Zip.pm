@@ -125,8 +125,7 @@ sub get_item_mtime {
 sub item_present {
     my ( $self, $name ) = @_;
     $name = $self->base_directory() . $name;
-    my $re = qr{ \A \Q$name\E \z }smx;
-    return scalar $self->archive()->membersMatching( $re );
+    return $self->archive()->memberNamed( $name ) ? 1 : 0;
 }
 
 sub list_contents {
