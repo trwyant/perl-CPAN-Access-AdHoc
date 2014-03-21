@@ -1,4 +1,15 @@
-0.000_19	2013-08-06
+0.000_191	2014-03-21	T. R. Wyant
+  Have the CPAN::Access::AdHoc::Archive::Zip item_present() check for
+    the item by name with Archive::Zip memberNamed() rather than
+    searching for it with membersMatching().
+  Various tweaks to eg/cpan-adhoc:
+    - Make it more pipe-friendly;
+    - Add -full to the 'corpus' command;
+    - Add 'info' command;
+    - Add 'write' command;
+  Fix various test failures.
+
+0.000_19	2013-08-06	T. R. Wyant
   Substantial rewrite to eg/cpan-adhoc to try to make it much smarter
     about retrieving distributions. Also make every command that takes a
     file name take a module name as well.
