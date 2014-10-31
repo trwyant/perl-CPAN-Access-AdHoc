@@ -1,3 +1,9 @@
+0.000_192	2014-10-31	T. R. Wyant
+  Base corpus() on the author's CHECKSUMS file instead of plowing
+    through indexed distributions.
+  In the eg/cpan-adhoc corpus command, add -verbose as a synonym for
+    -full.
+
 0.000_191	2014-03-21	T. R. Wyant
   Have the CPAN::Access::AdHoc::Archive::Zip item_present() check for
     the item by name with Archive::Zip memberNamed() rather than
