@@ -194,7 +194,8 @@ sub verb_corpus {
 	    my %found;
 	    foreach my $dist( $cad->corpus( $uc_id ) ) {
 		my $obj = CPAN::DistnameInfo->new( $dist );
-		my $name = $obj->dist();
+		defined( my $name = $obj->dist() )
+		    or next;
 		my $version = version->parse( $obj->version() );
 		push @{ $found{$name} }, {
 		    name	=> $name,

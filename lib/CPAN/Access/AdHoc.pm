@@ -64,7 +64,11 @@ sub corpus {
 	substr( $cpan_id, 0, 2 ),
 	$cpan_id;
 
-    return ( map { "$prefix/$_" } sort keys %{ $self->fetch_distribution_checksums( $cpan_id ) } );
+    return (
+	map { "$prefix/$_" }
+	grep { $_ !~ m/ [.] meta \z /smx }
+	sort keys %{ $self->fetch_distribution_checksums( $cpan_id ) }
+    );
 }
 
 sub exists : method {	## no critic (ProhibitBuiltinHomonyms)
