@@ -1,3 +1,8 @@
+0.000_193	2014-10-31	T. R. Wyant
+  Fix undefined value error in eg/cpan-adhoc corpus
+  Add -latest option to eg/cpan-adhoc corpus. This causes only the
+    highest-numbered version of each release to be listed.
+
 0.000_192	2014-10-31	T. R. Wyant
   Base corpus() on the author's CHECKSUMS file instead of plowing
     through indexed distributions.
