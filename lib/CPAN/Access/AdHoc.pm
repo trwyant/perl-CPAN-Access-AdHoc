@@ -59,13 +59,12 @@ sub corpus {
     my ( $self, $cpan_id ) = @_;
     $cpan_id = uc $cpan_id;
 
-    my $re = join '/',
+    my $prefix = join '/',
 	substr( $cpan_id, 0, 1 ),
 	substr( $cpan_id, 0, 2 ),
 	$cpan_id;
 
-    $re = qr{ \A \Q$re\E / }smx;
-    return ( grep { $_ =~ $re } $self->indexed_distributions() );
+    return ( map { "$prefix/$_" } sort keys %{ $self->fetch_distribution_checksums( $cpan_id ) } );
 }
 
 sub exists : method {	## no critic (ProhibitBuiltinHomonyms)
