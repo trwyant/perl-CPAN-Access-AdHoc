@@ -177,11 +177,13 @@ sub verb_corpus {
     local @ARGV = @_;
     my %opt;
     my $go = Getopt::Long::Parser->new();
-    $go->getoptions( \%opt, qw{ full|verbose! } )
+    $go->getoptions( \%opt, qw{ full|verbose! latest! } )
 	or return;
     @ARGV
 	or die "No author specified\n";
     $opt{full} //= @ARGV > 1;
+    $opt{latest}
+	and $opt{full} = 1;
     my $inx = $cad->fetch_author_index();
     foreach my $id ( @ARGV ) {
 	my $uc_id = uc $id;
@@ -189,12 +191,31 @@ sub verb_corpus {
 	if ( $inx->{$uc_id} ) {
 	    $opt{full}
 		and say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
-	    foreach my $dist ( $cad->corpus( $uc_id ) ) {
-		my $display = $opt{full} ? "    $dist" :
-		    CPAN::DistnameInfo->new( $dist )->dist();
-		$seen{$display}++
-		    or say $display;
+	    my %found;
+	    foreach my $dist( $cad->corpus( $uc_id ) ) {
+		my $obj = CPAN::DistnameInfo->new( $dist );
+		my $name = $obj->dist();
+		my $version = version->parse( $obj->version() );
+		push @{ $found{$name} }, {
+		    name	=> $name,
+		    version	=> $version,
+		    dist	=> $dist,
+		};
 		_record_distribution( $dist );
+	    }
+	    foreach my $name ( sort keys %found ) {
+		@{ $found{$name} } = sort {
+		    $a->{version} <=> $b->{version} }
+		    @{ $found{$name} };
+		$opt{latest}
+		    and $found{$name} = [ $found{$name}[-1] ];
+		if ( $opt{full} ) {
+		    foreach ( @{ $found{$name} } ) {
+			say '    ', $_->{dist};
+		    }
+		} else {
+		    say $name;
+		}
 	    }
 	} else {
 	    warn "CPAN ID $uc_id not found\n";
@@ -748,6 +769,11 @@ Supported options are:
 
 If asserted, you get full distribution names. If not asserted, you get
 the base distribution name only. The default is C<-nofull>.
+
+=item -latest
+
+If asserted, you get the full display, but only the highest-numbered
+version of any distribution is displayed.
 
 =item -verbose
 
