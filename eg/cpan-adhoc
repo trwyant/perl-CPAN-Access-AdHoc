@@ -177,7 +177,7 @@ sub verb_corpus {
     local @ARGV = @_;
     my %opt;
     my $go = Getopt::Long::Parser->new();
-    $go->getoptions( \%opt, qw{ full! } )
+    $go->getoptions( \%opt, qw{ full|verbose! } )
 	or return;
     @ARGV
 	or die "No author specified\n";
@@ -185,13 +185,15 @@ sub verb_corpus {
     my $inx = $cad->fetch_author_index();
     foreach my $id ( @ARGV ) {
 	my $uc_id = uc $id;
+	my %seen;
 	if ( $inx->{$uc_id} ) {
 	    $opt{full}
 		and say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
 	    foreach my $dist ( $cad->corpus( $uc_id ) ) {
 		my $display = $opt{full} ? "    $dist" :
 		    CPAN::DistnameInfo->new( $dist )->dist();
-		say $display;
+		$seen{$display}++
+		    or say $display;
 		_record_distribution( $dist );
 	    }
 	} else {
@@ -737,6 +739,21 @@ More than one CPAN ID can be specified. The CPAN ID is converted to
 upper case before use, so the example could equally well be written
 
  cpan-adhoc> corpus bach
+
+Supported options are:
+
+=over
+
+=item -full
+
+If asserted, you get full distribution names. If not asserted, you get
+the base distribution name only. The default is C<-nofull>.
+
+=item -verbose
+
+This is just a synonym for C<-full>.
+
+=back
 
 =head2 cpan
 
