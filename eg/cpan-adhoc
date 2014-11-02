@@ -59,6 +59,9 @@ EOD
 my $cad = CPAN::Access::AdHoc->new();
 my %dist;
 
+@ARGV
+    and verb_cpan( shift @ARGV );
+
 MAIN_LOOP:
 while ( defined( my $buffer = $rl->( 'cpan-adhoc> ' ) ) ) {
     $buffer =~ s/ \s+ \z //smx;
@@ -177,7 +180,7 @@ sub verb_corpus {
     local @ARGV = @_;
     my %opt;
     my $go = Getopt::Long::Parser->new();
-    $go->getoptions( \%opt, qw{ development! full|verbose! latest!
+    $go->getoptions( \%opt, qw{ date development! full|verbose! latest!
 	production! } )
 	or return;
     @ARGV
@@ -221,7 +224,15 @@ sub verb_corpus {
 		    foreach ( @{ $found{$name} } ) {
 			$opt{$_->{kind}}
 			    or next;
-			say '    ', $_->{dist};
+			if ( $opt{date} ) {
+			    my $arch = $cad->fetch_distribution_archive(
+				$_->{dist} );
+			    say '    ', $_->{dist}, "\t", strftime
+			    '%d-%b-%Y %H:%M:%S', localtime
+			    $arch->mtime();
+			} else {
+			    say '    ', $_->{dist};
+			}
 		    }
 		} else {
 		    say $name;
@@ -673,6 +684,9 @@ cpan-adhoc - Get arbitrary information from a CPAN mirror.
  cpan-adhoc> perldoc lib/LWP/UserAgent.pm
  cpan-adhoc> exit
  
+ $ cpan-adhoc http://cpan.pair.com/
+ cpan-adhoc> ...
+ 
  $ cpan-adhoc -help
  $ cpan-adhoc -version
 
@@ -694,7 +708,10 @@ This option displays the version of this script. The script then exits.
 
 =head1 DETAILS
 
-This Perl script implements an interactive query of a CPAN mirror.
+This Perl script implements an interactive query of a CPAN mirror. The
+default is whatever mirror your CPAN client is set to, as determined by
+L<CPAN::Access::AdHoc|CPAN::Access::AdHoc>. You can specify a different
+mirror on the command line, or using the L<cpan|/cpan> command.
 
 The following commands are supported:
 
