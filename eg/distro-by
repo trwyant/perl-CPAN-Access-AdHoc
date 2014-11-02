@@ -1,0 +1,129 @@
+#!/usr/bin/env perl
+
+use 5.010;
+
+use strict;
+use warnings;
+
+use CPAN::Access::AdHoc;
+use CPAN::DistnameInfo;
+use Getopt::Long 2.33 qw{ :config auto_version };
+use Pod::Usage;
+
+our $VERSION = '0.000_01';
+
+my %opt;
+
+GetOptions( \%opt,
+    qw{ cpan=s verbose! },
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) or pod2usage( { -verbose => 0 } );
+
+my $accept = @ARGV ? do {
+    my %hash = map { uc $_ => 1 } @ARGV;
+    sub { $hash{$_[0]->cpanid()} }
+} : sub { 1 };
+
+my $cad = CPAN::Access::AdHoc->new();
+defined $opt{cpan}
+    and $cad->cpan( $opt{cpan} );
+
+my @distros;
+while ( <STDIN> ) {
+    s/ \s+ \z //smx;
+    s/ \A \s+ //smx;
+    m/ \A (?: [#] | \z ) /smx
+	and next;
+    push @distros, $_;
+}
+
+my $re = join '|', map { quotemeta } @distros;
+$re = qr { / (?: $re ) - \d }smx;
+
+@distros = ();
+foreach my $dist ( $cad->indexed_distributions() ) {
+    $dist =~ $re
+	or next;
+    my $obj = CPAN::DistnameInfo->new( $dist );
+    push @distros, $obj;
+}
+
+my @display = ( 'cpanid', $opt{verbose} ? 'filename' : 'dist' );
+foreach my $dist (
+    map { $_->[0] }
+    sort { $a->[1] cmp $b->[1] }
+    map { [ $_, $_->dist() ] }
+    @distros
+) {
+    $accept->( $dist )
+	or next;
+    say join "\t", map { $dist->$_() } @display;
+}
+
+__END__
+
+=head1 TITLE
+
+distro-by - Report on who maintains a distribution.
+
+=head1 SYNOPSIS
+
+ distro-by <distribution-list.txt
+ distro-by yehudi <distribution-list.txt
+ distro-by -help
+ distro-by -version
+
+=head1 OPTIONS
+
+=head2 -cpan url
+
+This option specifies the URL of the CPAN archive to access.
+
+The default is whatever L<CPAN::Access::AdHoc|CPAN::Access::AdHoc>
+decides it is.
+
+=head2 -help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 -verbose
+
+If this option is asserted, the listing is of the full distribution
+name, including version and file name suffixes. If not asserted, this
+listing is just the base distribution name.
+
+The default is C<-noverbose>.
+
+=head2 -version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script reads a list of Perl distribution names, looks them up
+in CPAN, and reports on who their author of record is. If you provide
+one or more CPAN IDs on the command line, only those authors are listed.
+
+The CPAN access is done by L<CPAN::Access::AdHoc|CPAN::Access::AdHoc>,
+so the mirror used by default is whichever mirror that picks.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2014 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the full text
+of the licenses in the directory LICENSES.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :
