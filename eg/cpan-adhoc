@@ -177,10 +177,14 @@ sub verb_corpus {
     local @ARGV = @_;
     my %opt;
     my $go = Getopt::Long::Parser->new();
-    $go->getoptions( \%opt, qw{ full|verbose! latest! } )
+    $go->getoptions( \%opt, qw{ development! full|verbose! latest!
+	production! } )
 	or return;
     @ARGV
 	or die "No author specified\n";
+    $opt{development}
+	or $opt{production}
+	or $opt{development} = $opt{production} = 1;
     $opt{full} //= @ARGV > 1;
     $opt{latest}
 	and $opt{full} = 1;
@@ -196,11 +200,14 @@ sub verb_corpus {
 		my $obj = CPAN::DistnameInfo->new( $dist );
 		defined( my $name = $obj->dist() )
 		    or next;
-		my $version = version->parse( $obj->version() );
+		my $version = $obj->version();
+		my $kind = ( $version =~ m/ _ /smx ) ? 'development' : 'production';
 		push @{ $found{$name} }, {
 		    name	=> $name,
-		    version	=> $version,
+		    obj		=> $obj,
+		    version	=> version->parse( $version ),
 		    dist	=> $dist,
+		    kind	=> $kind,
 		};
 		_record_distribution( $dist );
 	    }
@@ -212,6 +219,8 @@ sub verb_corpus {
 		    and $found{$name} = [ $found{$name}[-1] ];
 		if ( $opt{full} ) {
 		    foreach ( @{ $found{$name} } ) {
+			$opt{$_->{kind}}
+			    or next;
 			say '    ', $_->{dist};
 		    }
 		} else {
@@ -766,6 +775,12 @@ Supported options are:
 
 =over
 
+=item -development
+
+If asserted, development releases are listed; if not asserted they are
+not. This option is ignored unless C<-full> or C<-latest> is in effect.
+The default is C<-development> if C<-production> is not asserted.
+
 =item -full
 
 If asserted, you get full distribution names. If not asserted, you get
@@ -775,6 +790,12 @@ the base distribution name only. The default is C<-nofull>.
 
 If asserted, you get the full display, but only the highest-numbered
 version of any distribution is displayed.
+
+=item -production
+
+If asserted, production releases are listed; if not asserted they are
+not. This option is ignored unless C<-full> or C<-latest> is in effect.
+The default is C<-production> if C<-development> is not asserted.
 
 =item -verbose
 
