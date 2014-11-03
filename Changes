@@ -1,5 +1,11 @@
+0.000_194	2014-11-02	T. R. Wyant
+  Add eg/cpan-adhoc options -production, -development, -date.
+  Add eg/distro-by
+  Finally fix undef hash key problem in corpus().
+
 0.000_193	2014-10-31	T. R. Wyant
-  Fix undefined value error in eg/cpan-adhoc corpus
+  Try (unsuccessfully, as it turns out) to fix undefined value error in
+    eg/cpan-adhoc corpus
   Add -latest option to eg/cpan-adhoc corpus. This causes only the
     highest-numbered version of each release to be listed.
 
