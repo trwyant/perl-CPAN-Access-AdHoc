@@ -232,6 +232,7 @@ sub list_contents {
 	my $code = $known_encoding{$encoding}
 	    or __wail( "Encoding $encoding not supported" );
 	$code->( $fn, $attr->{contents}{$file}{content} );
+	$self->__set_archive_mtime( $fn );
 	return $self;
     }
 }

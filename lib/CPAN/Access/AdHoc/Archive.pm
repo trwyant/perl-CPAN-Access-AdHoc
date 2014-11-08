@@ -10,6 +10,7 @@ use CPAN::Access::AdHoc::Util qw{
     __attr __expand_distribution_path __guess_media_type :carp
 };
 use CPAN::Meta ();
+use HTTP::Date ();
 use HTTP::Response ();
 use Module::Pluggable::Object;
 use URI::file;
@@ -110,7 +111,7 @@ sub mtime {
 
     if ( @value ) {
 	caller eq ref $self
-	    or __wail( 'Attribute archive is read-only' );
+	    or __wail( 'Attribute mtime is read-only' );
 	$attr->{mtime} = $value[0];
 	return $self;
     } else {
@@ -134,12 +135,23 @@ sub path {
     }
 }
 
+
+sub __set_archive_mtime {
+    my ( $self, $fn ) = @_;
+    if ( defined( my $mtime = $self->mtime() ) ) {
+	utime $mtime, $mtime, $fn
+	    or __whinge( "Failed to set modification time on $fn: $!" );
+    }
+    return;
+}
+
 sub wrap_archive {
     my ( $class, @args ) = @_;
     my $opt = 'HASH' eq ref $args[0] ? shift @args : {};
     my ( $fn ) = @args;
     -f $fn
 	or __wail( "File $fn not found" );
+    my $mtime = ( stat _ )[9];
     my $content;
     {
 	local $/ = undef;
@@ -177,6 +189,9 @@ sub wrap_archive {
     }
     my $resp = HTTP::Response->new( 200, 'OK', undef, $content );
     __guess_media_type( $resp, $path );
+    defined $mtime
+	and $resp->header( 'Last-Modified' => HTTP::Date::time2str(
+	    $mtime ) );
     return $class->__handle_http_response( $resp );
 }
 
@@ -367,6 +382,19 @@ in that order. If neither is present, or neither contains valid metadata
 as determined by L<CPAN::Meta|CPAN::Meta>, nothing is returned -- this
 method makes no further effort to establish what the metadata are.
 
+=head3 __set_archive_mtime
+
+  $self->__set_archive_mtime( $file_name );
+
+This method is private to the C<CPAN-Access-AdHoc> package.
+
+This method sets the access and modification time of the given file to
+the value of $self->mtime(), provided that is defined. It returns
+nothing.
+
+This method is intended for the use of subclass' write() methods, and is
+not intended to be called by the user of this package.
+
 =head3 wrap_archive
 
  my $archive = CPAN::Access::AdHoc::Archive->wrap_archive(
@@ -406,6 +434,9 @@ with gzip.
 
 If the file name is omitted, it defaults to the base name of
 C<< $archive->path() >>.
+
+The access and modification time of the output file will be set to
+C<< $self->mtime() >> provided the latter is not C<undef>.
 
 =head1 SUPPORT
 

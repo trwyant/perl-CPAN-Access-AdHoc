@@ -163,6 +163,7 @@ sub write : method {	## no critic (ProhibitBuiltInHomonyms)
     my $status = $self->archive()->writeToFileNamed( $fn );
     $status == Archive::Zip::AZ_OK()
 	or __wail( 'Zip write error' );
+    $self->__set_archive_mtime( $fn );
     return $self;
 }
 

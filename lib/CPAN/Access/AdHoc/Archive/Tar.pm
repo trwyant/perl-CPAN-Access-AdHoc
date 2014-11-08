@@ -182,6 +182,7 @@ sub list_contents {
 	    push @args, $known_encoding{$encoding};
 	}
 	$self->archive()->write( @args );
+	$self->__set_archive_mtime( $fn );
 	return $self;
     }
 }
