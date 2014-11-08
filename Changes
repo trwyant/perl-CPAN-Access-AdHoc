@@ -1,3 +1,7 @@
+0.000_195	2014-11-08	T. R. Wyant
+  Have CPAN::Access::AdHoc::Archive write() preserve modification time,
+    if the modification time of the original archive is known.
+
 0.000_194	2014-11-02	T. R. Wyant
   Add eg/cpan-adhoc options -production, -development, -date.
   Add eg/distro-by
