@@ -181,13 +181,13 @@ sub verb_corpus {
     my %opt;
     my $go = Getopt::Long::Parser->new();
     $go->getoptions( \%opt, qw{ date development! full|verbose! latest!
-	production! } )
+	production! unreleased! } )
 	or return;
     @ARGV
 	or die "No author specified\n";
     $opt{development}
 	or $opt{production}
-	or $opt{development} = $opt{production} = 1;
+	or $opt{development} = $opt{production} = $opt{unreleased} = 1;
     $opt{full} //= @ARGV > 1;
     $opt{latest}
 	and $opt{full} = 1;
@@ -204,7 +204,7 @@ sub verb_corpus {
 		defined( my $name = $obj->dist() )
 		    or next;
 		my $version = $obj->version();
-		my $kind = ( $version =~ m/ _ /smx ) ? 'development' : 'production';
+		my $kind = _version_kind( $version );
 		push @{ $found{$name} }, {
 		    name	=> $name,
 		    obj		=> $obj,
@@ -669,6 +669,19 @@ sub _issue {
 
 }
 
+# Given a version, return:
+# 'production' unless it contains an underscore
+# 'unreleased' if it has only zeroes and dots before the underscore
+# 'development' otherwise.
+sub _version_kind {
+    my ( $version ) = @_;
+    $version =~ m/ _ /smx
+	or return 'production';
+    $version =~ m/ \A [0.]+ _ /smx
+	and return 'unreleased';
+    return 'development';
+}
+
 __END__
 
 =head1 TITLE
@@ -792,11 +805,21 @@ Supported options are:
 
 =over
 
+=item -date
+
+If asserted, the dates of the packages are displayed. This requires
+actually fetching the packages.
+
+The default is C<-nodate>.
+
 =item -development
 
-If asserted, development releases are listed; if not asserted they are
-not. This option is ignored unless C<-full> or C<-latest> is in effect.
-The default is C<-development> if C<-production> is not asserted.
+If asserted, development packages are listed; if not asserted they are
+not. Development packages are defined as those with an underscore in
+their version number, and digits other than zero before the underscore.
+This option is ignored unless C<-full> or C<-latest> is in effect.  If
+none of C<-development>, C<-production> or C<-unreleased> is asserted,
+all are asserted by default.
 
 =item -full
 
@@ -810,9 +833,20 @@ version of any distribution is displayed.
 
 =item -production
 
-If asserted, production releases are listed; if not asserted they are
-not. This option is ignored unless C<-full> or C<-latest> is in effect.
-The default is C<-production> if C<-development> is not asserted.
+If asserted, production packages are listed; if not asserted they are
+not. Production packages are defined as those with no underscore in
+their version number. This option is ignored unless C<-full> or
+C<-latest> is in effect.  If none of C<-development>, C<-production> or
+C<-unreleased> is asserted, all are asserted by default.
+
+=item -unreleased
+
+If asserted, unreleased packages are listed; if not asserted they are
+not. Unreleased packages are defined as those with an underscore in
+their version number, and only zeroes and dots before the underscore.
+This option is ignored unless C<-full> or C<-latest> is in effect.  If
+none of C<-development>, C<-production> or C<-unreleased> is asserted,
+all are asserted by default.
 
 =item -verbose
 
