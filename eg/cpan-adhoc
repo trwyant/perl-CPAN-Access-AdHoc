@@ -23,7 +23,9 @@ our $VERSION = '0.000_195';
 
 use constant CURRENT_PACKAGE => 'current';
 
-my %opt;
+my %opt = (
+    verbose	=> -t STDIN,
+);
 
 GetOptions( \%opt,
     qw{ verbose! },
@@ -714,6 +716,9 @@ exits.
 
 If asserted, this option causes the banner to be printed and commands
 echoed when not reading commands from a terminal.
+
+The default is C<-verbose> if standard in is a terminal, and
+C<-noverbose> otherwise.
 
 =head2 -version
 
