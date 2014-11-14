@@ -16,6 +16,7 @@ use Getopt::Long 2.33 qw{ :config auto_version };
 use Pod::Usage;
 use POSIX qw{ strftime };
 use Term::ReadLine;
+use Text::ParseWords qw{ shellwords };
 use version 0.77;
 use YAML::Any;
 
@@ -24,11 +25,12 @@ our $VERSION = '0.000_195';
 use constant CURRENT_PACKAGE => 'current';
 
 my %opt = (
+    date_format	=> '%d-%b-%Y %H:%M:%S',
     verbose	=> -t STDIN,
 );
 
 GetOptions( \%opt,
-    qw{ verbose! },
+    qw{ date_format|date-format=s verbose! },
     'help|?' => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
 
@@ -72,7 +74,7 @@ while ( defined( my $buffer = $rl->( 'cpan-adhoc> ' ) ) ) {
 	and next;
     $buffer =~ m/ \A [#] /smx
 	and next;
-    my ( $verb, @args ) = split qr{ \s+ }smx, $buffer;
+    my ( $verb, @args ) = shellwords( $buffer );
     if ( my $code = __PACKAGE__->can( "verb_$verb" ) ) {
 	eval {
 	    $code->( @args );
@@ -119,9 +121,9 @@ sub verb_author {
 }
 
 sub verb_base {
-    my @args = @_;
-    @args or @args = ( CURRENT_PACKAGE );
-    foreach my $name ( @args ) {
+    my @argv = @_;
+    @argv or @argv = ( CURRENT_PACKAGE );
+    foreach my $name ( @argv ) {
 	my $pkg = _resolve_unique_distribution( $name,
 	    record	=> 1,
 	    warn	=> 1,
@@ -163,12 +165,12 @@ sub verb_checksums {
 }
 
 sub verb_choose {
-    my ( @args ) = @_;
-    @args == 1
+    my @argv = @_;
+    @argv == 1
 	or die "The choose command takes exactly one argument.\n";
-    $dist{$args[0]}
-	or die _err_not_requested( $args[0] );
-    $dist{+CURRENT_PACKAGE} = $dist{$args[0]};
+    $dist{$argv[0]}
+	or die _err_not_requested( $argv[0] );
+    $dist{+CURRENT_PACKAGE} = $dist{$argv[0]};
     return;
 }
 
@@ -179,22 +181,24 @@ sub verb_clear {
 }
 
 sub verb_corpus {
-    local @ARGV = @_;
-    my %opt;
+    my @argv = @_;
+    my %opt = (
+	format	=> $opt{date_format},
+    );
     my $go = Getopt::Long::Parser->new();
-    $go->getoptions( \%opt, qw{ date development! full|verbose! latest!
-	production! unreleased! } )
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ date development!
+	format=s full|verbose!  latest!  production! unreleased! } )
 	or return;
-    @ARGV
+    @argv
 	or die "No author specified\n";
     $opt{development}
 	or $opt{production}
 	or $opt{development} = $opt{production} = $opt{unreleased} = 1;
-    $opt{full} //= @ARGV > 1;
+    $opt{full} //= @argv > 1;
     $opt{latest}
 	and $opt{full} = 1;
     my $inx = $cad->fetch_author_index();
-    foreach my $id ( @ARGV ) {
+    foreach my $id ( @argv ) {
 	my $uc_id = uc $id;
 	my %seen;
 	if ( $inx->{$uc_id} ) {
@@ -230,8 +234,8 @@ sub verb_corpus {
 			    my $arch = $cad->fetch_distribution_archive(
 				$_->{dist} );
 			    say '    ', $_->{dist}, "\t", strftime
-			    '%d-%b-%Y %H:%M:%S', localtime
-			    $arch->mtime();
+				$opt{format}, localtime
+				$arch->mtime();
 			} else {
 			    say '    ', $_->{dist};
 			}
@@ -273,16 +277,17 @@ sub verb_default_cpan_source {
 }
 
 sub verb_diff {
-    local @ARGV = @_;
+    my @argv = @_;
     my ( @d_opt, @d_arg );
     my %opt;
     my $go = Getopt::Long::Parser->new(
 	config => [ qw{ pass_through no_auto_abbrev } ] );
-    $go->getoptions( \%opt, qw{ less! } );
-    while ( @ARGV ) {
-	local $_ = shift @ARGV;
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ less! } )
+	or return;
+    while ( @argv ) {
+	local $_ = shift @argv;
 	if ( '--' eq $_ ) {
-	    @d_arg = @ARGV;
+	    @d_arg = @argv;
 	    last;
 	} elsif ( m/ \A - /smx ) {
 	    push @d_opt, $_;
@@ -302,8 +307,8 @@ sub verb_diff {
 }
 
 sub verb_distribution {
-    my @args = @_;
-    foreach my $dist ( _resolve_distributions( @args ) ) {
+    my @argv = @_;
+    foreach my $dist ( _resolve_distributions( @argv ) ) {
 	_record_distribution( $dist );
 	say $dist;
     }
@@ -321,9 +326,9 @@ sub verb_exit {
 }
 
 sub verb_extract {
-    my @args = @_;
-    @args or @args = ( CURRENT_PACKAGE );
-    foreach my $name ( @args ) {
+    my @argv = @_;
+    @argv or @argv = ( CURRENT_PACKAGE );
+    foreach my $name ( @argv ) {
 	my $pkg = _resolve_unique_distribution(
 	    $name, record => 1, warn => 1 )
 	    or next;
@@ -342,9 +347,9 @@ sub verb_help {
 }
 
 sub verb_info {
-    my @args = @_;
-    @args or @args = ( CURRENT_PACKAGE );
-    foreach my $name ( @args ) {
+    my @argv = @_;
+    @argv or @argv = ( CURRENT_PACKAGE );
+    foreach my $name ( @argv ) {
 	my $pkg = _resolve_unique_distribution(
 	    $name, record => 1, warn => 1 )
 	    or next;
@@ -363,15 +368,15 @@ sub verb_less {
 }
 
 sub verb_list {
-    local @ARGV = @_;
+    my @argv = @_;
     my %opt;
-    GetOptions( \%opt, qw{ less! } )
+    my $go = Getopt::Long::Parser->new();
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ less! } )
 	or return;
-    my @args = @ARGV;
-    @args
-	or push @args, CURRENT_PACKAGE;
+    @argv
+	or push @argv, CURRENT_PACKAGE;
     my $output = $opt{less} ? File::Temp->new() : *STDOUT;
-    foreach my $name ( @args ) {
+    foreach my $name ( @argv ) {
 	my $pkg = _resolve_unique_distribution(
 	    $name, record => 1, warn => 1 )
 	    or next;
@@ -386,9 +391,9 @@ sub verb_list {
 }
 
 sub verb_metadata {
-    my @args = @_;
-    @args or push @args, CURRENT_PACKAGE;
-    foreach my $name ( @args ) {
+    my @argv = @_;
+    @argv or push @argv, CURRENT_PACKAGE;
+    foreach my $name ( @argv ) {
 	my $pkg = _resolve_unique_distribution(
 	    $name, record => 1, warn => 1 )
 	    or next;
@@ -405,9 +410,9 @@ sub verb_metadata {
 }
 
 sub verb_module {
-    my @arg = @_;
+    my @argv = @_;
     my $inx = $cad->fetch_module_index();
-    foreach my $module ( @arg ) {
+    foreach my $module ( @argv ) {
 	$inx->{$module}
 	    or _flunk( "Module '$module' not indexed" )
 	    or next;	# _flunk returns false
@@ -419,10 +424,23 @@ sub verb_module {
 }
 
 sub verb_mtime {
-    my ( $pkg, $file ) = _validate_pkg_file( @_ );
-    say strftime( '%d-%b-%Y %H:%M:%S', localtime
-	$pkg->{archive}->get_item_mtime( $file )
+    my @argv = @_;
+    my %opt = (
+	format	=> $opt{date_format},
     );
+    my $go = Getopt::Long::Parser->new();
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ distribution! format=s } )
+	or return;
+    my $time;
+    if ( $opt{distribution} ) {
+	my $archive = _get_archive( $argv[0] );
+	$time = $archive->mtime();
+    } else {
+	my ( $pkg, $file ) = _validate_pkg_file( @argv );
+	my $archive = _get_archive( $pkg );
+	$time = $archive->get_item_mtime( $file );
+    }
+    say strftime $opt{format}, localtime $time;
     return;
 }
 
@@ -439,9 +457,9 @@ sub verb_pwd {
 }
 
 sub verb_write {
-    my @args = @_;
-    @args or @args = ( CURRENT_PACKAGE );
-    foreach my $name ( @args ) {
+    my @argv = @_;
+    @argv or @argv = ( CURRENT_PACKAGE );
+    foreach my $name ( @argv ) {
 	my $pkg = _resolve_unique_distribution(
 	    $name, record => 1, warn => 1 )
 	    or next;
@@ -454,18 +472,19 @@ sub verb_write {
 }
 
 sub _expand_default {
-    local @ARGV = @_;
+    my @argv = @_;
     my %opt;
-    GetOptions( \%opt, qw{ default! } )
+    my $go = Getopt::Long::Parser->new();
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ default } )
 	or die "The only legal option is -default\n";
     if ( $opt{default} ) {
-	@ARGV
+	@argv
 	    and die "You may not specify both -default and an argument\n";
 	return ( undef );
-    } elsif ( @ARGV ) {
-	@ARGV == 1
+    } elsif ( @argv ) {
+	@argv == 1
 	    or die "You may not specify more than one argument\n";
-	return @ARGV;
+	return @argv;
     } else {
 	return;
     }
@@ -707,6 +726,13 @@ cpan-adhoc - Get arbitrary information from a CPAN mirror.
 
 =head1 OPTIONS
 
+=head2 -date-format strftime_format
+
+This option specifies the default date format for date and time output.
+This can typically be overridden at the individual commands.
+
+The default is C<-date-format '%d-%b-%Y %H:%M:%S'>.
+
 =head2 -help
 
 This option displays the documentation for this script. The script then
@@ -825,6 +851,12 @@ their version number, and digits other than zero before the underscore.
 This option is ignored unless C<-full> or C<-latest> is in effect.  If
 none of C<-development>, C<-production> or C<-unreleased> is asserted,
 all are asserted by default.
+
+=item -format strftime_format
+
+This option specifies the C<strftime()> format for date output. It has
+no effect unless C<-date> is specified. The default is the value of the
+command-line C<-date-format> option.
 
 =item -full
 
@@ -1009,6 +1041,33 @@ method.
 
 This command looks up the given modules in the module index, and
 displays their version and the distribution they are contained in.
+
+=head2 mtime
+
+ cpan-adhoc> mtime libwww-perl lib/LWP/UserAgent.pm
+ cpan-adhoc> mtime lib/LWP/UserAgent.pm
+
+This command displays the modification time of the given file. The first
+argument is the distribution name, and the second argument is the file
+whose time is to be displayed. If only one argument is given it is
+presumed to be the name of a file in the current distribution.
+
+Supported options are:
+
+=over
+
+=item -distribution
+
+If this option is asserted, no file name is specified, and the time
+displayed is the modification time of the distribution itself, or of the
+cuurrent distribution if no distribution name is given.
+
+=item -format strftime_format
+
+This option specifies the C<strftime()> format for date output. The
+default is the value of the command-line C<-date-format> option.
+
+=back
 
 =head2 perldoc
 
