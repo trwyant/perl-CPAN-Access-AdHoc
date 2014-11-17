@@ -186,8 +186,9 @@ sub verb_corpus {
 	format	=> $opt{date_format},
     );
     my $go = Getopt::Long::Parser->new();
-    $go->getoptionsfromarray( \@argv, \%opt, qw{ date development!
-	format=s full|verbose!  latest!  production! unreleased! } )
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s date
+	development!  format=s full|verbose!  latest!  production!
+	since=s unreleased! } )
 	or return;
     @argv
 	or die "No author specified\n";
@@ -197,6 +198,12 @@ sub verb_corpus {
     $opt{full} //= @argv > 1;
     $opt{latest}
 	and $opt{full} = 1;
+    foreach my $name ( qw{ before since } ) {
+	$opt{$name}
+	    or next;
+	$opt{$name} = _parse_date( $opt{$name} );
+	$opt{date} = 1;
+    }
     my $inx = $cad->fetch_author_index();
     foreach my $id ( @argv ) {
 	my $uc_id = uc $id;
@@ -233,9 +240,15 @@ sub verb_corpus {
 			if ( $opt{date} ) {
 			    my $arch = $cad->fetch_distribution_archive(
 				$_->{dist} );
+			    my $date = $arch->mtime();
+			    $opt{before}
+				and $date >= $opt{before}
+				and next;
+			    $opt{since}
+				and $date < $opt{since}
+				and next;
 			    say '    ', $_->{dist}, "\t", strftime
-				$opt{format}, localtime
-				$arch->mtime();
+				$opt{format}, localtime $date;
 			} else {
 			    say '    ', $_->{dist};
 			}
@@ -690,6 +703,33 @@ sub _issue {
 
 }
 
+sub _parse_date {
+    my ( $date ) = @_;
+    if ( $date =~ m/ \A [0-9]{2,4} (?: [^0-9] [0-9]{1,2} ){2,5} \z /smx ) {
+	require Time::Local;
+	my @parsed = split qr{ [^0-9] }smx, $date;
+	$parsed[0] = _parse_date_adjust_year( $parsed[0] );
+	$parsed[1] -= 1;
+	@parsed < 6
+	    and push @parsed, ( 0 ) x ( 6 - @parsed );
+	return Time::Local::timelocal( reverse @parsed );
+    } else {
+	require Date::Manip;
+	return Date::Manip::UnixDate( $date, '%s' );
+    }
+}
+
+sub _parse_date_adjust_year {
+    my ( $year ) = @_;
+    $year < 60
+	and return $year + 100;
+    $year < 100
+	and return $year;
+    $year >= 1900
+	and return $year - 1900;
+    die "Invalid year '$year'\n";
+}
+
 # Given a version, return:
 # 'production' unless it contains an underscore
 # 'unreleased' if it has only zeroes and dots before the underscore
@@ -836,6 +876,20 @@ Supported options are:
 
 =over
 
+=item -before date-and-optional-time
+
+This option, if present, specifies that only distributions created
+before the given date be listed. This option implies C<-date>.
+
+If the date looks like an ISO-8661 date (that is, three to six groups of
+digits each separated by a single non-digit) L<Time::Local|Time::Local>
+will be loaded and used to interpret the time.
+
+If the date does not look like an ISO-8661 date,
+L<Date::Manip|Date::Manip> will be loaded if possible and used to
+interpret the time. If L<Date::Manip|Date::Manip> can not be loaded an
+exception will be thrown.
+
 =item -date
 
 If asserted, the dates of the packages are displayed. This requires
@@ -875,6 +929,13 @@ not. Production packages are defined as those with no underscore in
 their version number. This option is ignored unless C<-full> or
 C<-latest> is in effect.  If none of C<-development>, C<-production> or
 C<-unreleased> is asserted, all are asserted by default.
+
+=item -since date-and-optional-time
+
+This option, if present, specifies that only distributions created
+on or after the given date be listed. This option inplies C<-date>.
+
+For how the date is parsed, see C<-before>.
 
 =item -unreleased
 
