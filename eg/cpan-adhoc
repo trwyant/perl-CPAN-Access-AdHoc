@@ -10,6 +10,7 @@ use autodie;
 use Config;
 use CPAN::DistnameInfo;
 use CPAN::Access::AdHoc;
+use CPAN::Access::AdHoc::Util qw{ __expand_distribution_path };
 use Cwd;
 use File::Temp;
 use Getopt::Long 2.33 qw{ :config auto_version };
@@ -186,33 +187,32 @@ sub verb_corpus {
 	format	=> $opt{date_format},
     );
     my $go = Getopt::Long::Parser->new();
-    $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s date
-	development!  format=s full|verbose!  latest!  production!
-	since=s unreleased! } )
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s development!
+	format=s latest!  production!  since=s unreleased! } )
 	or return;
     @argv
 	or die "No author specified\n";
     $opt{development}
 	or $opt{production}
 	or $opt{development} = $opt{production} = $opt{unreleased} = 1;
-    $opt{full} //= @argv > 1;
-    $opt{latest}
-	and $opt{full} = 1;
     foreach my $name ( qw{ before since } ) {
 	$opt{$name}
 	    or next;
 	$opt{$name} = _parse_date( $opt{$name} );
-	$opt{date} = 1;
     }
     my $inx = $cad->fetch_author_index();
     foreach my $id ( @argv ) {
 	my $uc_id = uc $id;
 	my %seen;
 	if ( $inx->{$uc_id} ) {
-	    $opt{full}
-		and say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
+	    say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
 	    my %found;
-	    foreach my $dist( $cad->corpus( $uc_id ) ) {
+	    my $corpus = $cad->fetch_distribution_checksums( $uc_id );
+	    foreach my $filename ( keys %{ $corpus } ) {
+		$filename =~ m/ [.] meta \z /smx
+		    and next;
+		my $dist = __expand_distribution_path(
+		    "$uc_id/$filename" );
 		my $obj = CPAN::DistnameInfo->new( $dist );
 		defined( my $name = $obj->dist() )
 		    or next;
@@ -220,10 +220,14 @@ sub verb_corpus {
 		my $kind = _version_kind( $version );
 		push @{ $found{$name} }, {
 		    name	=> $name,
+		    filename	=> $filename,
 		    obj		=> $obj,
 		    version	=> version->parse( $version ),
 		    dist	=> $dist,
 		    kind	=> $kind,
+		    mtime	=> $corpus->{$filename}{mtime} //
+			strftime '%Y-%m-%d', gmtime
+			$cad->fetch_distribution_archive( $dist ),
 		};
 		_record_distribution( $dist );
 	    }
@@ -233,28 +237,19 @@ sub verb_corpus {
 		    @{ $found{$name} };
 		$opt{latest}
 		    and $found{$name} = [ $found{$name}[-1] ];
-		if ( $opt{full} ) {
-		    foreach ( @{ $found{$name} } ) {
-			$opt{$_->{kind}}
-			    or next;
-			if ( $opt{date} ) {
-			    my $arch = $cad->fetch_distribution_archive(
-				$_->{dist} );
-			    my $date = $arch->mtime();
-			    $opt{before}
-				and $date >= $opt{before}
-				and next;
-			    $opt{since}
-				and $date < $opt{since}
-				and next;
-			    say '    ', $_->{dist}, "\t", strftime
-				$opt{format}, localtime $date;
-			} else {
-			    say '    ', $_->{dist};
-			}
+		foreach ( @{ $found{$name} } ) {
+		    $opt{$_->{kind}}
+			or next;
+		    if ( $opt{before} // $opt{after} ) {
+			my $date = _parse_date( $_->{mtime} );
+			$opt{before}
+			    and $date >= $opt{before}
+			    and next;
+			$opt{since}
+			    and $date < $opt{since}
+			    and next;
 		    }
-		} else {
-		    say $name;
+		    say '    ', $_->{filename}, "\t", $_->{mtime};
 		}
 	    }
 	} else {
@@ -872,6 +867,9 @@ upper case before use, so the example could equally well be written
 
  cpan-adhoc> corpus bach
 
+For each CPAN ID, the CPAN ID and electronic mail address are displayed,
+followed by the distribution name and date in ISO-8651 format.
+
 Supported options are:
 
 =over
@@ -879,7 +877,7 @@ Supported options are:
 =item -before date-and-optional-time
 
 This option, if present, specifies that only distributions created
-before the given date be listed. This option implies C<-date>.
+before the given date be listed.
 
 If the date looks like an ISO-8661 date (that is, three to six groups of
 digits each separated by a single non-digit) L<Time::Local|Time::Local>
@@ -890,21 +888,13 @@ L<Date::Manip|Date::Manip> will be loaded if possible and used to
 interpret the time. If L<Date::Manip|Date::Manip> can not be loaded an
 exception will be thrown.
 
-=item -date
-
-If asserted, the dates of the packages are displayed. This requires
-actually fetching the packages.
-
-The default is C<-nodate>.
-
 =item -development
 
 If asserted, development packages are listed; if not asserted they are
 not. Development packages are defined as those with an underscore in
 their version number, and digits other than zero before the underscore.
-This option is ignored unless C<-full> or C<-latest> is in effect.  If
-none of C<-development>, C<-production> or C<-unreleased> is asserted,
-all are asserted by default.
+If none of C<-development>, C<-production> or C<-unreleased> is
+asserted, all are asserted by default.
 
 =item -format strftime_format
 
@@ -912,28 +902,24 @@ This option specifies the C<strftime()> format for date output. It has
 no effect unless C<-date> is specified. The default is the value of the
 command-line C<-date-format> option.
 
-=item -full
-
-If asserted, you get full distribution names. If not asserted, you get
-the base distribution name only. The default is C<-nofull>.
-
 =item -latest
 
-If asserted, you get the full display, but only the highest-numbered
-version of any distribution is displayed.
+If asserted, only the highest-numbered version of any distribution is
+displayed.
+
+The default is C<-nolatest>.
 
 =item -production
 
 If asserted, production packages are listed; if not asserted they are
 not. Production packages are defined as those with no underscore in
-their version number. This option is ignored unless C<-full> or
-C<-latest> is in effect.  If none of C<-development>, C<-production> or
+their version number. If none of C<-development>, C<-production> or
 C<-unreleased> is asserted, all are asserted by default.
 
 =item -since date-and-optional-time
 
 This option, if present, specifies that only distributions created
-on or after the given date be listed. This option inplies C<-date>.
+on or after the given date be listed.
 
 For how the date is parsed, see C<-before>.
 
@@ -942,13 +928,8 @@ For how the date is parsed, see C<-before>.
 If asserted, unreleased packages are listed; if not asserted they are
 not. Unreleased packages are defined as those with an underscore in
 their version number, and only zeroes and dots before the underscore.
-This option is ignored unless C<-full> or C<-latest> is in effect.  If
-none of C<-development>, C<-production> or C<-unreleased> is asserted,
-all are asserted by default.
-
-=item -verbose
-
-This is just a synonym for C<-full>.
+If none of C<-development>, C<-production> or C<-unreleased> is
+asserted, all are asserted by default.
 
 =back
 
