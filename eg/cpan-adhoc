@@ -188,7 +188,7 @@ sub verb_corpus {
     );
     my $go = Getopt::Long::Parser->new();
     $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s development!
-	format=s latest!  production!  since=s unreleased! } )
+	format=s latest!  production! quiet!  since=s unreleased! } )
 	or return;
     @argv
 	or die "No author specified\n";
@@ -205,7 +205,6 @@ sub verb_corpus {
 	my $uc_id = uc $id;
 	my %seen;
 	if ( $inx->{$uc_id} ) {
-	    say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
 	    my %found;
 	    my $corpus = $cad->fetch_distribution_checksums( $uc_id );
 	    foreach my $filename ( keys %{ $corpus } ) {
@@ -231,6 +230,9 @@ sub verb_corpus {
 		};
 		_record_distribution( $dist );
 	    }
+	    my $banner = sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
+	    my $quiet = $opt{quiet}
+		or say $banner;
 	    foreach my $name ( sort keys %found ) {
 		@{ $found{$name} } = sort {
 		    $a->{version} <=> $b->{version} }
@@ -249,6 +251,9 @@ sub verb_corpus {
 			    and $date < $opt{since}
 			    and next;
 		    }
+		    $quiet
+			or say $banner;
+		    $quiet = 0;
 		    say '    ', $_->{filename}, "\t", $_->{mtime};
 		}
 	    }
@@ -710,7 +715,9 @@ sub _parse_date {
 	return Time::Local::timelocal( reverse @parsed );
     } else {
 	require Date::Manip;
-	return Date::Manip::UnixDate( $date, '%s' );
+	defined( my $rslt = Date::Manip::UnixDate( $date, '%s' ) )
+	    or die "Date::Manip does not recognize '$date'\n";
+	return $rslt;
     }
 }
 
@@ -915,6 +922,11 @@ If asserted, production packages are listed; if not asserted they are
 not. Production packages are defined as those with no underscore in
 their version number. If none of C<-development>, C<-production> or
 C<-unreleased> is asserted, all are asserted by default.
+
+=item -quiet
+
+If asserted, the name and address of the author is suppressed unless
+at least one distribution by that author is listed.
 
 =item -since date-and-optional-time
 
