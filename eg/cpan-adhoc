@@ -253,7 +253,7 @@ sub verb_corpus {
 		    }
 		    $quiet
 			or say $banner;
-		    $quiet = 0;
+		    $quiet = 1;
 		    say '    ', $_->{filename}, "\t", $_->{mtime};
 		}
 	    }
