@@ -32,7 +32,7 @@ __END__
 
 =head1 TITLE
 
-corpus - List the indexed distributions of one or more CPAN authors.
+corpus - List the distributions of one or more CPAN authors.
 
 =head1 SYNOPSIS
 
