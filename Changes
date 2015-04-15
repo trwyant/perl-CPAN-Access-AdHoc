@@ -1,3 +1,21 @@
+0.000_196	2015-04-15	T. R. Wyant
+  Correct 'No CPAN URL' error message.
+  Add -quiet to eg/cpan-adhoc corpus verb.
+  Remove eg/cpan-adhoc corpus -full and -date. There is now only the
+    -full display. The date is always displayed, and comes from the
+    CHECKSUMS file's {mtime} item.
+  In eg/cpan-adhoc, add -before and -since to corpus command. These
+    select only files modified before or since the given date. You can
+    specify both, but if there is no overlap what you have is an
+    expensive no-op.
+  Provide control of time format in eg/cpan-adhoc. This is the
+    command-line option -date-format and the command option -format on
+    the corpus and mtime commands. The mtime command also got
+    documented, and got a -distribution option to report the
+    modification time of the distribution itself.
+  Default eg/cpan-adhoc -verbose to the value of -t STDIN.
+  Add -unreleased to eg/cpan-adhoc corpus command.
+
 0.000_195	2014-11-08	T. R. Wyant
   Have CPAN::Access::AdHoc::Archive write() preserve modification time,
     if the modification time of the original archive is known.
