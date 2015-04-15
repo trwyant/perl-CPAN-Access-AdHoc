@@ -541,7 +541,8 @@ sub __attr__cpan__default {
 	return $url;
     }
 
-    __wail( 'No CPAN URL obtained from ' . $self->default_cpan_source() );
+    __wail( 'No CPAN URL obtained from ' . join ', ', @{
+	$self->default_cpan_source() } );
 }
 
 # modules/02packages.details.txt.gz and modules/03modlist.data.gz have
