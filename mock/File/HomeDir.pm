@@ -7,7 +7,7 @@ use warnings;
 
 use File::Spec::Unix;
 
-our $VERSION = '0.000_196';
+our $VERSION = '0.000_197';
 
 our $BASE ||= 'mock/Perl';
 

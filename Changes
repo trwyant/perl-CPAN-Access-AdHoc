@@ -1,3 +1,6 @@
+0.000_197	2016-01-01	T. R. Wyant
+  Move merge_meta info to My::Module::Meta.
+
 0.000_196	2015-04-15	T. R. Wyant
   Correct 'No CPAN URL' error message.
   Add -quiet to eg/cpan-adhoc corpus verb.
