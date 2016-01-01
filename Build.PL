@@ -44,14 +44,8 @@ my %args = (
     },
 );
 
-$mbv >= 0.28 and $args{meta_merge} = {
-    no_index => {
-	directory => [qw{ inc mock t xt }],
-    },
-    resources => {
-	bugtracker => 'https://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Access-AdHoc',
-    },
-};
+$mbv >= 0.28
+    and $args{meta_merge} = $meta->meta_merge();
 
 $mbv >= 0.34
     and $args{auto_configure_requires} = 0;	# Don't require Module::Build
