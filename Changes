@@ -1,3 +1,9 @@
+0.000_198	2016-01-05	T. R. Wyant
+  Better default options in eg/cpan-adhoc corpus. If options from the
+    group -development, -produciton or -unreleased are specified only
+    negated, than unspecified members of the group are asserted by
+    default.
+
 0.000_197	2016-01-01	T. R. Wyant
   Move merge_meta info to My::Module::Meta.
 
