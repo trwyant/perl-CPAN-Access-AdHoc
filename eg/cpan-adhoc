@@ -14,6 +14,7 @@ use CPAN::Access::AdHoc::Util qw{ __expand_distribution_path };
 use Cwd;
 use File::Temp;
 use Getopt::Long 2.33 qw{ :config auto_version };
+use List::Util qw{ any };
 use Pod::Usage;
 use POSIX qw{ strftime };
 use Term::ReadLine;
@@ -192,9 +193,8 @@ sub verb_corpus {
 	or return;
     @argv
 	or die "No author specified\n";
-    $opt{development}
-	or $opt{production}
-	or $opt{development} = $opt{production} = $opt{unreleased} = 1;
+    _default_boolean_option_group(
+	\%opt, qw{ development production unreleased } );
     foreach my $name ( qw{ before since } ) {
 	$opt{$name}
 	    or next;
@@ -480,6 +480,32 @@ sub verb_write {
 	$archive->write();
 	my $di = $pkg->{info};
 	say sprintf '%s', $di->filename();
+    }
+    return;
+}
+
+# Default a group of Boolean options.
+# The arguments are a hash reference and some option names. Nothing is
+# returned. The defaults are applied as follows:
+#
+# * If any option in the group is asserted, the hash is unmodified,
+#   which defaults unspecified options to false.
+#
+# * If no option in the group is asserted but at least one option in the
+#   group is negated, any unspecified options are asserted.
+#
+# * If no options in the group are specified, all are asserted.
+#
+sub _default_boolean_option_group {
+    my ( $opt, @name ) = @_;
+    if ( any { $opt->{$_} } @name ) {
+    } elsif ( any { exists $opt->{$_} } @name ) {
+	foreach ( @name ) {
+	    exists $opt->{$_}
+		or $opt->{$_} = 1;
+	}
+    } else {
+	@{ $opt }{ @name } = ( 1 ) x scalar @name;
     }
     return;
 }
