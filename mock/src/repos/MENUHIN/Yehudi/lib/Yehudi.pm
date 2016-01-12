@@ -7,7 +7,7 @@ use warnings;
 
 use Carp;
 
-our $VERSION = '0.000_198';
+our $VERSION = '0.001';
 
 sub instrument {
     return 'violin';

@@ -39,7 +39,8 @@ exception fetch => 'fubar/bazzle',
     'Fetch a non-existant file.';
 
 warning http_error_handler => sub {
-    my ( $self, $url, $resp ) = @_;
+##  my ( $self, $url, $resp ) = @_;
+    my ( undef, $url ) = @_;		# Invocant and response not used
     $url =~ m{ /modules/02packages_details [.] txt [.] gz \z }smx
 	and return;
     die "$url not found\n"
@@ -80,7 +81,8 @@ SKIP: {
     no warnings qw{ redefine };
 
     local *LWP::MediaTypes::guess_media_type = sub {
-	my ( $url, $rslt ) = @_;
+##	my ( $url, $rslt ) = @_;
+	my ( undef, $rslt ) = @_;	# URL not used
 	$rslt->header( 'Content-Type' => 'something/awful' );
 	return;
     };
@@ -97,7 +99,7 @@ SKIP: {
 	require Errno;
 	Errno->can( 'ENOENT' );
 	1;
-    } or skip 'Errno can not be loaded, or does not support ENOENT';
+    } or skip 'Errno can not be loaded, or does not support ENOENT', $tests;
 
     no warnings qw{ redefine };
 

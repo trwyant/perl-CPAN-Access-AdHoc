@@ -19,7 +19,7 @@ SKIP: {
 	1;
     } or do {
 	fail "Failed to wrap $fn: $@";
-	skip 'Unable to instantiate object', 1;
+	skip 'Unable to instantiate object', $tests;
     };
     pass "Wrap $fn";
 
@@ -64,7 +64,7 @@ SKIP: {
 	1;
     } or do {
 	fail "Failed to wrap $fn: $@";
-	skip 'Unable to instantiate object', 1;
+	skip 'Unable to instantiate object', $tests;
     };
     pass "Wrap $fn as user SCHICKELE";
 

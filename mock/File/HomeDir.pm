@@ -12,7 +12,7 @@ our $VERSION = '0.000_198';
 our $BASE ||= 'mock/Perl';
 
 sub my_dist_config {
-    my ( $class, $dist ) = @_;
+    my ( undef, $dist ) = @_;		# Invocant not used.
     return File::Spec::Unix->catdir( $BASE, $dist );
 }
 

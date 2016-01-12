@@ -430,7 +430,7 @@ SKIP: {
 
 $cad = CPAN::Access::AdHoc->new(
     http_error_handler => sub {
-	my ( $self, $path, $resp ) = @_;
+	my ( undef, $path, $resp ) = @_;	# Invocant not used
 	$resp->code() == 404
 	    and $path eq q{modules/02packages.details.txt.gz}
 	    and return;

@@ -333,7 +333,7 @@ sub __create_accessor_mutators {
 	and $config_path = File::Spec->catfile( $config_dir, $config_file );
 
     sub __attr__config__default {
-	my ( $self ) = @_;
+##	my ( $self ) = @_;		# Invocant is unused
 	defined $config_path
 	    and -f $config_path
 	    and return Config::Tiny->read( $config_path );
@@ -342,7 +342,7 @@ sub __create_accessor_mutators {
 }
 
 sub __attr__config__validate {
-    my ( $self, $value ) = @_;
+    my ( undef, $value ) = @_;		# Invocant is unused
 
     my $err = "Attribute 'config' must be a file name or a " .
 	"Config::Tiny reference";
@@ -384,7 +384,7 @@ sub __attr__http_error_handler__default {
 }
 
 sub __attr__http_error_handler__validate {
-    my ( $self, $value ) = @_;
+    my ( undef, $value ) = @_;		# Invocant is unused
     'CODE' eq ref $value
 	or __wail(
 	q{Attribute 'http_error_handler' must be a code reference}
@@ -401,7 +401,7 @@ sub __attr__cpan__post_assignment {
 }
 
 sub __attr__cpan__validate {
-    my ( $self, $value ) = @_;
+    my ( undef, $value ) = @_;		# Invocant is unused
 
     $value = "$value";	# Stringify
     $value =~ s{ (?<! / ) \z }{/}smx;
@@ -464,7 +464,7 @@ sub _checksum {
     )->plugins();
 
     sub __attr__default_cpan_source__validate {
-	my ( $self, $value ) = @_;
+	my ( undef, $value ) = @_;		# Invocant is unused
 
 	ref $value
 	    or $value = [ split qr{ \s* , \s* }smx, $value ];
@@ -552,7 +552,7 @@ sub __attr__cpan__default {
 # spaces.
 
 sub _read_meta {
-    my ( $self, $fh ) = @_;
+    my ( undef, $fh ) = @_;		# Invocant is unused.
     my %meta;
     {
 	my ( $name, $value );

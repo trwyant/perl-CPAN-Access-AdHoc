@@ -12,7 +12,7 @@ our $VERSION = '0.000_198';
 our $CONFIG ||= {};
 
 sub new {
-    my ( $class ) = @_;
+##  my ( $class ) = @_;		# Invocant not used
     # Because our configuration file may or may not exist under testing
     # conditions, new() also needs to return $CONFIG, so that we get the
     # desired result no matter which path we take through the code.
@@ -20,7 +20,8 @@ sub new {
 }
 
 sub read {
-    my ( $class, $file ) = @_;
+##  my ( $class, $file ) = @_;
+    my ( $class ) = @_;		# File name not used
     return $class->new();
 }
 

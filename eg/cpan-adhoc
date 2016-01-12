@@ -203,7 +203,6 @@ sub verb_corpus {
     my $inx = $cad->fetch_author_index();
     foreach my $id ( @argv ) {
 	my $uc_id = uc $id;
-	my %seen;
 	if ( $inx->{$uc_id} ) {
 	    my %found;
 	    my $corpus = $cad->fetch_distribution_checksums( $uc_id );

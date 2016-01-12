@@ -57,7 +57,7 @@ sub get_item_mtime {
     )->plugins();
 
     sub __handle_http_response {
-	my ( $class, $resp ) = @_;
+	my ( undef, $resp ) = @_;	# Invocant is not used.
 
 	foreach my $archiver ( @archivers ) {
 	    my $archive;

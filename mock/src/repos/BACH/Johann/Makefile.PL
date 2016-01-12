@@ -5,7 +5,7 @@ use warnings;
 
 use ExtUtils::MakeMaker 6.56;
 
-(my $mmv = ExtUtils::MakeMaker->VERSION) =~ s/_//g;
+# ( my $mmv = ExtUtils::MakeMaker->VERSION ) =~ s/_//g;
 
 my %args = (
     NAME => 'Johann',

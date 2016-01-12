@@ -258,7 +258,7 @@ sub _provides {
     use ExtUtils::Manifest;
     my $manifest = maniread()
 	or return {};
-    while ( my ( $file, $comment ) = each %{ $manifest } ) {
+    foreach my $file ( sort keys %{ $manifest } ) {
 
 	( my $module = $file ) =~ s{ [.] pm \z }{}smx
 	    or next;
@@ -291,6 +291,11 @@ Build_Repos.PL - Build the CPAN::Access::AdHoc mock repository
  Build_Repos.PL -version
 
 =head1 OPTIONS
+
+=head2 -force
+
+If asserted, this option forces the build to proceed even if directory
+F<mock/repos/> already exists.
 
 =head2 -help
 

@@ -15,7 +15,7 @@ my @hide = qw{
 };
 
 sub ACTION_make_optional_modules_tests {
-    my ( $self, @args ) = @_;
+##  my ( $self, @args ) = @_;		# Invocant and arguments are unused
 
     my $hider = 'Test::Without::Module';
 
@@ -54,7 +54,8 @@ EOD
 
 
 sub ACTION_authortest {
-    my ( $self, @args ) = @_;
+##  my ( $self, @args ) = @_;
+    my ( $self ) = @_;		# Arguments are unused
 
     local $ENV{AUTHOR_TESTING} = 1;
 

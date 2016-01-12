@@ -15,7 +15,7 @@ my $configured = eval {
 };
 
 sub get_default {
-    my ( $class ) = @_;
+##  my ( $class ) = @_;		# Invocant not used
 
     $configured
 	or return;
