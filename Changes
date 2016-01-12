@@ -1,3 +1,11 @@
+0.000_199	2016-01-12	T. R. Wyant
+  Prohibit _all_ unused variables. I used to allow them in subroutine
+    signatures.
+
+  Put version numbers in mock/src/repos/ back to their intended values.
+
+  Update bundled File::chdir to version 0.1010.
+
 0.000_198	2016-01-05	T. R. Wyant
   Better default options in eg/cpan-adhoc corpus. If options from the
     group -development, -produciton or -unreleased are specified only
