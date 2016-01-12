@@ -2,6 +2,7 @@
 /blib
 /Build
 /cover_db
+/CPAN-Access-AdHoc-*
 /Debian_CPANTS.txt
 /foo
 /Makefile
