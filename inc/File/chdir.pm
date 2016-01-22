@@ -1,5 +1,5 @@
 package File::chdir;
-use 5.004;
+use 5.010;
 use strict;
 use vars qw($VERSION @ISA @EXPORT $CWD @CWD);
 # ABSTRACT: a more sensible way to change directories

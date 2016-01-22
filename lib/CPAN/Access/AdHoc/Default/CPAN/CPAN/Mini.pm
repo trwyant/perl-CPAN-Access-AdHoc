@@ -1,6 +1,6 @@
 package CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini;
 
-use 5.008;
+use 5.010;
 
 use strict;
 use warnings;

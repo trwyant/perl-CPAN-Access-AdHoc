@@ -1,6 +1,6 @@
 package CPAN::Access::AdHoc::Archive::Null;
 
-use 5.008;
+use 5.010;
 
 use strict;
 use warnings;
