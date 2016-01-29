@@ -192,6 +192,8 @@ sub verb_corpus {
 	format=s latest!  production! quiet!  since=s unreleased! } )
 	or return;
     @argv
+	or @argv = _pause_info( 'user' );
+    @argv
 	or die "No author specified\n";
     _default_boolean_option_group(
 	\%opt, qw{ development production unreleased } );
@@ -227,7 +229,7 @@ sub verb_corpus {
 			strftime '%Y-%m-%d', gmtime
 			$cad->fetch_distribution_archive( $dist ),
 		};
-		_record_distribution( $dist );
+		_record_distribution( $dist, quiet => 1 );
 	    }
 	    my $banner = sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
 	    my $quiet = $opt{quiet}
@@ -591,6 +593,39 @@ sub _get_archive {
     );
 }
 
+sub _pause_info {
+    my ( $key ) = @_;
+    state $pause_info;
+    unless ( $pause_info ) {
+	eval {
+	    require Config::Identity::PAUSE;
+	    $pause_info = { Config::Identity::PAUSE->load() };
+	    1;
+	} or do {
+	    $pause_info = {};
+	    no autodie qw{ open };
+	    if ( open my $fh, '<:encoding(utf-8)', File::Spec->catfile(
+		    $ENV{HOME}, '.pause' ) ) {
+		while ( <$fh> ) {
+		    s/ \A \s+ //smx;
+		    m/ \A (?: [#] | \z ) /smx
+			and next;
+		    s/ \s+ \z //smx;
+		    my ( $name, $value ) = split qr{ \s+ }smx, $_, 2;
+		    $pause_info->{$name} = $value;
+		}
+		close $fh;
+	    }
+	};
+	defined $pause_info->{username}
+	    and not defined $pause_info->{user}
+	    and $pause_info->{user} = delete $pause_info->{username};
+    }
+    defined $pause_info->{$key}
+	or return;
+    return $pause_info->{$key};
+}
+
 sub _record_distribution {
     my ( $pkg, %arg ) = @_;
     defined $pkg
@@ -681,6 +716,8 @@ sub _resolve_unique_distribution {
 
 sub _flunk {
     my ( $msg, %arg ) = @_;
+    $arg{quiet}
+	and return;
     $msg =~ s/ (?<! \n ) \z /\n/smx;
     $arg{warn}
 	or die $msg;
