@@ -1,3 +1,8 @@
+0.000_200	2016-01-28	T. R. Wyant
+  Use ~/.pause user as default author in eg/cpan-adhoc corpus command
+
+  Require Perl 5.010.
+
 0.000_199	2016-01-12	T. R. Wyant
   Prohibit _all_ unused variables. I used to allow them in subroutine
     signatures.
