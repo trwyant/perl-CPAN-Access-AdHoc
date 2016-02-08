@@ -340,18 +340,20 @@ sub verb_exit {
 }
 
 sub verb_extract {
-    my @argv = @_;
-    @argv or @argv = ( CURRENT_PACKAGE );
-    foreach my $name ( @argv ) {
-	my $pkg = _resolve_unique_distribution(
-	    $name, record => 1, warn => 1 )
-	    or next;
-	my $archive = _get_archive( $pkg );
-	$archive->extract();
-	my $di = $pkg->{info};
-	say sprintf '%s/%s  %s', $di->cpanid(), $di->filename(),
-	    $archive->base_directory();
-    }
+    my ( $name, $target ) = @_;
+    defined $name
+	and '' ne $name
+	or $name = CURRENT_PACKAGE;
+    defined $target
+	and $target =~ s{ / \z }{}smx;
+    my $pkg = _resolve_unique_distribution(
+	$name, record => 1, warn => 1 )
+	or return;
+    my $archive = _get_archive( $pkg );
+    $archive->extract( $target );
+    my $di = $pkg->{info};
+    say sprintf '%s/%s  %s', $di->cpanid(), $di->filename(),
+	join '/', grep { defined } $target, $archive->base_directory();
     return;
 }
 
@@ -1098,10 +1100,17 @@ This command causes the script to exit. An end-of-file also works.
 
  cpan-adhoc> extract libwww-perl
  cpan-adhoc> extract
+ cpan-adhoc> extract libwww-perl lwp-directory
+ cpan-adhoc> extract '' lwp-directory
 
-This command extracts the files in the given distributions into
+This command extracts the files in the given distribution into
 subdirectories of the current directory. If no distribution is
 specified, the current distribution is extracted.
+
+An optional second argument specifies the directory into which the
+distribution should be extracted. If this is specified the directory
+must exist. To specify the second argument while defaulting the first,
+specify the first argument as an empty string.
 
 =head2 help
 
