@@ -1,3 +1,12 @@
+0.000_201	2016-02-08	T. R. Wyant
+  Add Makefile targets authortest and testcover.
+
+  Add target directory as optional extract() argument. This involves
+    making File::chdir a full-fledged dependency, so the copy in inc/
+    (used for testing) has been removed. The eg/cpan-adhoc 'extract'
+    verb now extracts only a single distribution, and accepts the target
+    directory as an optional second argument.
+
 0.000_200	2016-01-28	T. R. Wyant
   Use ~/.pause user as default author in eg/cpan-adhoc corpus command
 
