@@ -78,12 +78,12 @@ sub base_directory {
     return $base;
 }
 
-sub extract {
+sub __extract {
     my ( $self ) = @_;
 
     $self->archive()->extractTree();
 
-    return $self;
+    return;
 }
 
 sub get_item_content {

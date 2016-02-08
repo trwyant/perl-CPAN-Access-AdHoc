@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use Cwd ();
+use File::chdir;
 use CPAN::Access::AdHoc::Util qw{
     __attr __expand_distribution_path __guess_media_type :carp
 };
@@ -38,6 +39,14 @@ sub base_directory {
 }
 
 sub extract {
+    my ( $self, $target ) = @_;
+    defined $target
+	and local $CWD = $target;
+    $self->__extract();
+    return $self;
+}
+
+sub __extract {
     __weep( 'The extract() method must be overridden' );
 }
 
@@ -143,6 +152,13 @@ sub __set_archive_mtime {
 	    or __whinge( "Failed to set modification time on $fn: $!" );
     }
     return;
+}
+
+sub __change_to_target_dir {
+    my ( undef, $target ) = @_;	# Invocant unused
+    defined $target
+	or return $target;
+    return CPAN::Access::AdHoc::chdir->new( $target );
 }
 
 sub wrap_archive {
@@ -318,6 +334,9 @@ computed from the directories contained in the distribution.
 
 This method extracts the contents of the archive to files. It simply
 wraps whatever the extraction method is for the underlying archiver.
+
+An optional argument specifies the name of the directory to extract
+into. If this directory can not be used, an exception is thrown.
 
 =head3 get_item_content
 

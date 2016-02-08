@@ -98,7 +98,7 @@ sub base_directory {
     return $attr->{base_dir};
 }
 
-sub extract {
+sub __extract {
     my ( $self ) = @_;
     my $attr = $self->__attr();
 
@@ -123,7 +123,7 @@ sub extract {
 	utime $mtime, $mtime, $path;
     }
 
-    return $self;
+    return;
 }
 
 sub get_item_content {

@@ -7,7 +7,6 @@ use warnings;
 
 use lib qw{ inc };
 
-use File::chdir;
 use File::Spec;
 use POSIX ();
 use Test::More 0.88;	# Because of done_testing();
@@ -97,12 +96,14 @@ my $cad = CPAN::Access::AdHoc->new();
 	my $td = File::Temp->newdir()
 	    or skip "Unable to create temp dir: $!", $tests;
 
-	local $CWD = $td;
-
-	if ( eval { $arc->extract(); 1; } ) {
-	    is slurp( File::Spec->catfile( $arc->base_directory(),
-		    $file_name ) ), $text,
-	    'Correct extraction from archive';
+	if ( eval {
+		$arc->extract( $td->dirname() );
+		is slurp( File::Spec->catfile( $td->dirname(),
+			$arc->base_directory(),
+			$file_name ) ), $text,
+		'Correct extraction from archive';
+		1;
+	    } ) {
 	} else {
 	    fail "Unable to extract null archive: $@";
 	}

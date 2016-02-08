@@ -68,9 +68,11 @@ sub requires {
 	'base'			=> 0,
 	'Carp'			=> 0,
 	'Config::Tiny'		=> 0,
+	'CPAN'			=> 0,	# Core module
 	'CPAN::Meta'		=> 0,
 	'Cwd'			=> 0,
 	'Digest::SHA'		=> 0,
+	'File::chdir'		=> 0,
 	'File::HomeDir'		=> 0,
 	'File::Path'		=> 2.07,
 	'File::Spec'		=> 0,
