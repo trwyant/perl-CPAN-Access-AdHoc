@@ -35,7 +35,7 @@ my %args = (
 #	    } ],
     },
     'dist' => {COMPRESS => 'gzip', SUFFIX => '.gz'},
-#   realclean => { FILES => join ' ', qw{ mock/repos/ } },
+    realclean => { FILES => join ' ', qw{ cover_db xt/author/optionals } },
     AUTHOR => 'Tom Wyant (wyant at cpan dot org)',
     ABSTRACT => 'Provide ad-hoc access to a CPAN repository',
 );
@@ -54,3 +54,26 @@ $mmv >= 6.5501
 
 WriteMakefile (%args);
 
+sub MY::postamble {
+    my ( $self, @args ) = @_;
+
+    my $authortest = $self->test_via_harness(
+	'$(FULLPERLRUN)', '$(AUTHORTEST_FILES)' );
+    $authortest =~ s/ \s+ \z //smx;
+    $authortest =~ s/ \A \s+ //smx;
+    chomp $authortest;
+
+    return <<"EOD";
+
+AUTHORTEST_FILES = t/*.t xt/author/*.t xt/author/optionals/*.t
+
+authortest :: pure_all
+	\$(FULLPERLRUN) "-Iinc" "-MMy::Module::Meta" "-e" "My::Module::Meta->make_optional_modules_tests()"
+	AUTHOR_TESTING=1 $authortest
+
+testcover :: pure_all
+	cover -test
+EOD
+}
+
+# ex: set textwidth=72 :

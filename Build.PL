@@ -26,8 +26,7 @@ my %args = (
 	perl => $meta->requires_perl(),
     ),
     license => 'perl',
-#   add_to_cleanup	=> [ qw{ mock/repos/ } ],
-    add_to_cleanup =>[ qw{ xt/author/optionals } ],
+    add_to_cleanup =>[ qw{ cover_db xt/author/optionals } ],
     PL_files => {
 #	'Build_Repos.PL' => [ qw{
 #	    mock/repos/authors/01mailrc.txt.gz

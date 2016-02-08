@@ -58,6 +58,69 @@ sub meta_merge {
     };
 }
 
+sub make_optional_modules_tests {
+    eval {
+	require Test::Without::Module;
+	1;
+    } or return;
+    my $dir = 'xt/author/optionals';
+    -d $dir
+	or mkdir $dir
+	or die "Can not create $dir: $!\n";
+    opendir my $dh, 't'
+	or die "Can not access t/: $!\n";
+    while ( readdir $dh ) {
+	m/ \A [.] /smx
+	    and next;
+	m/ [.] t \z /smx
+	    or next;
+	my $fn = "$dir/$_";
+	-e $fn
+	    and next;
+	print "Creating $fn\n";
+	open my $fh, '>:encoding(utf-8)', $fn
+	    or die "Can not create $fn: $!\n";
+	print { $fh } <<"EOD";
+package main;
+
+use strict;
+use warnings;
+
+use Test::More 0.88;
+
+use lib qw{ inc };
+
+use My::Module::Meta;
+
+BEGIN {
+    eval {
+	require Test::Without::Module;
+	Test::Without::Module->import(
+	    My::Module::Meta->optionals() );
+	1;
+    } or plan skip_all => 'Test::Without::Module not available';
+}
+
+do 't/$_';
+
+1;
+
+__END__
+
+# ex: set textwidth=72 :
+EOD
+    }
+    closedir $dh;
+
+    return $dir;
+}
+
+sub optionals {
+    return ( qw{
+	CPAN::Mini CPANPLUS App::cpanminus
+    } );
+}
+
 sub requires {
     my ( undef, @extra ) = @_;		# Invocant is unused
 ##  if ( ! $self->distribution() ) {
@@ -158,6 +221,24 @@ C<BUILD_REQUIRES> key.
 This method returns the value of the environment variable
 C<MAKING_MODULE_DISTRIBUTION> at the time the object was instantiated.
 
+=head2 make_optional_modules_tests
+
+ My::Module::Meta->make_optional_modules_tests()
+
+This static method creates the optional module tests. These are stub
+files in F<xt/author/optionals/> that use C<Test::Without::Module> to
+hide all the optional modules and then invoke the normal tests in F<t/>.
+The aim of these tests is to ensure that we get no test failures if the
+optional modules are missing.
+
+This method is idempotent; that is, it only creates the directory and
+the individual stub files if they are missing.
+
+On success this method returns the name of the optional tests directory.
+If C<Test::Without::Module> can not be loaded this method returns
+nothing. If the directory or any file can not be created, an exception
+is thrown.
+
 =head2 meta_merge
 
  use YAML;
@@ -167,6 +248,12 @@ This method returns a reference to a hash describing the meta-data which
 has to be provided by making use of the builder's C<meta_merge>
 functionality. This includes the C<dynamic_config>, C<no_index> and
 C<resources> data.
+
+=head2 optionals
+
+ say for My::Module::Meta->optionals();
+
+This static method simply returns the names of the optional modules.
 
 =head2 requires
 
