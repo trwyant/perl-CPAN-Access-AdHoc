@@ -67,7 +67,7 @@ sub corpus {
     return (
 	map { "$prefix/$_" }
 	grep { $_ !~ m/ [.] meta \z /smx }
-	sort keys %{ $self->fetch_distribution_checksums( $cpan_id ) }
+	sort keys %{ $self->fetch_distribution_checksums( $cpan_id ) || {} }
     );
 }
 
@@ -761,10 +761,13 @@ These methods are what all the rest is in aid of.
 
 =head3 corpus
 
-This convenience method returns a list of the indexed distributions by
-the author with the given CPAN ID. This information is derived from the
-output of L<indexed_distributions()|/indexed_distributions>. The
-argument is converted to upper case before use.
+This convenience method returns a list of distributions by the author
+with the given CPAN ID. The argument is converted to upper case before
+use.
+
+This list is derived from the author's F<CHECKSUMS> file. If run against
+a Mini-CPAN, the returned data may list distributions that are not
+contained in the underlying CPAN.
 
 =head3 exists
 
