@@ -1,3 +1,8 @@
+0.000_202	2016-03-20	T. R. Wyant
+  Fix exception when author has no corpus.
+    
+  Update corpus() documentation to reflect how it actually works.
+
 0.000_201	2016-02-08	T. R. Wyant
   Add Makefile targets authortest and testcover.
 
