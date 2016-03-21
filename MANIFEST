@@ -18,6 +18,7 @@ lib/CPAN/Access/AdHoc/Archive.pm
 lib/CPAN/Access/AdHoc/Archive/Null.pm
 lib/CPAN/Access/AdHoc/Archive/Tar.pm
 lib/CPAN/Access/AdHoc/Archive/Zip.pm
+lib/CPAN/Access/AdHoc/Default/CPAN.pm
 lib/CPAN/Access/AdHoc/Default/CPAN/CPAN.pm
 lib/CPAN/Access/AdHoc/Default/CPAN/CPAN/Mini.pm
 lib/CPAN/Access/AdHoc/Default/CPAN/cpanm.pm

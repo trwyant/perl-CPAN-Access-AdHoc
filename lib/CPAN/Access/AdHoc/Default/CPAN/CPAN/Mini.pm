@@ -5,6 +5,8 @@ use 5.010;
 use strict;
 use warnings;
 
+use base qw{ CPAN::Access::AdHoc::Default::CPAN };
+
 use CPAN::Access::AdHoc::Util qw{ __load };
 use Cwd ();
 use URI::file;
@@ -16,7 +18,7 @@ my $configured = eval {
     1;
 };
 
-sub get_default {
+sub get_cpan_url {
 ##  my ( $class ) = @_;		# Invocant is not used.
 
     $configured
@@ -33,6 +35,20 @@ sub get_default {
     return $uri;
 }
 
+sub get_clean_checksums {
+
+    $configured
+	or return;
+
+    my %config = CPAN::Mini->read_config( {} )
+	or return;
+
+    exists $config{exact_mirror}
+	or return;
+
+    return ! $config{exact_mirror};
+}
+
 1;
 
 __END__
@@ -44,7 +60,7 @@ CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini - Get the default CPAN from CPAN:
 =head1 SYNOPSIS
 
  use CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini;
- print CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini->get_default();
+ print CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini->get_cpan_url();
 
 =head1 DESCRIPTION
 
@@ -56,11 +72,17 @@ C<file://> URL.
 
 This class supports the following public methods:
 
-=head2 get_default
+=head2 get_cpan_url
 
 This static method returns the user's CPAN::Mini local repository as a
 C<file:> URL. If the repository can not be determined, nothing is
 returned.
+
+=head2 get_clean_checksums
+
+This static method returns the negation of the CPAN::Mini
+configuration's C<exact_mirror> attribute, or false if that attribute
+does not exist.
 
 =head1 SEE ALSO
 

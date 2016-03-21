@@ -5,6 +5,8 @@ use 5.010;
 use strict;
 use warnings;
 
+use base qw{ CPAN::Access::AdHoc::Default::CPAN };
+
 use CPAN::Access::AdHoc::Util qw{ __load };
 
 our $VERSION = '0.000_202';
@@ -14,7 +16,7 @@ my $configured = eval {
     1;
 };
 
-sub get_default {
+sub get_cpan_url {
 ##  my ( $class ) = @_;		# Invocant is not used.
 
     $configured
@@ -63,7 +65,7 @@ CPAN::Access::AdHoc::Default::CPAN::CPAN - Get the default CPAN URL from CPAN
 =head1 SYNOPSIS
 
  use CPAN::Access::AdHoc::Default::CPAN::CPAN;
- print CPAN::Access::AdHoc::Default::CPAN::CPAN->get_default();
+ print CPAN::Access::AdHoc::Default::CPAN::CPAN->get_cpan_url();
 
 =head1 DESCRIPTION
 
@@ -76,7 +78,7 @@ scheme.
 
 This class supports the following public methods:
 
-=head2 get_default
+=head2 get_cpan_url
 
 This static method returns the user's CPAN repository URL.  If the
 repository URL can not be determined, nothing is returned.

@@ -28,10 +28,10 @@ our $VERSION = '0.000_202';
 # In the following list of attribute names, 'config' must be first
 # because it supplies default values for everything else. 'cpan' must be
 # after 'default_cpan_source' because 'default_cpan_source' determines
-# how the default value of 'cpan' is computed.
+# how the default value of 'cpan' is computed. Ditto clean_checksums.
 my @attributes = qw{
-    config __debug clean_checksums http_error_handler
-    default_cpan_source cpan
+    config __debug http_error_handler
+    default_cpan_source cpan clean_checksums
 };
 
 sub new {
@@ -540,7 +540,7 @@ sub __attr__cpan__default {
 
     foreach my $class ( @{ $self->default_cpan_source() } ) {
 
-	my @url_list = $class->get_default()
+	my @url_list = $class->get_cpan_url()
 	    or next;
 
 	foreach ( @url_list ) {
@@ -561,6 +561,19 @@ sub __attr__cpan__default {
 
     __wail( 'No CPAN URL obtained from ' . join ', ', @{
 	$self->default_cpan_source() } );
+}
+
+sub __attr__clean_checksums__default {
+    my ( $self ) = @_;
+
+    foreach my $class ( @{ $self->default_cpan_source() } ) {
+
+	$class->get_cpan_url()
+	    and return $class->get_clean_checksums();
+
+    }
+
+    return;
 }
 
 # modules/02packages.details.txt.gz and modules/03modlist.data.gz have

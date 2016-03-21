@@ -5,6 +5,8 @@ use 5.010;
 use strict;
 use warnings;
 
+use base qw{ CPAN::Access::AdHoc::Default::CPAN };
+
 use CPAN::Access::AdHoc::Util qw{ __load };
 use Getopt::Long 2.33;
 
@@ -15,7 +17,7 @@ my $configured = eval {
     1;
 };
 
-sub get_default {
+sub get_cpan_url {
     $configured
 	or return;
     my @mirrors;
@@ -43,7 +45,7 @@ CPAN::Access::AdHoc::Default::CPAN::cpanm - Get the default CPAN URL from cpanmi
 =head1 SYNOPSIS
 
  use CPAN::Access::AdHoc::Default::CPAN::CPAN;
- print CPAN::Access::AdHoc::Default::CPAN::CPAN->get_default();
+ print CPAN::Access::AdHoc::Default::CPAN::CPAN->get_cpan_url();
 
 =head1 DESCRIPTION
 
@@ -59,7 +61,7 @@ a C<--mirror> option, L<http://search.cpan.org/CPAN> is returned.
 
 This class supports the following public methods:
 
-=head2 get_default
+=head2 get_cpan_url
 
 This static method returns the CPAN repository URLs configured in
 F<cpanm>.  If the repository URLs can not be determined, nothing is
