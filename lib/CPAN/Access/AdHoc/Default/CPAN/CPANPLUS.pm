@@ -9,7 +9,7 @@ use base qw{ CPAN::Access::AdHoc::Default::CPAN };
 
 use CPAN::Access::AdHoc::Util qw{ __load };
 
-our $VERSION = '0.000_202';
+our $VERSION = '0.000_203';
 
 my $configured = eval {
     __load( 'CPANPLUS::Configure' );

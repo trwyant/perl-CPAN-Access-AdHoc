@@ -1,3 +1,10 @@
+0.000_203	2016-03-21	T. R. Wyant
+  Add Boolean attribute clean_checksums, which causes data from
+    non-existent files to be removed from CHECKSUMS data. This defaults
+    to true if the default source is Mini-CPAN and Mini-CPAN's
+    exact_mirror configuration item is turned off. Othewise it defaults
+    to false.
+
 0.000_202	2016-03-20	T. R. Wyant
   Fix exception when author has no corpus.
     
