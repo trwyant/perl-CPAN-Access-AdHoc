@@ -66,6 +66,10 @@ sub corpus {
 	substr( $cpan_id, 0, 2 ),
 	$cpan_id;
 
+    $self->exists( "authors/id/$prefix/CHECKSUMS" )
+	or not $self->fetch_author_index()->{$cpan_id}
+	or return;
+
     return (
 	map { "$prefix/$_" }
 	grep { $_ !~ m/ [.] meta \z /smx }
@@ -810,7 +814,12 @@ use.
 
 This list is derived from the author's F<CHECKSUMS> file. If run against
 a Mini-CPAN, the returned data may list distributions that are not
-contained in the underlying CPAN.
+contained in the underlying CPAN unless L<clean_checksums> is true.
+
+If the F<CHECKSUMS> file does not exist, the CPAN ID is checked against
+the author index. If the author is found, nothing is returned. Otherwise
+a 404 error occurs, and is dealt with by the
+L<http_error_handler|/http_error_handler>.
 
 =head3 exists
 
