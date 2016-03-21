@@ -1,3 +1,9 @@
+0.000_204	2016-03-21	T. R. Wyant
+  Have corpus() return nothing if no CHECKSUMS file is found but the
+    CPAN ID appears in the author index, since it appears that in this
+    case CPAN omits the CHECKSUMS file rather than carrying an empty
+    one.
+
 0.000_203	2016-03-21	T. R. Wyant
   Add Boolean attribute clean_checksums, which causes data from
     non-existent files to be removed from CHECKSUMS data. This defaults
