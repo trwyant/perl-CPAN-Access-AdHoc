@@ -42,7 +42,9 @@ eval {
     1;
 } or diag $@;
 
-my $cad = CPAN::Access::AdHoc->new();
+my $cad = CPAN::Access::AdHoc->new(
+    clean_checksums	=> 1,
+);
 
 # Test access to module index
 
@@ -437,7 +439,7 @@ $cad = CPAN::Access::AdHoc->new(
 	    and return;
 	goto &CPAN::Access::AdHoc::DEFAULT_HTTP_ERROR_HANDLER;
     },
-    cpan => URI::file->new( Cwd::abs_path( 'mock/src' ) )
+    cpan => URI::file->new( Cwd::abs_path( 'mock/src' ) ),
 );
 
 is_deeply scalar $cad->fetch_module_index(), {},

@@ -176,6 +176,16 @@ sub verb_choose {
     return;
 }
 
+sub verb_clean_checksums {
+    my ( $arg ) = @_;
+    if ( @_ ) {
+	$cad->clean_checksums( $arg );
+    } else {
+	say $cad->clean_checksums() ? 1 : 0;
+    }
+    return;
+}
+
 sub verb_clear {
     %dist = ();
     $cad->flush();
@@ -927,6 +937,22 @@ This command makes the given downloaded distribution the default.
 
 This command removes all distributions from the stash, and purges cached
 data from the L<CPAN::Access::AdHoc|CPAN::Access::AdHoc> object.
+
+=head2 clean_checksums
+
+ cpan-adhoc> clean_checksums
+ cpan-adhoc> clean_checksums 1
+
+If no argument is specified, this command displays the current
+C<clean_checksums> setting.
+
+If an argument is specified, this command changes the C<clean_checksums>
+setting. Cached values will be purged.
+
+The C<clean_checksums> setting determines whether F<CHECKSUMS> data that
+relates to non-existent files will be removed. This may be useful if
+running against a Mini-CPAN, but requires an access attempt to every
+file referenced bu the C<CHECKSUMS> file.
 
 =head2 corpus
 

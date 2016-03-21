@@ -13,6 +13,7 @@ use CPAN::Access::AdHoc::Util qw{
 use Digest::SHA ();
 use File::HomeDir ();
 use File::Spec ();
+use HTTP::Status qw{ HTTP_NOT_FOUND };
 use IO::File ();
 use LWP::UserAgent ();
 use LWP::Protocol ();
@@ -29,7 +30,8 @@ our $VERSION = '0.000_202';
 # after 'default_cpan_source' because 'default_cpan_source' determines
 # how the default value of 'cpan' is computed.
 my @attributes = qw{
-    config __debug http_error_handler default_cpan_source cpan
+    config __debug clean_checksums http_error_handler
+    default_cpan_source cpan
 };
 
 sub new {
@@ -158,6 +160,14 @@ sub fetch_distribution_checksums {
 	    or return $archive;
 	$cache->{checksums}{$dir} = _eval_string(
 	    $archive->get_item_content() );
+
+	if ( $self->clean_checksums() ) {
+	    my @keys = keys %{ $cache->{checksums}{$dir} };
+	    foreach my $fn ( @keys ) {
+		$self->exists( "authors/id/$dir$fn" )
+		    or delete $cache->{checksums}{$dir}{$fn};
+	    }
+	}
     }
 
     $file eq ''
@@ -390,6 +400,14 @@ sub __attr__http_error_handler__validate {
 	q{Attribute 'http_error_handler' must be a code reference}
     );
     return $value;
+}
+
+sub __attr__clean_checksums__post_assignment {
+    my ( $self ) = @_;
+
+    $self->flush();
+
+    return;
 }
 
 sub __attr__cpan__post_assignment {
@@ -672,6 +690,18 @@ attribute documentation for a few more details.
 
 =head2 Accessors/Mutators
 
+=head3 clean_checksums
+
+If this Boolean attribute is true, any non-existent files are removed
+from the checksums before being returned. This is probably significant
+only if processing a Mini-CPAN archive that has had non-current archives
+removed.
+
+If this attribute is modified, an implicit L<purge()|/purge> will be
+done, since the C<CHECKSUMS> results are cached.
+
+The default is false.
+
 =head3 config
 
 When called with no arguments, this method acts as an accessor, and
@@ -893,7 +923,8 @@ If the request if for the F<CHECKSUMS> file, the return is a reference
 to a hash which contains the interpreted contents of the entire file.
 
 If the argument is a file name other than F<CHECKSUMS>, the return is a
-reference to the F<CHECKSUMS> entry for that file, provided it exists.
+reference to the F<CHECKSUMS> entry for that file, provided the entry
+exists.
 
 If the argument is a directory name, it is treated like a request for
 the F<CHECKSUMS> file in that directory.
@@ -904,6 +935,10 @@ file, nothing is returned.
 
 For convenience, either the top or the top two directories can be
 omitted, since they can be reconstructed from the rest.
+
+If the L<clean_checksums|/clean_checksums> attribute is true, checksums
+for non-existent files will be removed when the F<CHECKSUMS> file is
+fetched.
 
 The result of the first fetch for a given directory is cached, and
 subsequent calls for the same author are supplied from cache.
