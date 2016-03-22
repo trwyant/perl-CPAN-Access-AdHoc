@@ -192,6 +192,17 @@ sub verb_clear {
     return;
 }
 
+sub verb_copy {
+    my ( $pkg, $file ) = _validate_pkg_file( @_ );
+    my $content = _get_archive( $pkg )->get_item_content( $file );
+    state $unused = do {
+	require Clipboard;
+	Clipboard->import();
+    };
+    Clipboard->copy( $content );
+    return;
+}
+
 sub verb_corpus {
     my @argv = @_;
     my %opt = (
@@ -953,6 +964,15 @@ The C<clean_checksums> setting determines whether F<CHECKSUMS> data that
 relates to non-existent files will be removed. This may be useful if
 running against a Mini-CPAN, but requires an access attempt to every
 file referenced bu the C<CHECKSUMS> file.
+
+=head2 copy
+
+ cpan-adhoc> copy lib/Foo/Bar.pm
+
+This command copies the named file to the clipboard. The heavy lifting
+on this is delegated to the L<Clipboard|Clipboard> module, which is
+loaded on the fly. If this module is not installed, an exception is
+thrown.
 
 =head2 corpus
 
