@@ -352,7 +352,7 @@ sub verb_distribution {
 
 BEGIN {
     no warnings qw{ once };
-    *verb_dist = \&verb_distribution;
+    *verb_distro = *verb_dist = \&verb_distribution;
 }
 
 sub verb_exit {
@@ -1135,6 +1135,10 @@ This is a synonym for L<distribution|/distribution>, for convenience.
 
 This command looks up the given distributions in the module index (sic),
 using an unanchored regular expression, and displays any matches.
+
+=head2 distro
+
+This is a synonym for L<distribution|/distribution>, for convenience.
 
 =head2 exit
 
