@@ -22,7 +22,7 @@ use Text::ParseWords qw{ shellwords };
 use version 0.77;
 use YAML::Any;
 
-our $VERSION = '0.000_204';
+our $VERSION = '0.000_204-a';
 
 use constant CURRENT_PACKAGE => 'current';
 
@@ -378,6 +378,17 @@ sub verb_extract {
     return;
 }
 
+{
+    my $temp;
+
+    sub verb_gview {
+	my ( $pkg, $file ) = @_;
+	$temp = _fetch_file( $pkg, $file );
+	_issue( {}, qw{ gvim -R }, $temp->filename() );
+	return;
+    }
+}
+
 sub verb_help {
     pod2usage( { -verbose => 2, -exitval => 'NOEXIT' } );
     return;
@@ -597,8 +608,11 @@ sub _err_not_requested {
 
 sub _fetch_file {
     my ( $pkg, $file ) = _validate_pkg_file( @_ );
+    my @temp_args;
+    $file =~ m/ ( [.] [^.]+ ) \z /smx
+	and push @temp_args, SUFFIX => "$1";
     my $content = _get_archive( $pkg )->get_item_content( $file );
-    my $temp = File::Temp->new();
+    my $temp = File::Temp->new( @temp_args );
     print { $temp } $content;
     return $temp;
 }
@@ -1161,6 +1175,15 @@ An optional second argument specifies the directory into which the
 distribution should be extracted. If this is specified the directory
 must exist. To specify the second argument while defaulting the first,
 specify the first argument as an empty string.
+
+=head2 gview
+
+ cpan-adhoc> module LWP::UserAgent
+ cpan-adhoc> gview lib/LWP/UserAgent.pm
+
+This command extracts the named file to a temporary file and then spawns
+C<gvim -R> on it. The script holds onto the temporary file until the
+next C<gview> command is issued or until it exits.
 
 =head2 help
 
