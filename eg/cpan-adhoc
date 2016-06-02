@@ -22,7 +22,7 @@ use Text::ParseWords qw{ shellwords };
 use version 0.77;
 use YAML::Any;
 
-our $VERSION = '0.000_204-a';
+our $VERSION = '0.000_204-b';
 
 use constant CURRENT_PACKAGE => 'current';
 
@@ -831,6 +831,111 @@ sub _parse_date_adjust_year {
     die "Invalid year '$year'\n";
 }
 
+BEGIN {
+    $readline::rl_completion_function = __PACKAGE__ .
+    '::_readline_completer_function';
+}
+
+use File::Glob qw{ bsd_glob };
+
+sub _readline_completer_function {
+    no warnings qw{ once };
+    my ( $text, $line, $start ) = @_;
+    $start
+	or return _readline_complete_command( $text );
+    state $dispatch = {
+	author	=> 'author',
+	copy	=> 'element',
+	corpus	=> 'author',
+	gview	=> 'element',
+	less	=> 'element',
+	module	=> 'module',
+	mtime	=> 'element',
+	perldoc	=> 'element',
+    };
+    my ( $verb ) = $line =~ m/ ( \w+ ) /smx;
+    if ( $dispatch->{$verb} ) {
+	my $code;
+	$code = __PACKAGE__->can(
+	    "_readline_complete_$dispatch->{$verb}" )
+	    and goto &$code;
+    }
+    my @files = bsd_glob( "$text*" );
+    if ( $readline::var_CompleteAddsuffix ) {
+	foreach ( @files ) {
+	    if (-l $_) {
+##		$_ .= '@';
+	    } elsif (-d _) {
+		$_ .= '/';
+		$readline::rl_completer_terminator_character = '';
+	    } elsif (-x _) {
+##		$_ .= '*';
+	    } elsif (-S _ || -p _) {
+##		$_ .= '=';
+	    }
+	}
+    }
+    return @files;
+}
+
+sub _readline_complete_author {
+    my ( $text ) = @_;
+    my $match = qr{ \A \Q$text\E }smxi;
+    my $author_index = $cad->fetch_author_index();
+    return grep { $_ =~ $match } sort keys %{ $author_index };
+}
+
+sub _readline_complete_command {
+    my ( $text ) = @_;
+    state $commands = _readline_complete_command_list();
+    my $match = qr{ \A \Q$text\E }smx;
+    return grep { $_ =~ $match } @{ $commands };
+}
+
+sub _readline_complete_command_list {
+    no strict qw{ refs };
+    my $name_space = __PACKAGE__ . '::';
+    my @rslt;
+    foreach my $name ( sort keys %$name_space ) {
+	__PACKAGE__->can( $name )
+	    and $name =~ m/ \A verb_ ( \w+ ) /smx
+	    and push @rslt, "$1";
+    }
+    return \@rslt;
+}
+
+sub _readline_complete_element {
+    my ( $text ) = @_;
+    my $pkg = _resolve_unique_distribution( CURRENT_PACKAGE,
+	record	=> 1 );
+    my $dname = $pkg->{info}->distvname();
+    my $arch = _get_archive( $pkg );
+
+    my @rslt;
+    my $match = qr{ \A \Q$text\E }smx;
+
+    foreach my $elem ( $arch->list_contents() ) {
+	$elem =~ $match
+	    or next;
+	push @rslt, $elem;
+    }
+    return @rslt;
+}
+
+sub _readline_complete_module {
+    my ( $text ) = @_;
+    my $match = qr{ ( \A \Q$text\E [^:]* ) }smx;
+    my $module_index = $cad->fetch_module_index();
+    my %rslt;
+    foreach my $module ( keys %{ $module_index } ) {
+	$module =~ $match
+	    and $rslt{$1} = 1;
+    }
+    $readline::rl_completer_terminator_character = '';
+    return sort keys %rslt;
+##    return grep { $_ =~ $match } sort keys %{ $module_index };
+}
+
 # Given a version, return:
 # 'production' unless it contains an underscore
 # 'unreleased' if it has only zeroes and dots before the underscore
@@ -897,6 +1002,15 @@ This Perl script implements an interactive query of a CPAN mirror. The
 default is whatever mirror your CPAN client is set to, as determined by
 L<CPAN::Access::AdHoc|CPAN::Access::AdHoc>. You can specify a different
 mirror on the command line, or using the L<cpan|/cpan> command.
+
+Tab completion is somewhat supported. You can use it to complete command
+names. For the C<'author'> and C<'corpus'> commands, arguments are
+completed from the author index. For the C<'module'> command, arguments
+are completed from the module index. For the C<'copy'>, C<'gview'>,
+C<'less'>, C<'mtime'> and C<'perldoc'> commands, arguments are completed
+from the element list of the current distribution. For all other
+commands, arguments are completed from the files in the current
+directory, whether or not this is appropriate to the command.
 
 The following commands are supported:
 
