@@ -27,6 +27,7 @@ sub build_requires {
 	'IO::Compress::Gzip'	=> 0,
 	'Pod::Usage'		=> 0,
 	'Test::More'		=> 0.88,	# Because of done_testing().
+	'Time::Local'		=> 0,
     };
 }
 
@@ -132,6 +133,7 @@ sub requires {
 	'Carp'			=> 0,
 	'Config::Tiny'		=> 0,
 	'CPAN'			=> 0,	# Core module
+	'CPAN::DistnameInfo'	=> 0,
 	'CPAN::Meta'		=> 0,
 	'Cwd'			=> 0,
 	'Digest::SHA'		=> 0,
@@ -151,12 +153,15 @@ sub requires {
 	'LWP::MediaTypes'		=> 0,
 	'LWP::UserAgent'		=> 0,
 	'Module::Pluggable::Object'	=> 0,
-	'URI'			=> 0,
-	'URI::file'		=> 0,
 	'Safe'			=> 2.32, # Plays well with Devel::Cover
+	'Scalar::Util'		=> 0,
 	'strict'		=> 0,
+	'Time::Local'		=> 0,
 	'Text::ParseWords'	=> 0,
 	'Time::Local'		=> 0,
+	'URI'			=> 0,
+	'URI::file'		=> 0,
+	'version'		=> 0,
 	'warnings'		=> 0,
 	@extra,
     };

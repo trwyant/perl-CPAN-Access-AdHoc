@@ -10,6 +10,7 @@ use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{
     :carp __attr __cache __expand_distribution_path __guess_media_type
 };
+use CPAN::DistnameInfo;
 use Digest::SHA ();
 use File::HomeDir ();
 use File::Spec ();
@@ -22,6 +23,7 @@ use Safe;
 use Scalar::Util qw{ blessed };
 use Text::ParseWords ();
 use URI ();
+use version;
 
 our $VERSION = '0.000_204';
 
@@ -58,23 +60,79 @@ sub __init {
 }
 
 sub corpus {
-    my ( $self, $cpan_id ) = @_;
+    my ( $self, $cpan_id, %arg ) = @_;
+    defined $cpan_id
+	or return;
     $cpan_id = uc $cpan_id;
 
-    my $prefix = join '/',
-	substr( $cpan_id, 0, 1 ),
-	substr( $cpan_id, 0, 2 ),
-	$cpan_id;
-
-    $self->exists( "authors/id/$prefix/CHECKSUMS" )
-	or not $self->fetch_author_index()->{$cpan_id}
+    my $inx = $self->fetch_author_index();
+    $inx->{$cpan_id}
 	or return;
 
-    return (
-	map { "$prefix/$_" }
-	grep { $_ !~ m/ [.] meta \z /smx }
-	sort keys %{ $self->fetch_distribution_checksums( $cpan_id ) || {} }
-    );
+    unless ( grep { $arg{$_} } _version_kind() ) {
+	foreach my $kind ( _version_kind() ) {
+	    defined $arg{$kind}
+		or $arg{$kind} = 1;
+	}
+    }
+
+    my %found;
+    my $corpus = $self->fetch_distribution_checksums( $cpan_id );
+
+    foreach my $filename ( keys %{ $corpus } ) {
+	$filename =~ m/ [.] meta \z /smx
+	    and next;
+	my $pathname = __expand_distribution_path(
+	    "$cpan_id/$filename" );
+	my $info = CPAN::DistnameInfo->new( $pathname );
+	defined( my $dist = $info->dist() )
+	    or next;
+	my $version = $info->version();
+	my $kind = _version_kind( $version );
+	my $mtime = defined $corpus->{$filename}{mtime} ?
+	    _parse_checksums_date( $corpus->{$filename}{mtime} ) :
+	    $self->fetch_distribution_archive( $pathname )->mtime();
+	push @{ $found{$dist} }, {
+	    info	=> $info,
+	    kind	=> $kind,
+	    mtime	=> $mtime,
+	    version	=> version->parse( $version ),
+	};
+    }
+
+    my @rslt;
+    foreach my $name ( sort keys %found ) {
+	my @distro = sort {
+	    $a->{version} <=> $b->{version} }
+	    @{ $found{$name} };
+	$arg{latest}
+	    and @distro = ( $distro[-1] );;
+	foreach my $info ( @distro ) {
+	    $arg{$info->{kind}}
+		or next;
+	    defined $arg{before}
+		and $info->{mtime} >= $arg{before}
+		and next;
+	    defined $arg{since}
+		and $info->{mtime} < $arg{since}
+		and next;
+	    push @rslt, $info;
+	}
+    }
+
+    $arg{hash}
+	and return @rslt;
+    return ( map { $_->{info}->pathname() } @rslt );
+
+}
+
+sub _parse_checksums_date {
+    my ( $date ) = @_;
+    my ( $yr, $mo, $da ) = split qr{ [^0-9]+ }smx, $date;
+    $da
+	or return undef;	## no critic (ProhibitExplicitReturnUndef)
+    use Time::Local ();
+    return Time::Local::timelocal( 0, 0, 0, $da, $mo - 1, $yr - 1900 );
 }
 
 sub exists : method {	## no critic (ProhibitBuiltinHomonyms)
@@ -622,6 +680,22 @@ sub _request_path {
     return $ua->$rqst( $url );
 }
 
+# Given a version, return:
+# 'production' unless it contains an underscore
+# 'unreleased' if it has only zeroes and dots before the underscore
+# 'development' otherwise.
+# If the version is undef, all three are returned.
+sub _version_kind {
+    my ( $version ) = @_;
+    defined $version
+	or return qw{ development production unreleased };
+    $version =~ m/ _ /smx
+	or return 'production';
+    $version =~ m/ \A [0.]+ _ /smx
+	and return 'unreleased';
+    return 'development';
+}
+
 
 1;
 
@@ -808,6 +882,8 @@ These methods are what all the rest is in aid of.
 
 =head3 corpus
 
+ say for $cad->corpus( 'YEHUDI' );
+
 This convenience method returns a list of distributions by the author
 with the given CPAN ID. The argument is converted to upper case before
 use.
@@ -820,6 +896,96 @@ If the F<CHECKSUMS> file does not exist, the CPAN ID is checked against
 the author index. If the author is found, nothing is returned. Otherwise
 a 404 error occurs, and is dealt with by the
 L<http_error_handler|/http_error_handler>.
+
+Optional arguments may be specified as name/value pairs after the CPAN
+ID. The following optional arguments are supported:
+
+=over
+
+=item before
+
+If this argument is defined, it is interpreted as a Perl time (i.e.
+number of seconds since the epoch), and only distributions made before
+this time are returned.
+
+=item development
+
+If this argument is true, development distributions are returned. These
+are distributions that have an underscore in the version number, but a
+non-zero number to the left of the underscore. See below for the default
+behavior if this argument is unspecified, or specified as C<undef>.
+
+=item hash
+
+If this argument is true, the entire hash built for each distribution is
+returned. This hash contains the following keys:
+
+=over
+
+=item info
+
+The L<CPAN::DistnameInfo|CPAN::DistnameInfo> object for this
+distribution.
+
+=item kind
+
+The kind of distribution, one of C<'development'>, C<'production'>, or
+C<'unreleased'>.
+
+=item mtime
+
+The modification time of the distribution, as an epoch time. For
+preference this is derived from the F<CHECKSUMS> file, and so is to the
+nearest day. If this is unavailable for some reason the modification
+time of the archive file is used.
+
+=item version
+
+The L<version|version> object representing this distribution's version.
+
+=back
+
+If this argument is false (the default) the C<< {info}->pathname() >>
+from the hash is returned for each distribution.
+
+=item latest
+
+If this argument is true, only the highest-numbered version of each
+distribution is returned. If it fails to meet other criteria, no
+version of this distribution is returned.
+
+If this argument is false, all versions that meet other criteria are
+reported.
+
+=item production
+
+If this argument is true, production distributions are returned. These
+are distributions that have no underscore in the version number, but a
+non-zero number to the left of the underscore.  See below for the
+default behavior if this argument is unspecified, or specified as
+C<undef>.
+
+=item since
+
+If this argument is defined, it is interpreted as a Perl time (i.e.
+number of seconds since the epoch), and only distributions made on or
+after this time are returned.
+
+=item unreleased
+
+If this argument is true, unreleased distributions are returned. These
+are distributions that have an underscore in the version number, and
+zeroes (and a decimal point) to the left of the underscore. See below
+for the default behavior if this argument is unspecified, or specified
+as C<undef>.
+
+=back
+
+The C<development>, C<production>, and C<unreleased> arguments default
+as follows. If any of them is specified as true, unspecified arguments
+default to false. Otherwise unspecified arguments default to true.
+
+=cut
 
 =head3 exists
 

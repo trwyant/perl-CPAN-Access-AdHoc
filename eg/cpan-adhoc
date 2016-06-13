@@ -206,7 +206,7 @@ sub verb_copy {
 sub verb_corpus {
     my @argv = @_;
     my %opt = (
-	format	=> $opt{date_format},
+	format	=> '%Y-%m-%d',
     );
     my $go = Getopt::Long::Parser->new();
     $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s development!
@@ -223,61 +223,19 @@ sub verb_corpus {
 	    or next;
 	$opt{$name} = _parse_date( $opt{$name} );
     }
+    $opt{hash} = 1;
     my $inx = $cad->fetch_author_index();
     foreach my $id ( @argv ) {
 	my $uc_id = uc $id;
 	if ( $inx->{$uc_id} ) {
-	    my %found;
-	    my $corpus = $cad->fetch_distribution_checksums( $uc_id );
-	    foreach my $filename ( keys %{ $corpus } ) {
-		$filename =~ m/ [.] meta \z /smx
-		    and next;
-		my $dist = __expand_distribution_path(
-		    "$uc_id/$filename" );
-		my $obj = CPAN::DistnameInfo->new( $dist );
-		defined( my $name = $obj->dist() )
-		    or next;
-		my $version = $obj->version();
-		my $kind = _version_kind( $version );
-		push @{ $found{$name} }, {
-		    name	=> $name,
-		    filename	=> $filename,
-		    obj		=> $obj,
-		    version	=> version->parse( $version ),
-		    dist	=> $dist,
-		    kind	=> $kind,
-		    mtime	=> $corpus->{$filename}{mtime} //
-			strftime '%Y-%m-%d', gmtime
-			$cad->fetch_distribution_archive( $dist ),
-		};
-		_record_distribution( $dist, quiet => 1 );
-	    }
-	    my $banner = sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
-	    my $quiet = $opt{quiet}
-		or say $banner;
-	    foreach my $name ( sort keys %found ) {
-		@{ $found{$name} } = sort {
-		    $a->{version} <=> $b->{version} }
-		    @{ $found{$name} };
-		$opt{latest}
-		    and $found{$name} = [ $found{$name}[-1] ];
-		foreach ( @{ $found{$name} } ) {
-		    $opt{$_->{kind}}
-			or next;
-		    if ( $opt{before} // $opt{after} ) {
-			my $date = _parse_date( $_->{mtime} );
-			$opt{before}
-			    and $date >= $opt{before}
-			    and next;
-			$opt{since}
-			    and $date < $opt{since}
-			    and next;
-		    }
-		    $quiet
-			and say $banner;
-		    $quiet = 0;
-		    say '    ', $_->{filename}, "\t", $_->{mtime};
-		}
+	    my @found = $cad->corpus( $uc_id, %opt );
+	    $opt{quiet}
+		and not @found
+		and next;
+	    say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
+	    foreach my $item ( @found ) {
+		say '    ', $item->{info}->filename(), "\t", strftime(
+		    $opt{format}, localtime $item->{mtime} );
 	    }
 	} else {
 	    warn "CPAN ID $uc_id not found\n";
@@ -1144,8 +1102,8 @@ asserted, all are asserted by default.
 =item -format strftime_format
 
 This option specifies the C<strftime()> format for date output. It has
-no effect unless C<-date> is specified. The default is the value of the
-command-line C<-date-format> option.
+no effect unless C<-date> is specified. The default C<'%Y-%m-%d'>, which
+is the format used in the F<CHECKSUMS> file.
 
 =item -latest
 
