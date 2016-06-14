@@ -22,7 +22,7 @@ use Text::ParseWords qw{ shellwords };
 use version 0.77;
 use YAML::Any;
 
-our $VERSION = '0.000_204-b';
+our $VERSION = '0.000_205';
 
 use constant CURRENT_PACKAGE => 'current';
 
