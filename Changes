@@ -1,3 +1,25 @@
+0.000_205	2016-06-13	T. R. Wyant
+  Enhance corpus() to actually be useful.
+    The eg/cpan-adhoc 'corpus' command made no use of the
+    CPAN::Access::AdHoc corpus() method. So the eg/cpan-adhoc
+    functionality got stuffed into the corpus() method. There are named
+    arguments corresponding to all the cpan-adhoc 'corpus' options, plus
+    a 'hash' argument which, if true, causes the accumulated data hashes
+    to be returned rather than the path names.
+
+  Add author test for minimum Perl version.
+
+  Add tab completion to eg/cpan-adhoc.
+
+  Add eg/cpan-adhoc verb gview
+
+  Add eg/cpan-adhoc cmd distro as synonym.
+    We already have 'dist' as a synonym for 'distribution', but my
+    fingers wanted to type 'distro', so ...
+
+  Add eg/cpan-adhoc verb 'copy' (to clipboard).
+    This loads the Clipboard module, and fails if it is not installed.
+
 0.000_204	2016-03-21	T. R. Wyant
   Have corpus() return nothing if no CHECKSUMS file is found but the
     CPAN ID appears in the author index, since it appears that in this

@@ -16,7 +16,7 @@ use HTTP::Response ();
 use Module::Pluggable::Object;
 use URI::file;
 
-our $VERSION = '0.000_204';
+our $VERSION = '0.000_205';
 
 # Note that this can be called as a mutator, but the mutator
 # functionality is private to the invocant's class.
