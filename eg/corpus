@@ -15,7 +15,10 @@ my %opt;
 
 GetOptions( \%opt,
     help => sub { pod2usage( { -verbose => 2 } ) },
-) and @ARGV or pod2usage( { -verbose => 0 } );
+) or pod2usage( { -verbose => 0 } );
+
+@ARGV
+    or push @ARGV, CPAN::Access::AdHoc->pause_user();
 
 my $cad = CPAN::Access::AdHoc->new();
 
@@ -36,6 +39,7 @@ corpus - List the distributions of one or more CPAN authors.
 
 =head1 SYNOPSIS
 
+ corpus               # If PAUSE id can be determined.
  corpus some_cpan_id
  corpus -help
  corpus -version
@@ -56,6 +60,10 @@ This option displays the version of this script. The script then exits.
 This Perl script retrieves and displays the names of all distributions
 written by the authors whose CPAN IDs are given on the command line. The
 CPAN IDs are not case-sensitive, since in use they are all upper case.
+
+If L<Config::Identity|Config::Identity> is installed and a PAUSE
+identity file is found, the default user is the one specified by the
+PAUSE identity file.
 
 =head1 AUTHOR
 

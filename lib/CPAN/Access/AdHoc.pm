@@ -61,9 +61,7 @@ sub __init {
 
 sub corpus {
     my ( $self, $cpan_id, %arg ) = @_;
-    defined $cpan_id
-	or return;
-    $cpan_id = uc $cpan_id;
+    $cpan_id = uc( $cpan_id // pause_user() );
 
     my $inx = $self->fetch_author_index();
     $inx->{$cpan_id}
@@ -339,6 +337,14 @@ sub indexed_distributions {
     }
 
     return @{ $cache->{indexed_distributions} = [ sort keys %pkg ] };
+}
+
+sub pause_user {
+    return ( state $user = do {
+	    require Config::Identity::PAUSE;
+	    my %id = Config::Identity::PAUSE->load();
+	    $id{user};
+	} );
 }
 
 # Set up the accessor/mutators. All mutators interpret undef as being a
@@ -886,7 +892,8 @@ These methods are what all the rest is in aid of.
 
 This convenience method returns a list of distributions by the author
 with the given CPAN ID. The argument is converted to upper case before
-use.
+use. The argument defaults to whatever is returned by
+L<pause_id()|/pause_id>, if that can be called successfully.
 
 This list is derived from the author's F<CHECKSUMS> file. If run against
 a Mini-CPAN, the returned data may list distributions that are not
@@ -1154,6 +1161,13 @@ when needed.
 This convenience method returns a list of all indexed distributions in
 ASCIIbetical order. This information is derived from the results of
 L<fetch_module_index()|/fetch_module_index>, and is cached.
+
+=head2 pause_user
+
+This method can be called as a normal method, a static method, or even
+as a subroutine. If L<Config::Identity::PAUSE|Config::Identity::PAUSE>
+can be loaded and a PAUSE identity file exists, the user name from that
+file is returned. Otherwise an exception is raised.
 
 =head2 Subclass Methods
 

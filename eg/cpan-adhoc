@@ -213,7 +213,7 @@ sub verb_corpus {
 	format=s latest!  production! quiet!  since=s unreleased! } )
 	or return;
     @argv
-	or @argv = _pause_info( 'user' );
+	or @argv = ( $cad->pause_user() );
     @argv
 	or die "No author specified\n";
     _default_boolean_option_group(
@@ -586,39 +586,6 @@ sub _get_archive {
 	$pkg->{archive} ||= $cad->fetch_distribution_archive(
 	    $pkg->{name} )
     );
-}
-
-sub _pause_info {
-    my ( $key ) = @_;
-    state $pause_info;
-    unless ( $pause_info ) {
-	eval {
-	    require Config::Identity::PAUSE;
-	    $pause_info = { Config::Identity::PAUSE->load() };
-	    1;
-	} or do {
-	    $pause_info = {};
-	    no autodie qw{ open };
-	    if ( open my $fh, '<:encoding(utf-8)', File::Spec->catfile(
-		    $ENV{HOME}, '.pause' ) ) {
-		while ( <$fh> ) {
-		    s/ \A \s+ //smx;
-		    m/ \A (?: [#] | \z ) /smx
-			and next;
-		    s/ \s+ \z //smx;
-		    my ( $name, $value ) = split qr{ \s+ }smx, $_, 2;
-		    $pause_info->{$name} = $value;
-		}
-		close $fh;
-	    }
-	};
-	defined $pause_info->{username}
-	    and not defined $pause_info->{user}
-	    and $pause_info->{user} = delete $pause_info->{username};
-    }
-    defined $pause_info->{$key}
-	or return;
-    return $pause_info->{$key};
 }
 
 sub _record_distribution {
@@ -1072,6 +1039,9 @@ upper case before use, so the example could equally well be written
 
 For each CPAN ID, the CPAN ID and electronic mail address are displayed,
 followed by the distribution name and date in ISO-8651 format.
+
+If no CPAN ID is provided, the default is the PAUSE ID if that can be
+determined; otherwise an exception is thrown.
 
 Supported options are:
 
