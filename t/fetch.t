@@ -295,6 +295,13 @@ SKIP: {
 
     is $meta->version(), '0.001', q{Module version is 0.001};
 
+    is_deeply $kit->provides(), {
+	Yehudi	=> {
+	    file	=> 'lib/Yehudi.pm',
+	    version	=> '0.001',
+	},
+    }, 'package provides Yehudi 0.001';
+
     SKIP: {
 
 	Archive::Tar->can( 'extract' )

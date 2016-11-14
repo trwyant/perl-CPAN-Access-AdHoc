@@ -457,6 +457,31 @@ sub verb_perldoc {
     return;
 }
 
+sub verb_provides {
+    my @argv = @_;
+    my %opt;
+    my $go = Getopt::Long::Parser->new();
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ less! } )
+	or return;
+    @argv
+	or push @argv, CURRENT_PACKAGE;
+    my $output = $opt{less} ? File::Temp->new() : *STDOUT;
+    foreach my $name ( @argv ) {
+	my $pkg = _resolve_unique_distribution(
+	    $name, record => 1, warn => 1 )
+	    or next;
+	say { $output } $pkg->{name};
+	my $provides = _get_archive( $pkg )->provides();
+	foreach my $module ( sort keys %{ $provides } ) {
+	    say { $output } '    ', $module, "\t",
+		$provides->{$module}{version};
+	}
+    }
+    $opt{less}
+	and _less( $output );
+    return;
+}
+
 sub verb_pwd {
     say cwd;
     return;
@@ -1264,7 +1289,8 @@ displays the given file in the current distribution, if any
  cpan-adhoc> list
 
 This command lists the files in the given distributions. If no
-distribution is specified, the current distribution is listed.
+distribution is specified, the current distribution is listed. You can
+specify option C<-less> to view the list in Perl's default pager.
 
 =head2 metadata
 
@@ -1322,7 +1348,16 @@ and an attempt is made to find that module's file.
 
 The single-argument form attempts to look up the argument in the module
 index. If it is found, that module's documentation is displayed.
-Otherwise it displays the given file in the current distribution, if any
+Otherwise it displays the given file in the current distribution, if
+any.
+
+=head2 provides
+
+This command lists the modules provided by the distribution. This comes
+from the metadata C<'provides'> key provided that is not empty;
+otherwise it is constructed from the metadata and the contents of the
+distribution. You can specify option C<-less> to view the list in Perl's
+default pager.
 
 =head2 pwd
 

@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use Cwd ();
+use ExtUtils::MakeMaker;
 use File::chdir;
 use CPAN::Access::AdHoc::Util qw{
     __attr __expand_distribution_path __guess_media_type :carp
@@ -144,6 +145,29 @@ sub path {
     }
 }
 
+# Note that the ExtUtils::MakeMaker version of the metadata does not
+# have 'provides' metadata, so we have to generate it.
+sub provides {
+    my ( $self ) = @_;
+    my $meta = $self->metadata();
+    my $provides;
+    $provides = $meta->provides()
+	and keys %{ $provides }
+	and return $provides;
+    foreach my $file ( $self->list_contents() ) {
+	$file =~ m/ [.] pm \z /smx
+	    and $meta->should_index_file( $file )
+	    or next;
+	my $content = $self->get_item_content( $file );
+	$content =~ m/ \b package \s+ ( [\w:]+ ) /smx
+	    or next;
+	$provides->{$1} = {
+	    file	=> $file,
+	    version	=> scalar MM->parse_version( \$content ),
+	};
+    }
+    return $provides;
+}
 
 sub __set_archive_mtime {
     my ( $self, $fn ) = @_;
@@ -400,6 +424,12 @@ decoding of the distribution's F<META.json> or F<META.yml> files, taken
 in that order. If neither is present, or neither contains valid metadata
 as determined by L<CPAN::Meta|CPAN::Meta>, nothing is returned -- this
 method makes no further effort to establish what the metadata are.
+
+=head3 provides
+
+This method returns the names of all modules provided by this
+distribution. It comes from the corresponding metadata item if that
+exists; otherwise we try to generate it ourselves.
 
 =head3 __set_archive_mtime
 
