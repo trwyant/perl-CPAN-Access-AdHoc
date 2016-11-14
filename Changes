@@ -1,3 +1,11 @@
+0.000_206	2016-11-14	T. R. Wyant
+  Add archive method provides(). This returns the CPAN::Meta data of the
+    same name if it exists; otherwise it tries to fake it up.
+
+  Default corpus() argument to PAUSE ID. If Config::Identity::PAUSE can
+    not be loaded or it can not find a PAUSE ID file, an exception is
+    thrown.
+
 0.000_205	2016-06-13	T. R. Wyant
   Enhance corpus() to actually be useful.
     The eg/cpan-adhoc 'corpus' command made no use of the

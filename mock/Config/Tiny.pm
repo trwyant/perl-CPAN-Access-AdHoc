@@ -7,7 +7,7 @@ use warnings;
 
 use Carp;
 
-our $VERSION = '0.000_205';
+our $VERSION = '0.000_206';
 
 our $CONFIG ||= {};
 
