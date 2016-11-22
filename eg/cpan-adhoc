@@ -398,7 +398,12 @@ sub verb_list {
 
 sub verb_metadata {
     my @argv = @_;
+    my %opt;
+    my $go = Getopt::Long::Parser->new();
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ less! } )
+	or return;
     @argv or push @argv, CURRENT_PACKAGE;
+    my $output = $opt{less} ? File::Temp->new() : *STDOUT;
     foreach my $name ( @argv ) {
 	my $pkg = _resolve_unique_distribution(
 	    $name, record => 1, warn => 1 )
@@ -407,11 +412,13 @@ sub verb_metadata {
 	if ( my $meta = _get_archive( $pkg )->metadata() ) {
 	    my $ms = $meta->as_string();
 	    chomp $ms;
-	    say "$dv: $ms";
+	    say { $output } "$dv: $ms";
 	} else {
 	    warn "No metadata found for $dv\n";
 	}
     }
+    $opt{less}
+	and _less( $output );
     return;
 }
 
@@ -1299,7 +1306,8 @@ metadata is not available (i.e. no F<META.json> or F<META.yml> was
 found) a warning will be issued.
 
 The metadata is displayed by the L<CPAN::Meta|CPAN::Meta> C<as_string()>
-method.
+method. You can specify option C<-less> to view the list in Perl's
+default pager.
 
 =head2 module
 
