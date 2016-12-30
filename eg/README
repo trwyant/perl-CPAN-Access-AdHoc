@@ -10,6 +10,9 @@ cpan-adhoc - An interactive script to obtain information about CPAN
 dist-extensions - List all file name extensions found on distributions
 	in CPAN.
 
+grep-content - Find all distributions whose contents match one or more
+	regular expressions given on the command line.
+
 grep-distributions - Find all indexed distributions that match one or
 	more regular expressions given on the command line.
 

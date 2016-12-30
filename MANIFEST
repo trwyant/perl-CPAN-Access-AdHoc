@@ -6,6 +6,7 @@ eg/corpus
 eg/cpan-adhoc
 eg/dist-extensions
 eg/distro-by
+eg/grep-content
 eg/grep-distributions
 eg/grep-modules
 eg/mod-dep
