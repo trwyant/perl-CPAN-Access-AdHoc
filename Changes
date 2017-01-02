@@ -1,3 +1,6 @@
+0.000_207	2017-01-02	T. R. Wyant
+  Add -less option to cpan-adhoc metadata cmd
+
 0.000_206	2016-11-14	T. R. Wyant
   Add archive method provides(). This returns the CPAN::Meta data of the
     same name if it exists; otherwise it tries to fake it up.
