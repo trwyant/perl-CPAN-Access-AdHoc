@@ -5,7 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 
-use base qw{ CPAN::Access::AdHoc::Archive };
+use parent qw{ CPAN::Access::AdHoc::Archive };
 
 use CPAN::Access::AdHoc::Util qw{ :carp __guess_media_type };
 use File::Path 2.07 ();

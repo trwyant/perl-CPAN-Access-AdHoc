@@ -5,7 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 
-use base qw{ CPAN::Access::AdHoc::Default::CPAN };
+use parent qw{ CPAN::Access::AdHoc::Default::CPAN };
 
 use CPAN::Access::AdHoc::Util qw{ __load };
 

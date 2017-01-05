@@ -129,7 +129,6 @@ sub requires {
     return +{
 	'Archive::Tar'		=> 0,
 	'Archive::Zip'		=> 0,
-	'base'			=> 0,
 	'Carp'			=> 0,
 	'Config::Tiny'		=> 0,
 	'CPAN'			=> 0,	# Core module
@@ -153,6 +152,7 @@ sub requires {
 	'LWP::MediaTypes'		=> 0,
 	'LWP::UserAgent'		=> 0,
 	'Module::Pluggable::Object'	=> 0,
+	'parent'		=> 0,
 	'Safe'			=> 2.32, # Plays well with Devel::Cover
 	'Scalar::Util'		=> 0,
 	'strict'		=> 0,

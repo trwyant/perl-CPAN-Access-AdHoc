@@ -5,7 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 
-use base qw{ Exporter };
+use parent qw{ Exporter };
 
 use LWP::MediaTypes ();
 
