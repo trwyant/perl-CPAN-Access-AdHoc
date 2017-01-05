@@ -1,3 +1,8 @@
+0.000_208	2017-01-04	T. R. Wyant
+  Ditch 'use base' in favor of 'use parent'.
+    In the case of the inc/ files, it was replaced by a 'use' of the
+    appropriate module, followed by assignment to @ISA.
+
 0.000_207	2017-01-02	T. R. Wyant
   Add -less option to cpan-adhoc metadata cmd
 
