@@ -90,11 +90,30 @@ sub corpus {
 	my $mtime = defined $corpus->{$filename}{mtime} ?
 	    _parse_checksums_date( $corpus->{$filename}{mtime} ) :
 	    $self->fetch_distribution_archive( $pathname )->mtime();
-	push @{ $found{$dist} }, {
-	    info	=> $info,
-	    kind	=> $kind,
-	    mtime	=> $mtime,
-	    version	=> version->parse( $version ),
+	local $@ = undef;
+	eval {
+	    my $v = version->parse( $version );
+	    push @{ $found{$dist} }, {
+		info	=> $info,
+		kind	=> $kind,
+		mtime	=> $mtime,
+		version	=> $v,
+	    };
+	    1;
+	} or do {
+	    __whinge( "$filename version '$version': $@" );
+	    ( my $v2 = $version ) =~ s/ [^0-9._]+ //smxg;
+	    $v2 =~ m/ _ /smx
+		and not $v2 =~ m/ [.] /smx
+		and $v2 =~ s/ _ /./smx;
+	    eval {	## no critic (RequireCheckingReturnValueOfEval)
+		push @{ $found{$dist} }, {
+		    info	=> $info,
+		    kind	=> $kind,
+		    mtime	=> $mtime,
+		    version	=> version->parse( $v2 ),
+		};
+	    };
 	};
     }
 
