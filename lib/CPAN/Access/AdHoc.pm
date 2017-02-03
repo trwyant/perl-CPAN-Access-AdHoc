@@ -9,6 +9,7 @@ use Config::Tiny ();
 use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{
     :carp __attr __cache __expand_distribution_path __guess_media_type
+    CODE_REF
 };
 use CPAN::DistnameInfo;
 use Digest::SHA ();
@@ -63,7 +64,7 @@ sub corpus {
     my ( $self, $cpan_id, %arg ) = @_;
     $cpan_id = uc( $cpan_id // pause_user() );
 
-    my $inx = $self->fetch_author_index();
+    my $inx = $self->fetch_author_index( %arg );
     $inx->{$cpan_id}
 	or return;
 
@@ -75,9 +76,9 @@ sub corpus {
     }
 
     my %found;
-    my $corpus = $self->fetch_distribution_checksums( $cpan_id );
+    my $corpus = $self->fetch_distribution_checksums( $cpan_id, %arg );
 
-    foreach my $filename ( keys %{ $corpus } ) {
+    foreach my $filename ( keys %{ $corpus || {} } ) {
 	$filename =~ m/ [.] meta \z /smx
 	    and next;
 	my $pathname = __expand_distribution_path(
@@ -88,8 +89,11 @@ sub corpus {
 	my $version = $info->version();
 	my $kind = _version_kind( $version );
 	my $mtime = defined $corpus->{$filename}{mtime} ?
-	    _parse_checksums_date( $corpus->{$filename}{mtime} ) :
-	    $self->fetch_distribution_archive( $pathname )->mtime();
+	    _parse_checksums_date( $corpus->{$filename}{mtime} ) : do {
+		my $arch = $self->fetch_distribution_archive(
+		    $pathname, %arg );
+		$arch ? $arch->mtime() : undef;
+	    };
 	local $@ = undef;
 	eval {
 	    my $v = version->parse( $version );
@@ -159,12 +163,16 @@ sub exists : method {	## no critic (ProhibitBuiltinHomonyms)
 }
 
 sub fetch {
-    my ( $self, $path ) = @_;
+    my ( $self, $path, %arg ) = @_;
 
     my $rslt = $self->_request_path( get => $path );
 
-    $rslt->is_success
-	or return $self->http_error_handler()->( $self, $path, $rslt );
+    unless ( $rslt->is_success() ) {
+	my $hdlr = $arg{http_error_handler} || $self->http_error_handler();
+	CODE_REF eq ref $hdlr
+	    or __wail( 'http_error_handler must be a CODE reference' );
+	return $hdlr->( $self, $path, $rslt );
+    }
 
     __guess_media_type( $rslt, $path );
 
@@ -179,13 +187,13 @@ sub fetch {
 }
 
 sub fetch_author_index {
-    my ( $self ) = @_;
+    my ( $self, %arg ) = @_;
 
     my $cache = $self->__cache();
     exists $cache->{author_index}
 	and return $cache->{author_index};
 
-    my $author_details = $self->fetch( 'authors/01mailrc.txt.gz' );
+    my $author_details = $self->fetch( 'authors/01mailrc.txt.gz', %arg );
     _got_archive( $author_details )
 	or return $author_details;
     $author_details = $author_details->get_item_content();
@@ -210,13 +218,13 @@ sub fetch_author_index {
 }
 
 sub fetch_distribution_archive {
-    my ( $self, $distribution ) = @_;
+    my ( $self, $distribution, %arg ) = @_;
     my $path = __expand_distribution_path( $distribution );
-    return $self->fetch( "authors/id/$path" );
+    return $self->fetch( "authors/id/$path", %arg );
 }
 
 sub fetch_distribution_checksums {
-    my ( $self, $distribution ) = @_;
+    my ( $self, $distribution, %arg ) = @_;
 
     $distribution =~ s{ \A ( . ) / \1 ( . ) / \1 \2 ( [^/]* ) }
 	{$1$2$3}smx;
@@ -234,7 +242,7 @@ sub fetch_distribution_checksums {
     my $cache = $self->__cache();
 
     if ( ! $cache->{checksums}{$dir} ) {
-	my $archive = $self->fetch( "authors/id/$path" );
+	my $archive = $self->fetch( "authors/id/$path", %arg );
 	_got_archive( $archive )
 	    or return $archive;
 	$cache->{checksums}{$dir} = _eval_string(
@@ -257,7 +265,7 @@ sub fetch_distribution_checksums {
 # TODO finish implementing error handling. See above, _got_archive().
 
 sub fetch_module_index {
-    my ( $self ) = @_;
+    my ( $self, %arg ) = @_;
 
     my $cache = $self->__cache();
 
@@ -271,7 +279,7 @@ sub fetch_module_index {
     # The only way this can return undef is if the http_error_handler
     # returns it. We take that as a request to cache an empty index.
     if ( my $packages_details = $self->fetch(
-	    'modules/02packages.details.txt.gz' ) ) {
+	    'modules/02packages.details.txt.gz', %arg ) ) {
 	$packages_details = $packages_details->get_item_content();
 
 	my $fh = IO::File->new( \$packages_details, '<' )
@@ -302,7 +310,7 @@ sub fetch_module_index {
 }
 
 sub fetch_registered_module_index {
-    my ( $self ) = @_;
+    my ( $self, %arg ) = @_;
 
     my $cache = $self->__cache();
     exists $cache->{registered_module_index}
@@ -311,7 +319,7 @@ sub fetch_registered_module_index {
 	    $cache->{registered_module_index}[0];
 
     my $packages_details = $self->fetch(
-	'modules/03modlist.data.gz'
+	'modules/03modlist.data.gz', %arg,
     )->get_item_content();
 
     my ( $meta, $reg );
@@ -974,6 +982,13 @@ The L<version|version> object representing this distribution's version.
 If this argument is false (the default) the C<< {info}->pathname() >>
 from the hash is returned for each distribution.
 
+=item http_error_handler
+
+This argument is a reference to code to be used in lieu of
+L<http_error_handler()|/http_error_handler> to handle any HTTP error
+encountered. Note that this method may fetch several files, so you may
+need to do some analysis of the arguments to get the behavior you want.
+
 =item latest
 
 If this argument is true, only the highest-numbered version of each
@@ -1025,7 +1040,8 @@ actually retrieve the archive.
 =head3 fetch
 
 This method fetches the named file from the CPAN repository. Its
-argument is the name of the file relative to the root of the repository.
+arguments are the name of the file relative to the root of the
+repository, and optional name/value pairs.
 
 If this method determines that there might be checksums for this file,
 it attempts to retrieve them, and if successful will compare the
@@ -1047,7 +1063,21 @@ If the fetched file is not an archive, it is wrapped in a
 L<CPAN::Access::AdHoc::Archive::Null|CPAN::Access::AdHoc::Archive::Null>
 object and returned.
 
+The following named arguments are supported:
+
+=over
+
+=item http_error_handler
+
+This is a reference to a piece of code to handle any HTTP errors to
+handle. If not specified, method
+L<http_error_handler()|/http_error_handler> is called.
+
+=back
+
 All other fetch functionality is implemented in terms of this method.
+The optional named arguments discussed above can be passed to all of
+them.
 
 =head3 fetch_author_index
 

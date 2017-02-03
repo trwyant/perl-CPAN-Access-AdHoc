@@ -12,14 +12,18 @@ use LWP::MediaTypes ();
 our @EXPORT_OK = qw{
     __attr __cache __expand_distribution_path __guess_media_type
     __load __whinge __wail __weep
+    CODE_REF
 };
 
 our %EXPORT_TAGS = (
     all	=> [ @EXPORT_OK ],
     carp => [ qw{ __whinge __wail __weep } ],
+    ref	=> [ qw{ CODE_REF } ],
 );
 
 our $VERSION = '0.000_208';
+
+use constant CODE_REF	=> ref sub {};
 
 sub __attr {
     my ( $self ) = @_;
@@ -201,6 +205,14 @@ C<croak()>.
 
 This subroutine loads L<Carp|Carp>, and then passes its arguments to
 C<confess()>, prefixed by the text C<'Programming Error - '>.
+
+=head1 MANIFEST CONSTANTS
+
+The following manifest constants are exportable:
+
+=head2 CODE_REF
+
+This manifest constant is simply C<'CODE'>.
 
 =head1 SUPPORT
 

@@ -36,7 +36,19 @@ exception new => [ fubar => 'bazzle' ],
 
 exception fetch => 'fubar/bazzle',
     qr{/fubar/bazzle: 404\b},
-    'Fetch a non-existant file.';
+    'fetch a non-existant file.';
+
+exception fetch => [ 'fubar/bazzle', http_error_handler => sub {
+	$_[2]->code( 'CDIV' );	# Roman numeral for 404
+	$_[2]->message( 'Otnay Oundfay' );
+	goto &CPAN::Access::AdHoc::DEFAULT_HTTP_ERROR_HANDLER;
+    }, ],
+    qr{/fubar/bazzle: CDIV\b},
+    'fetch a non-existant file, temporary error handler.';
+
+exception fetch => 'fubar/bazzle',
+    qr{/fubar/bazzle: 404\b},
+    'fetch a non-existant file, back to default behaviour.';
 
 warning http_error_handler => sub {
 ##  my ( $self, $url, $resp ) = @_;
