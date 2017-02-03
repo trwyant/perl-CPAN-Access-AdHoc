@@ -75,9 +75,19 @@ sub corpus {
 	}
     }
 
-    my %found;
-    my $corpus = $self->fetch_distribution_checksums( $cpan_id, %arg );
+    my $corpus;
+    {
+	$arg{http_error_handler}
+	    or local $arg{http_error_handler} = sub {
+		404 == $_[2]->code()
+		    and return;
+		goto $self->http_error_handler();
+	    };
+	$corpus = $self->fetch_distribution_checksums( $cpan_id, %arg )
+	    or return;
+    }
 
+    my %found;
     foreach my $filename ( keys %{ $corpus || {} } ) {
 	$filename =~ m/ [.] meta \z /smx
 	    and next;
