@@ -7,7 +7,7 @@ use warnings;
 
 use Cwd ();
 
-our $VERSION = '0.000_208';
+our $VERSION = '0.000_209';
 
 our $CONFIG ||= {
     urllist	=> [ 'file://' . Cwd::abs_path( 'mock/repos' ) ],

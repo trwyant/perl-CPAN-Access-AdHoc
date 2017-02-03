@@ -1,3 +1,13 @@
+0.000_209	2017-02-03	T. R. Wyant
+  Manifest constants for reference types (i.e. ARRAY_REF for 'ARRAY',
+    etc.)
+
+  Add http_error_handler argument to fetch*(), corpus(). This is a code
+    reference that replaces the established handler for the current call
+    only.
+
+  Try to be more robust about versions in corpus()
+
 0.000_208	2017-01-04	T. R. Wyant
   Ditch 'use base' in favor of 'use parent'.
     In the case of the inc/ files, it was replaced by a 'use' of the

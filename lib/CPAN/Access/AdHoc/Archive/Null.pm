@@ -17,7 +17,7 @@ use IO::File ();
 use IO::Uncompress::Bunzip2 ();
 use IO::Uncompress::Gunzip ();
 
-our $VERSION = '0.000_208';
+our $VERSION = '0.000_209';
 
 my %decode = (
     gzip	=> sub {
