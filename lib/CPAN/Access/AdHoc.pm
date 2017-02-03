@@ -9,7 +9,7 @@ use Config::Tiny ();
 use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{
     :carp __attr __cache __expand_distribution_path __guess_media_type
-    CODE_REF
+    ARRAY_REF CODE_REF
 };
 use CPAN::DistnameInfo;
 use Digest::SHA ();
@@ -490,7 +490,7 @@ sub __attr__http_error_handler__default {
 
 sub __attr__http_error_handler__validate {
     my ( undef, $value ) = @_;		# Invocant is unused
-    'CODE' eq ref $value
+    CODE_REF eq ref $value
 	or __wail(
 	q{Attribute 'http_error_handler' must be a code reference}
     );
@@ -582,7 +582,7 @@ sub _checksum {
 	ref $value
 	    or $value = [ split qr{ \s* , \s* }smx, $value ];
 
-	'ARRAY' eq ref $value
+	ARRAY_REF eq ref $value
 	    or __wail( q{Attribute 'default_cpan_source' takes an array } .
 	    q{reference or a comma-delimited string} );
 	my @rslt;

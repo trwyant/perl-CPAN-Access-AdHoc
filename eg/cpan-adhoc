@@ -10,7 +10,10 @@ use autodie;
 use Config;
 use CPAN::DistnameInfo;
 use CPAN::Access::AdHoc;
-use CPAN::Access::AdHoc::Util qw{ __expand_distribution_path };
+use CPAN::Access::AdHoc::Util qw{
+    __expand_distribution_path
+    HASH_REF
+};
 use Cwd;
 use File::Temp;
 use Getopt::Long 2.33 qw{ :config auto_version };
@@ -658,7 +661,7 @@ sub _resolve_distributions {
     my @args = @_;
     my %opt;
     @args
-	and 'HASH' eq ref $args[-1]
+	and HASH_REF eq ref $args[-1]
 	and %opt = %{ pop @args };
     my $re = qr< @{[ join ' | ', map { quotemeta } @args ]} >smx;
     my @rslt;

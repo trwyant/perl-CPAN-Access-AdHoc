@@ -7,7 +7,9 @@ use warnings;
 
 use parent qw{ CPAN::Access::AdHoc::Archive };
 
-use CPAN::Access::AdHoc::Util qw{ :carp __guess_media_type };
+use CPAN::Access::AdHoc::Util qw{
+    :carp __guess_media_type SCALAR_REF
+};
 use File::Path 2.07 ();
 use File::Spec ();
 use HTTP::Date ();
@@ -60,7 +62,7 @@ sub new {
 	    close $fh;
 	    @stat
 		and $mtime = $stat[9];
-	} elsif ( 'SCALAR' eq ref $content ) {
+	} elsif ( SCALAR_REF eq ref $content ) {
 	    $content = ${ $content };
 	}
 

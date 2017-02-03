@@ -219,10 +219,10 @@ done_testing;
 
     sub _xqt {
 	my ( $method, $args ) = @_;
-	'ARRAY' eq ref $args
+	ARRAY_REF eq ref $args
 	    or $args = [ $args ];
 	my $rslt = eval {
-	    if ( 'CODE' eq ref $method ) {
+	    if ( CODE_REF eq ref $method ) {
 		$method->( @{ $args } );
 	    } elsif ( $instantiator{$method} ) {
 		CPAN::Access::AdHoc->$method( @{ $args } );
@@ -239,7 +239,7 @@ done_testing;
 	_xqt( $method, $args ) or do {
 	    if ( defined( my $err = $@ ) ) {
 		@_ = ( $err, $exception, $title );
-		'Regexp' eq ref $exception
+		REGEXP_REF eq ref $exception
 		    and goto &like;
 		goto &is;
 	    } else {
@@ -282,7 +282,7 @@ done_testing;
 	if ( defined $err ) {
 	    if ( defined $warning ) {
 		@_ = ( $err, $warning, $title );
-		'Regexp' eq ref $warning
+		REGEXP_REF eq ref $warning
 		    and goto &like;
 		goto &is;
 	    } else {

@@ -12,18 +12,22 @@ use LWP::MediaTypes ();
 our @EXPORT_OK = qw{
     __attr __cache __expand_distribution_path __guess_media_type
     __load __whinge __wail __weep
-    CODE_REF
+    ARRAY_REF CODE_REF HASH_REF REGEXP_REF SCALAR_REF
 };
 
 our %EXPORT_TAGS = (
     all	=> [ @EXPORT_OK ],
     carp => [ qw{ __whinge __wail __weep } ],
-    ref	=> [ qw{ CODE_REF } ],
+    ref	=> [ grep { m/ \A [[:upper:]_]+ _REF \z /smx } @EXPORT_OK ],
 );
 
 our $VERSION = '0.000_208';
 
+use constant ARRAY_REF	=> ref [];
 use constant CODE_REF	=> ref sub {};
+use constant HASH_REF	=> ref {};
+use constant REGEXP_REF	=> ref qr{};
+use constant SCALAR_REF	=> ref \0;
 
 sub __attr {
     my ( $self ) = @_;
@@ -210,9 +214,41 @@ C<confess()>, prefixed by the text C<'Programming Error - '>.
 
 The following manifest constants are exportable:
 
+=head2 ARRAY_REF
+
+This manifest constant is simply C<'ARRAY'>.
+
 =head2 CODE_REF
 
 This manifest constant is simply C<'CODE'>.
+
+=head2 HASH_REF
+
+This manifest constant is simply C<'HASH'>.
+
+=head2 REGEXP_REF
+
+This manifest constant is simply C<'Regexp'>.
+
+=head2 SCALAR_REF
+
+This manifest constant is simply C<'SCALAR'>.
+
+=head1 EXPORT TAGS
+
+=head2 :all
+
+This tag exports everything exportable
+
+=head2 :carp
+
+This tag exports L<__whinge|/__whinge>, L<__wail|/__wail>, and
+L<__weep|/__weep>.
+
+=head2 :ref
+
+This tag exports all the reference manifest constants; that is, those
+ending in C<'_REF'>.
 
 =head1 SUPPORT
 
