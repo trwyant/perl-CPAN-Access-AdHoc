@@ -78,6 +78,7 @@ sub corpus {
     my $corpus;
     {
 	$arg{http_error_handler}
+	    or $self->__attr__http_error_handler__default() ne $self->http_error_handler()
 	    or local $arg{http_error_handler} = sub {
 		404 == $_[2]->code()
 		    and return;
