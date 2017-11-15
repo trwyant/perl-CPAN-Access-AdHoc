@@ -340,6 +340,8 @@ sub verb_extract {
 }
 
 {
+    # We pull $temp out of the subroutine like this because we do not
+    # want it to go out-of-scope before gvim launches.
     my $temp;
 
     sub verb_gview {
@@ -465,6 +467,51 @@ sub verb_perldoc {
     my $temp = _fetch_file( $pkg, $file );
     _issue( {}, perldoc => $temp );
     return;
+}
+
+{
+    my $temp;
+
+    sub verb_ppidump {
+	my @argv = @_;
+	require PPI::Document;
+	require PPI::Dumper;
+	my %opt = (
+	    class	=> 1,
+	    comments	=> 1,
+	    content	=> 1,
+	    indent	=> 2,
+	    whitespace	=> 1,
+	);
+	my $go = Getopt::Long::Parser->new();
+	$go->getoptionsfromarray( \@argv, \%opt, qw{
+	    class!
+	    comments!
+	    content!
+	    gview!
+	    indent=i
+	    locations!
+	    memaddr!
+	    whitespace!
+	    } )
+	    or return;
+	my ( $pkg, $file ) = @argv;
+	my $gview = delete $opt{gview};
+	my $contents = _get_file_contents( $pkg, $file );
+	my $dumper = PPI::Dumper->new(
+	    PPI::Document->new( \$contents ),
+	    %opt,
+	);
+	$temp = File::Temp->new();
+	print { $temp } $dumper->string();
+	seek $temp, 0, 0;
+	if ( $gview ) {
+	    _issue( {}, qw{ gvim -R }, $temp->filename() );
+	} else {
+	    _less( $temp );
+	}
+	return;
+    }
 }
 
 sub verb_provides {
@@ -621,6 +668,11 @@ sub _get_archive {
 	$pkg->{archive} ||= $cad->fetch_distribution_archive(
 	    $pkg->{name} )
     );
+}
+
+sub _get_file_contents {
+    my ( $pkg, $file ) = _validate_pkg_file( @_ );
+    return _get_archive( $pkg )->get_item_content( $file );
 }
 
 sub _record_distribution {
@@ -812,6 +864,7 @@ sub _readline_completer_function {
 	module	=> 'module',
 	mtime	=> 'element',
 	perldoc	=> 'element',
+	ppidump	=> 'element',
     };
     my ( $verb ) = $line =~ m/ ( \w+ ) /smx;
     if ( $dispatch->{$verb} ) {
@@ -1361,6 +1414,77 @@ The single-argument form attempts to look up the argument in the module
 index. If it is found, that module's documentation is displayed.
 Otherwise it displays the given file in the current distribution, if
 any.
+
+=head2 ppidump
+
+ cpan-adhoc> ppidump libwww-perl lib/LWP/UserAgent.pm
+ cpan-adhoc> ppidump libwww-perl LWP::UserAgent
+ cpan-adhoc> ppidump lib/LWP/UserAgent.pm
+ cpan-adhoc> ppidump LWP::UserAgent
+
+This command displays a PPI dump of the given file from the given
+package. The package may be defaulted. Supported options are:
+
+=over
+
+=item -class
+
+If this Boolean option is true, the dump will contain the class name of
+each element.
+
+The default is C<-class>, but this can be negated with C<-noclass>.
+
+=item -comments
+
+If this Boolean option is true, comments will appear in the dump.
+
+The default is C<-comments>, but this can be negated with
+C<-nocomments>.
+
+=item -content
+
+If this Boolean option is true, the content of each token will appear in
+the dump.
+
+The default is C<-content>, but this can be negated with C<-nocontent>.
+
+=item -gview
+
+If this Boolean option is true, the C<gview> command will be used to
+display the dump. Otherwise C<less> will be used.
+
+The default is C<-nogview>.
+
+=item -indent
+
+This integer option specifies the indentation of each nesting level in
+the dump.
+
+The default is C<-indent 2>.
+
+=item -locations
+
+If this Boolean option is true, the location of each element in the
+source will appear in the dump.
+
+The default is C<-nolocations>.
+
+=item -memaddr
+
+If this Boolean option is true, the memory address of each element in
+the dump will appear.
+
+The default is C<-nomemaddr>.
+
+=item -whitespace
+
+If this Boolean option is true, whitespace elements will appear in the
+dump.
+
+The default is C<-whitespace>, but this can be negated with
+C<-nowhitespace>.
+
+=back
 
 =head2 provides
 
