@@ -401,6 +401,32 @@ sub verb_list {
     return;
 }
 
+sub verb_look {
+    my ( $name ) = @_;
+    defined $name
+	and '' ne $name
+	or $name = CURRENT_PACKAGE;
+    my $pkg = _resolve_unique_distribution(
+	$name,
+	record	=> 1,
+	warn	=> 0,	# Fatal
+    );
+    my $dir = File::Temp->newdir();
+    my $archive = _get_archive( $pkg );
+    $archive->extract( $dir->dirname() );
+    my $shell = $ENV{SHELL} // '/bin/sh';
+    my $cwd = cwd;
+    local $@ = undef;
+    eval {
+	chdir File::Spec->catdir( $dir->dirname(),
+	    $archive->base_directory() );
+	system { $shell } $shell;
+	1;
+    } or warn $@;
+    chdir $cwd;
+    return;
+}
+
 sub verb_metadata {
     my @argv = @_;
     my %opt;
@@ -1354,6 +1380,17 @@ displays the given file in the current distribution, if any
 This command lists the files in the given distributions. If no
 distribution is specified, the current distribution is listed. You can
 specify option C<-less> to view the list in Perl's default pager.
+
+=head2 look
+ cpan-adhoc> look libwww-perl
+ cpan-adhoc> look
+
+This command expands the distribution into a temporary directory, and
+runs your shell with its default being that directory. If no
+distribution is specified, the current distribution is expanded.
+
+The shell is the contents of environment variable C<SHELL>, or
+F</bin/sh> otherwise.
 
 =head2 metadata
 
