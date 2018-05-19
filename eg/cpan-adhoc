@@ -212,7 +212,8 @@ sub verb_corpus {
 	format	=> '%Y-%m-%d',
     );
     my $go = Getopt::Long::Parser->new();
-    $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s development!
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s
+	development! distribution|distro!
 	format=s latest!  production! quiet!  since=s unreleased! } )
 	or return;
     @argv
@@ -228,6 +229,17 @@ sub verb_corpus {
     }
     $opt{hash} = 1;
     my $inx = $cad->fetch_author_index();
+    my $fmtr = $opt{distribution} ? sub {
+	my ( $item ) = @_;
+	return $item->{info}->dist();
+    } : sub {
+	my ( $item ) = @_;
+	return (
+	    '    ',
+	    $item->{info}->filename(), "\t", strftime(
+		$opt{format}, localtime $item->{mtime} )
+	);
+    };
     foreach my $id ( @argv ) {
 	my $uc_id = uc $id;
 	if ( $inx->{$uc_id} ) {
@@ -235,10 +247,11 @@ sub verb_corpus {
 	    $opt{quiet}
 		and not @found
 		and next;
-	    say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
+	    1 == @argv
+		and $opt{distribution}
+		or say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
 	    foreach my $item ( @found ) {
-		say '    ', $item->{info}->filename(), "\t", strftime(
-		    $opt{format}, localtime $item->{mtime} );
+		say $fmtr->( $item );
 	    }
 	} else {
 	    warn "CPAN ID $uc_id not found\n";
@@ -1182,6 +1195,15 @@ not. Development packages are defined as those with an underscore in
 their version number, and digits other than zero before the underscore.
 If none of C<-development>, C<-production> or C<-unreleased> is
 asserted, all are asserted by default.
+
+=item -distribution
+
+If asserted, only the distribution name is listed, and the author name
+is suppressed if only one author was specified.
+
+=item -distro
+
+This is a synonym for L<-distribution|/-distribution>.
 
 =item -format strftime_format
 
