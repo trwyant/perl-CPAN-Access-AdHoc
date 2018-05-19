@@ -15,18 +15,13 @@ our $VERSION = '0.000_209';
 
 my %canned_url = (
 #   kobes	=> 'http://cpan.uwinnipeg.ca/dist',	# R.I.P.
-    meta	=> 'http://metacpan.org/release',
-    search	=> 'http://search.cpan.org/dist',
-);
-
-my %default_browser = (
-    MSWin32	=> 'start',
-    darwin	=> 'open',
+    meta	=> 'http://metacpan.org/release',	# The default
+    search	=> 'http://search.cpan.org/dist',	# Deprecated
 );
 
 my %opt = (
-    browser => $default_browser{$^O} || 'firefox',
-    url => $canned_url{search},
+    browser => _get_default_browser(),
+    url => $canned_url{meta},
 );
 
 GetOptions( \%opt,
@@ -53,6 +48,21 @@ $url =~ m{ / \z }smx
 
 system $opt{browser}, $url . $di->dist();
 
+sub _get_default_browser {
+    my $browser;
+    local $@ = undef;
+    eval {
+	require Browser::Open;
+	$browser = Browser::Open::open_browser_cmd();
+	1;
+    } and return $browser;
+    state $default_browser = {
+	MSWin32	=> 'start',
+	darwin	=> 'open',
+    };
+    return $default_browser->{$^O} || 'firefox';
+}
+
 __END__
 
 =head1 TITLE
@@ -70,8 +80,9 @@ mod-doc - Given a module name, display its distribution documentation
 =head2 -browser
 
 This option specifies the command used to run the browser. The default
-is C<start> under C<MSWin32>, C<open> under C<darwin>, and C<firefox>
-anywhere else.
+comes from L<Browser::Open|Browser::Open> if that can be loaded.
+Otherwise it is C<start> under C<MSWin32>, C<open> under C<darwin>, and
+C<firefox> anywhere else.
 
 =head2 -cpan
 
@@ -84,7 +95,7 @@ C<CPANPLUS> setup.
 This option displays the documentation for this script. The script then
 exits.
 
-=head2 url
+=head2 -url
 
 This option specifies the URL of the documentation root. The name of the
 distribution containing this will be appended, and the result passed to
@@ -94,13 +105,15 @@ There are two canned URLs that can be specified by name:
 
 =over
 
-=item meta => 'http://metacpan.org/release',
+=item meta => 'http://metacpan.org/release';
 
-=item search => 'http://search.cpan.org/dist',
+=item search => 'http://search.cpan.org/dist' (deprecated).
+
+Note that this is being shut down in the not-too-distant future.
 
 =back
 
-The default is C<http://search.cpan.org/dist>.
+The default is C<http://metacpan.org/release>.
 
 =head2 -version
 

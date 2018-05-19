@@ -28,7 +28,7 @@ sub get_cpan_url {
 	$psr->getoptions( 'mirror=s@' => \@mirrors);
     }
     @mirrors
-	or @mirrors = ( qw{ http://search.cpan.org/CPAN } );
+	or @mirrors = ( qw{ https://cpan.metacpan.org } );
 
     return @mirrors;
 }
