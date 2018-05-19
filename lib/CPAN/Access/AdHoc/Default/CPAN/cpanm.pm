@@ -55,7 +55,7 @@ environment variable.
 This is the first C<file:> URL specified by the C<--mirror> option.
 parameter. If there is no C<file:> URL, it is the first URL whatever the
 scheme. If the C<PERL_CPAN_OPT> variable is defined but does not contain
-a C<--mirror> option, L<http://search.cpan.org/CPAN> is returned.
+a C<--mirror> option, L<https://cpan.metacpan.org> is returned.
 
 =head1 METHODS
 
