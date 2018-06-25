@@ -16,7 +16,7 @@ our $VERSION = '0.000_211';
 my %canned_url = (
 #   kobes	=> 'http://cpan.uwinnipeg.ca/dist',	# R.I.P.
     meta	=> 'http://metacpan.org/release',	# The default
-    search	=> 'http://search.cpan.org/dist',	# Deprecated
+#   search	=> 'http://search.cpan.org/dist',	# R.I.P.
 );
 
 my %opt = (
@@ -101,15 +101,11 @@ This option specifies the URL of the documentation root. The name of the
 distribution containing this will be appended, and the result passed to
 the selected browser.
 
-There are two canned URLs that can be specified by name:
+There is one canned URLs that can be specified by name:
 
 =over
 
 =item meta => 'http://metacpan.org/release';
-
-=item search => 'http://search.cpan.org/dist' (deprecated).
-
-Note that this is being shut down in the not-too-distant future.
 
 =back
 
