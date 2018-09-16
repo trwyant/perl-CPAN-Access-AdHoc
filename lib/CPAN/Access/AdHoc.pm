@@ -578,14 +578,16 @@ sub _checksum {
 {
 
     my $search_path = 'CPAN::Access::AdHoc::Default::CPAN';
-    my %defaulter = map { (
-        $_ => $_,
-	substr( $_, length( $search_path ) + 2 ) => $_,
-    ) } Module::Pluggable::Object->new(
-	search_path	=> $search_path,
-	inner	=> 0,
-	require	=> 1,
-    )->plugins();
+    my %defaulter;
+    foreach ( Module::Pluggable::Object->new(
+	    search_path	=> $search_path,
+	    inner	=> 0,
+	    require	=> 1,
+	)->plugins()
+    ) {
+	$defaulter{$_} = $_;
+	$defaulter{ substr $_, length( $search_path ) + 2 } = $_;
+    }
 
     sub __attr__default_cpan_source__validate {
 	my ( undef, $value ) = @_;		# Invocant is unused
