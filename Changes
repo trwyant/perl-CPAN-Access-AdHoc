@@ -1,3 +1,6 @@
+0.000_214	2019-06-10	T. R. Wyant
+    Fix broken POD links and add a test to ensure they stay fixed.
+
 0.000_213	2018-09-16	T. R. Wyant
     Recode for cperl-friendliness. It's still not supported, though.
 
