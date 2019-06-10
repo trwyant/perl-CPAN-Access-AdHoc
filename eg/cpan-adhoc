@@ -35,7 +35,7 @@ my %opt = (
 );
 
 GetOptions( \%opt,
-    qw{ date_format|date-format=s verbose! },
+    qw{ date_format|date-format=s debug! verbose! },
     'help|?' => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
 
@@ -65,7 +65,7 @@ EOD
     }
 }
 
-my $cad = CPAN::Access::AdHoc->new();
+my $cad = CPAN::Access::AdHoc->new( __debug => $opt{debug} );
 my %dist;
 
 @ARGV

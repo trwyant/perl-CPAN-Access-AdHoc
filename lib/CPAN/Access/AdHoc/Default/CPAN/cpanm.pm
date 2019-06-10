@@ -69,7 +69,7 @@ returned.
 
 =head1 SEE ALSO
 
-L<cpanm|cpanm>.
+L<App::cpanminus|App::cpanminus>.
 
 =head1 SUPPORT
 

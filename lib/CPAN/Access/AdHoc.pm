@@ -785,12 +785,13 @@ sections are currently unused, though C<CPAN-Access-AdHoc> reserves to
 itself all section names which contain no uppercase letters.
 
 In addition, it is possible to take the default CPAN repository URL from
-the user's L<CPAN::Mini|CPAN::Mini>, L<cpanm|cpanm>, L<CPAN|CPAN>, or
-L<CPANPLUS|CPANPLUS> configuration. They are accessed in this order by
-default, and the first available is used. But which of these are
-considered, and the order in which they are considered is under the
-user's control, via the L<default_cpan_source|/default_cpan_source>
-attribute/configuration item.
+the user's L<CPAN::Mini|CPAN::Mini>, L<App::cpanminus|App::cpanminus>,
+L<CPAN|CPAN>, or L<CPANPLUS|CPANPLUS> configuration. They are accessed
+in this order by default, and the first available is used. But which of
+these are considered, and the order in which they are considered is
+under the user's control, via the
+L<default_cpan_source|/default_cpan_source> attribute/configuration
+item.
 
 What actually happened here is that I got an RT ticket on one of my CPAN
 distributions, pointing out that the Free Software Foundation had moved,
@@ -834,7 +835,7 @@ from the checksums before being returned. This is probably significant
 only if processing a Mini-CPAN archive that has had non-current archives
 removed.
 
-If this attribute is modified, an implicit L<purge()|/purge> will be
+If this attribute is modified, an implicit L<flush()|/flush> will be
 done, since the C<CHECKSUMS> results are cached.
 
 The default is false.
@@ -933,11 +934,12 @@ These methods are what all the rest is in aid of.
 This convenience method returns a list of distributions by the author
 with the given CPAN ID. The argument is converted to upper case before
 use. The argument defaults to whatever is returned by
-L<pause_id()|/pause_id>, if that can be called successfully.
+L<pause_user()|/pause_user>, if that can be called successfully.
 
 This list is derived from the author's F<CHECKSUMS> file. If run against
 a Mini-CPAN, the returned data may list distributions that are not
-contained in the underlying CPAN unless L<clean_checksums> is true.
+contained in the underlying CPAN unless
+L<clean_checksums|/clean_checksums> is true.
 
 If the F<CHECKSUMS> file does not exist, the CPAN ID is checked against
 the author index. If the author is found, nothing is returned. Otherwise
@@ -1337,9 +1339,9 @@ distribution name and version (among other things) from the name of a
 particular distribution archive. This was very helpful in some of my
 CPAN ad-hocery.
 
-L<CPAN::Easy|CPAN::Easy> by Chris Weyl, which retrieves distributions
-and their meta information. As of this writing, it does not support
-version 2.0 of the meta spec.
+C<CPAN::Easy> by Chris Weyl, which retrieves distributions and their
+meta information. As of this writing it has been retracted, and, it
+never supported version 2.0 of the meta spec.
 
 L<CPAN::Index|CPAN::Index> by Adam Kennedy, which accesses the CPAN
 indices, storing them in an SQLite database.
