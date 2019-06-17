@@ -10,8 +10,8 @@ use parent qw{ Exporter };
 use LWP::MediaTypes ();
 
 our @EXPORT_OK = qw{
-    __attr __cache __expand_distribution_path __guess_media_type
-    __load __whinge __wail __weep
+    __attr __cache __classify_version __expand_distribution_path
+    __guess_media_type __load __whinge __wail __weep
     ARRAY_REF CODE_REF HASH_REF REGEXP_REF SCALAR_REF
 };
 
@@ -39,6 +39,14 @@ sub __cache {
     my ( $self ) = @_;
     my $name_space = caller;
     return ( $self->{'.cache'}{$name_space} ||= {} );
+}
+
+sub __classify_version {
+    local $_ = pop @_;
+    defined
+	or return ( qw{ development production unreleased } );
+    return m/ \A 0+ [.] 0+ _ [0-8] /smx ? 'unreleased' :
+	m/ _ /smx ? 'development' : 'production';
 }
 
 sub __expand_distribution_path {
@@ -160,6 +168,36 @@ nonetheless private to the C<CPAN-Access-AdHoc> distribution):
 This subroutine/method returns the hash element of its argument which is
 named after the caller's name space. This element is initialized to an
 empty hash if necessary.
+
+=head2 __cache
+
+This method returns a hash containing all values cached by the object.
+This hash may be modified, and in fact must be to cache new values.
+
+=head2 __classify_version
+
+This subroutine takes as its argument a version number, and returns one
+of the strings C<'production'>, C<'development'>, or C<'unreleased'>
+based on the following convention:
+
+=over
+
+=item unreleased
+
+is returned if the version matches C<m/ \A 0+ [.] 0+ _ [0-8] /smx>;
+otherwise
+
+=item development
+
+is returned if the version matches C<m/ _ /smx>; otherwise
+
+=item production
+
+is returned.
+
+=back
+
+If no argument is specified, a list of all three is returned.
 
 =head2 __expand_distribution_path
 

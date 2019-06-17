@@ -8,7 +8,8 @@ use warnings;
 use Config::Tiny ();
 use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{
-    :carp __attr __cache __expand_distribution_path __guess_media_type
+    :carp __attr __cache __classify_version __expand_distribution_path
+    __guess_media_type
     ARRAY_REF CODE_REF
 };
 use CPAN::DistnameInfo;
@@ -68,8 +69,8 @@ sub corpus {
     $inx->{$cpan_id}
 	or return;
 
-    unless ( grep { $arg{$_} } _version_kind() ) {
-	foreach my $kind ( _version_kind() ) {
+    unless ( grep { $arg{$_} } __classify_version() ) {
+	foreach my $kind ( __classify_version() ) {
 	    defined $arg{$kind}
 		or $arg{$kind} = 1;
 	}
@@ -98,7 +99,7 @@ sub corpus {
 	defined( my $dist = $info->dist() )
 	    or next;
 	my $version = $info->version();
-	my $kind = _version_kind( $version );
+	my $kind = __classify_version( $version );
 	my $mtime = defined $corpus->{$filename}{mtime} ?
 	    _parse_checksums_date( $corpus->{$filename}{mtime} ) : do {
 		my $arch = $self->fetch_distribution_archive(
@@ -726,23 +727,6 @@ sub _request_path {
     return $ua->$rqst( $url );
 }
 
-# Given a version, return:
-# 'production' unless it contains an underscore
-# 'unreleased' if it has only zeroes and dots before the underscore
-# 'development' otherwise.
-# If the version is undef, all three are returned.
-sub _version_kind {
-    my ( $version ) = @_;
-    defined $version
-	or return qw{ development production unreleased };
-    $version =~ m/ _ /smx
-	or return 'production';
-    $version =~ m/ \A [0.]+ _ /smx
-	and return 'unreleased';
-    return 'development';
-}
-
-
 1;
 
 __END__
@@ -960,9 +944,9 @@ this time are returned.
 =item development
 
 If this argument is true, development distributions are returned. These
-are distributions that have an underscore in the version number, but a
-non-zero number to the left of the underscore. See below for the default
-behavior if this argument is unspecified, or specified as C<undef>.
+are distributions for which
+L<__classify_version()|CPAN::Access::Adhoc::Util/__classify_version>
+returns C<'development'>.
 
 =item hash
 
@@ -1016,10 +1000,9 @@ reported.
 =item production
 
 If this argument is true, production distributions are returned. These
-are distributions that have no underscore in the version number, but a
-non-zero number to the left of the underscore.  See below for the
-default behavior if this argument is unspecified, or specified as
-C<undef>.
+are distributions for which
+L<__classify_version()|CPAN::Access::Adhoc::Util/__classify_version>
+returns C<'production'>.
 
 =item since
 
@@ -1030,18 +1013,15 @@ after this time are returned.
 =item unreleased
 
 If this argument is true, unreleased distributions are returned. These
-are distributions that have an underscore in the version number, and
-zeroes (and a decimal point) to the left of the underscore. See below
-for the default behavior if this argument is unspecified, or specified
-as C<undef>.
+are distributions for which
+L<__classify_version()|CPAN::Access::Adhoc::Util/__classify_version>
+returns C<'unreleased'>.
 
 =back
 
 The C<development>, C<production>, and C<unreleased> arguments default
 as follows. If any of them is specified as true, unspecified arguments
 default to false. Otherwise unspecified arguments default to true.
-
-=cut
 
 =head3 exists
 
@@ -1245,11 +1225,6 @@ consider myself at liberty to modify it without notice.
 This method returns a hash containing all attributes specific to the
 class that makes the call. This hash may be modified, and in fact must
 be to store new attribute values.
-
-=head3 __cache
-
-This method returns a hash containing all values cached by the object.
-This hash may be modified, and in fact must be to cache new values.
 
 =head3 __create_accessor_mutators
 
