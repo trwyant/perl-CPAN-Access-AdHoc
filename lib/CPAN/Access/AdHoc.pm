@@ -27,7 +27,7 @@ use Text::ParseWords ();
 use URI ();
 use version;
 
-our $VERSION = '0.000_214';
+our $VERSION = '0.000_215';
 
 # In the following list of attribute names, 'config' must be first
 # because it supplies default values for everything else. 'cpan' must be

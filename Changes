@@ -1,3 +1,7 @@
+0.000_215	2019-06-17	T. R. Wyant
+    Classify versions like 0.000_9 as development. Previously these
+    were unreleased.
+
 0.000_214	2019-06-10	T. R. Wyant
     Fix broken POD links and add a test to ensure they stay fixed.
 
