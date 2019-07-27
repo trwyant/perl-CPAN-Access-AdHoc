@@ -10,7 +10,7 @@ use CPAN::DistnameInfo;
 use Getopt::Long 2.33 qw{ :config auto_version };
 use Pod::Usage;
 
-our $VERSION = '0.000_215';
+our $VERSION = '0.000_216';
 
 my %opt;
 
