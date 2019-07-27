@@ -190,7 +190,7 @@ CPAN::Access::AdHoc::Archive::Zip - Provide a consistent interface to Archive::Z
 =head1 DESCRIPTION
 
 This class is a subclass of
-L<Archive::Zip::Archive|Archive::Zip::Archive>, provided for the
+L<Archive::Zip::Archive|Archive::Zip>, provided for the
 convenience of L<CPAN::Access::AdHoc|CPAN::Access::AdHoc>. It is private to the
 C<CPAN-Access-AdHoc> package.
 

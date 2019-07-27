@@ -1209,7 +1209,7 @@ L<fetch_module_index()|/fetch_module_index>, and is cached.
 =head2 pause_user
 
 This method can be called as a normal method, a static method, or even
-as a subroutine. If L<Config::Identity::PAUSE|Config::Identity::PAUSE>
+as a subroutine. If L<Config::Identity::PAUSE|Config::Identity>
 can be loaded and a PAUSE identity file exists, the user name from that
 file is returned. Otherwise an exception is raised.
 
@@ -1318,8 +1318,10 @@ C<CPAN::Easy> by Chris Weyl, which retrieves distributions and their
 meta information. As of this writing it has been retracted, and, it
 never supported version 2.0 of the meta spec.
 
-L<CPAN::Index|CPAN::Index> by Adam Kennedy, which accesses the CPAN
-indices, storing them in an SQLite database.
+C<CPAN::Index> by Adam Kennedy, which accesses the CPAN indices, storing
+them in an SQLite database. The module can be found at
+L<https://metacpan.org/release/CPAN-Index>. This module clashes with one
+of the modules included in the core L<CPAN|CPAN> distribution.
 
 L<CPAN::Inject|CPAN::Inject> by Adam Kennedy, which injects tarballs
 into a F<.cpan/sources> directory for a given CPAN ID.
