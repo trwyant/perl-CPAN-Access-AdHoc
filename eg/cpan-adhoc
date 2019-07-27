@@ -213,7 +213,7 @@ sub verb_corpus {
     );
     my $go = Getopt::Long::Parser->new();
     $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s
-	development! distribution|distro!
+	development! date! distribution|distro!
 	format=s latest!  production! quiet!  since=s unreleased! } )
 	or return;
     @argv
@@ -1187,6 +1187,11 @@ If the date does not look like an ISO-8661 date,
 L<Date::Manip|Date::Manip> will be loaded if possible and used to
 interpret the time. If L<Date::Manip|Date::Manip> can not be loaded an
 exception will be thrown.
+
+=item -date
+
+If this Boolean option is true, distributions are sorted by date. If
+not, they are sorted by distribution name.
 
 =item -development
 

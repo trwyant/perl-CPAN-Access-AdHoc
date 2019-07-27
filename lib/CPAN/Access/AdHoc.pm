@@ -139,7 +139,7 @@ sub corpus {
 	    $a->{version} <=> $b->{version} }
 	    @{ $found{$name} };
 	$arg{latest}
-	    and @distro = ( $distro[-1] );;
+	    and @distro = ( $distro[-1] );
 	foreach my $info ( @distro ) {
 	    $arg{$info->{kind}}
 		or next;
@@ -152,6 +152,9 @@ sub corpus {
 	    push @rslt, $info;
 	}
     }
+
+    $arg{date}
+	and @rslt = sort { $a->{mtime} <=> $b->{mtime} } @rslt;
 
     $arg{hash}
 	and return @rslt;
@@ -940,6 +943,11 @@ ID. The following optional arguments are supported:
 If this argument is defined, it is interpreted as a Perl time (i.e.
 number of seconds since the epoch), and only distributions made before
 this time are returned.
+
+=item date
+
+If this argument is true, distributions are returned in order by date.
+If it is false, they are returned in order by distribution name.
 
 =item development
 
