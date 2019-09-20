@@ -14,24 +14,28 @@ use File::Path 2.07 ();
 use File::Spec ();
 use HTTP::Date ();
 use IO::File ();
-use IO::Uncompress::Bunzip2 ();
-use IO::Uncompress::Gunzip ();
 
 our $VERSION = '0.000_216';
 
 my %decode = (
     gzip	=> sub {
 	my ( $content ) = @_;
+	require IO::Uncompress::Gunzip;
 	my $rslt;
 	IO::Uncompress::Gunzip::gunzip( $content, \$rslt );
 	return $rslt;
     },
     'x-bzip2'	=> sub {
 	my ( $content ) = @_;
+	require IO::Uncompress::Bunzip2;
 	my $rslt;
 	IO::Uncompress::Bunzip2::bunzip2( $content, \$rslt );
 	return $rslt;
     },
+    # NOTE that I was trying to add support for .xz files, but it proved
+    # impracticable because of lack of support in LWP::MediaTypes
+    # (fixable with add_encoding()) and CPAN::DistnameInfo (not fixable
+    # without patching it).
 );
 
 

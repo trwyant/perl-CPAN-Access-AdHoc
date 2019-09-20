@@ -12,8 +12,6 @@ use CPAN::Access::AdHoc::Util qw{ :carp __guess_media_type };
 use File::Spec::Unix ();
 use HTTP::Date ();
 use IO::File ();
-use IO::Uncompress::Bunzip2 ();
-use IO::Uncompress::Gunzip ();
 
 our $VERSION = '0.000_216';
 
@@ -22,12 +20,18 @@ our $VERSION = '0.000_216';
     my %decode = (
 	gzip	=> sub {
 	    my ( $content ) = @_;
+	    require IO::Uncompress::Gunzip;
 	    return IO::Uncompress::Gunzip->new( $content );
 	},
 	'x-bzip2'	=> sub {
 	    my ( $content ) = @_;
+	    require IO::Uncompress::Bunzip2;
 	    return IO::Uncompress::Bunzip2->new( $content );
 	},
+    # NOTE that I was trying to add support for .xz files, but it proved
+    # impracticable because of lack of support in LWP::MediaTypes
+    # (fixable with add_encoding()) and CPAN::DistnameInfo (not fixable
+    # without patching it).
     );
 
     sub new {
