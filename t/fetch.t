@@ -382,12 +382,12 @@ SKIP: {
     is $kit->base_directory(), 'PDQ-0.000_01/',
 	'Base directory of BACH/PDQ-0.000_01.zip';
 
-    is_deeply [ $kit->list_contents() ], [ qw{
-	lib/PDQ.pm
-	Makefile.PL
+    is_deeply [ sort $kit->list_contents() ], [ qw{
 	MANIFEST
 	META.json
 	META.yml
+	Makefile.PL
+	lib/PDQ.pm
 	t/basic.t
 	} ],
     'Contents of BACH/PDQ-0.000_01.zip';
