@@ -536,14 +536,17 @@ sub __attr__cpan__validate {
 
     my $url = URI->new( $value )
 	or _wail( "Bad URL '$value'" );
-    $value = $url;
 
-    my $scheme = $value->scheme();
-    $value->can( 'authority' )
+    my $scheme = $url->scheme();
+    unless ( defined $scheme ) {
+	$url = URI::file->new_abs( $value );
+	$scheme = $url->scheme();
+    }
+    $url->can( 'authority' )
 	and LWP::Protocol::implementor( $scheme )
 	or __wail ( "URL scheme $scheme: is unsupported" );
 
-    return $value;
+    return $url;
 }
 
 # Check the file's checksum if appropriate.
