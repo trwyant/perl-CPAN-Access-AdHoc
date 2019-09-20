@@ -3,6 +3,7 @@ use 5.010;
 use strict;
 use warnings;
 
+use Config;
 use CPAN::Meta;
 use Cwd qw{ cwd };
 use ExtUtils::MakeMaker;
@@ -64,7 +65,7 @@ foreach my $user ( bsd_glob( 'mock/src/repos/*' ) ) {
 	    and print "    $dist_name\n";
 
 	foreach my $maker (
-	    [ 'Makefile.PL' => 'make' ],
+	    [ 'Makefile.PL' => $Config{make} ],
 	    [ 'Build.PL' => './Build' ],
 	) {
 	    my ( $premake, $make ) = @{ $maker };
