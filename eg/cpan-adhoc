@@ -30,13 +30,15 @@ our $VERSION = '0.000_217';
 use constant CURRENT_PACKAGE => 'current';
 
 my %opt = (
-    qw{ undef_if_not_found|undef-if-not-found! },
     date_format	=> '%d-%b-%Y %H:%M:%S',
     verbose	=> -t STDIN,
 );
 
 GetOptions( \%opt,
-    qw{ date_format|date-format=s debug! verbose! },
+    qw{
+	date_format|date-format=s debug!
+	undef_if_not_found|undef-if-not-found! verbose!
+    },
     'help|?' => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
 
