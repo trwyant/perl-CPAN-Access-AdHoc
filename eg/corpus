@@ -20,7 +20,9 @@ GetOptions( \%opt,
 @ARGV
     or push @ARGV, CPAN::Access::AdHoc->pause_user();
 
-my $cad = CPAN::Access::AdHoc->new();
+my $cad = CPAN::Access::AdHoc->new(
+    undef_if_not_found	=> 1,
+);
 
 my $inx = $cad->fetch_author_index();
 

@@ -453,13 +453,25 @@ is_deeply scalar $cad->fetch_module_index(), {},
     'Can use HTTP error handler to change non-existant index to empty index';
 
 $cad->flush();				# Flush cache
+$cad->cpan( undef );			# Restore default CPAN
 $cad->http_error_handler( undef );	# Restore default handler
 
+$cad->undef_if_not_found( 1 );		# No exception if not found.
+
 eval {
-    $cad->fetch_module_index();
-    fail 'Restored HTTP error handler failed to throw error';
+    my $rslt = $cad->fetch( 'fubar/bazzle' );
+    ok ! defined $rslt,
+	'Fetch of 404 file returned undef with undef_if_not_found true';
     1;
-} or pass 'Restored HTTP error handler threw error';
+} or do {
+    fail 'Fetch of 404 file threw exception with undef_if_not_found true';
+    diag $@;
+};
+
+ok scalar $cad->fetch( 'modules/02packages.details.txt' ),
+    'Can still fetch extant file with undef_if_not_found true';
+
+$cad->undef_if_not_found( undef );	# Restore default.
 
 done_testing;
 

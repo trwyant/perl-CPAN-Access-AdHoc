@@ -30,6 +30,7 @@ our $VERSION = '0.000_216';
 use constant CURRENT_PACKAGE => 'current';
 
 my %opt = (
+    qw{ undef_if_not_found|undef-if-not-found! },
     date_format	=> '%d-%b-%Y %H:%M:%S',
     verbose	=> -t STDIN,
 );
@@ -65,7 +66,10 @@ EOD
     }
 }
 
-my $cad = CPAN::Access::AdHoc->new( __debug => $opt{debug} );
+my $cad = CPAN::Access::AdHoc->new(
+    __debug		=> $opt{debug},
+    undef_if_not_found	=> $opt{undef_if_not_found},
+);
 my %dist;
 
 @ARGV
@@ -282,6 +286,16 @@ sub verb_default_cpan_source {
 	}
 	say join ',', @src;
     }
+    return;
+}
+
+sub verb_undef_if_not_found {
+    my @arg = _expand_default( @_ );
+    if ( @arg ) {
+	$cad->undef_if_not_found( @arg );
+    }
+    defined $arg[0]
+	or say $cad->undef_if_not_found();
     return;
 }
 

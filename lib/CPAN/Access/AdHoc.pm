@@ -36,6 +36,7 @@ our $VERSION = '0.000_216';
 my @attributes = qw{
     config __debug http_error_handler
     default_cpan_source cpan clean_checksums
+    undef_if_not_found
 };
 
 sub new {
@@ -76,18 +77,8 @@ sub corpus {
 	}
     }
 
-    my $corpus;
-    {
-	$arg{http_error_handler}
-	    or $self->__attr__http_error_handler__default() ne $self->http_error_handler()
-	    or local $arg{http_error_handler} = sub {
-		HTTP_NOT_FOUND == $_[2]->code()
-		    and return;
-		goto $self->http_error_handler();
-	    };
-	$corpus = $self->fetch_distribution_checksums( $cpan_id, %arg )
+    my $corpus = $self->fetch_distribution_checksums( $cpan_id, %arg )
 	    or return;
-    }
 
     my %found;
     foreach my $filename ( keys %{ $corpus || {} } ) {
@@ -183,6 +174,9 @@ sub fetch {
     my $rslt = $self->_request_path( get => $path );
 
     unless ( $rslt->is_success() ) {
+	( $arg{undef_if_not_found} // $self->undef_if_not_found() )
+	    and HTTP_NOT_FOUND == $rslt->code()
+	    and return;
 	my $hdlr = $arg{http_error_handler} || $self->http_error_handler();
 	CODE_REF eq ref $hdlr
 	    or __wail( 'http_error_handler must be a CODE reference' );
@@ -333,9 +327,10 @@ sub fetch_registered_module_index {
 	    @{ $cache->{registered_module_index} } :
 	    $cache->{registered_module_index}[0];
 
-    my $packages_details = $self->fetch(
+    my $modlist = $self->fetch(
 	'modules/03modlist.data.gz', %arg,
-    )->get_item_content();
+    ) or return;
+    my $packages_details = $modlist->get_item_content();
 
     my ( $meta, $reg );
 
@@ -691,6 +686,15 @@ sub __attr__clean_checksums__default {
     return;
 }
 
+sub __attr__undef_if_not_found__default {
+    return 0;
+}
+
+sub __attr__undef_if_not_found__validate {
+    my ( undef, $value ) = @_;		# Invocant is unused
+    return $value ? 1 : 0;
+}
+
 # modules/02packages.details.txt.gz and modules/03modlist.data.gz have
 # metadata at the top. This metadata is organized as lines of
 #     key: value
@@ -913,6 +917,18 @@ uninteresting errors with
 
 This assumes that you have not modified C<@_>.
 
+=head3 undef_if_not_found
+
+When called with no arguments, this method acts as an accessor, and
+returns the current value of the C<undef_if_not_found> attribute.
+
+If called with an argument, this method acts as a mutator, and sets the
+C<undef_if_not_found> to C<1> if the argument is true, or C<0> if it is
+false.
+
+If the argument is C<undef>, the default is restored.
+
+
 =head2 Functionality
 
 These methods are what all the rest is in aid of.
@@ -933,8 +949,9 @@ L<clean_checksums|/clean_checksums> is true.
 
 If the F<CHECKSUMS> file does not exist, the CPAN ID is checked against
 the author index. If the author is found, nothing is returned. Otherwise
-a 404 error occurs, and is dealt with by the
-L<http_error_handler|/http_error_handler>.
+a 404 error occurs, and is handled as specified by the
+L<undef_if_not_found|/undef_if_not_found> and
+L<http_error_handler|/http_error_handler> attributes.
 
 Optional arguments may be specified as name/value pairs after the CPAN
 ID. The following optional arguments are supported:
@@ -1021,6 +1038,17 @@ If this argument is defined, it is interpreted as a Perl time (i.e.
 number of seconds since the epoch), and only distributions made on or
 after this time are returned.
 
+=item undef_if_not_found
+
+If this argument is defined, it is interpreted as a Boolean which, if
+true, causes C<undef> to be returned rather than an exception if a fetch
+operation encounters a C<404 Not found> error.
+
+B<Note> that if this argument is true and a C<404> error is encountered,
+the C<http_error_handler> is B<not> called.
+
+The default is false.
+
 =item unreleased
 
 If this argument is true, unreleased distributions are returned. These
@@ -1079,6 +1107,10 @@ This is a reference to a piece of code to handle any HTTP errors to
 handle. If not specified, method
 L<http_error_handler()|/http_error_handler> is called.
 
+=item undef_if_not_found
+
+If defined, this value overrides the C<undef_if_not_found> attribute.
+
 =back
 
 All other fetch functionality is implemented in terms of this method.
@@ -1125,7 +1157,9 @@ top of the expanded index file.
 
 If an HTTP error is encountered while fetching the index, normally an
 error is thrown. But if the C<http_error_handler> returns nothing, an
-empty index (and empty index metadata) are returned.
+empty index (and empty index metadata) are returned. This is what
+happens if C<undef_if_not_found> is true and a C<404> error is
+encountered.
 
 The results of the first fetch are cached; subsequent calls are supplied
 from cache.
