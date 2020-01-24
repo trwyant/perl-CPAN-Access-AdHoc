@@ -3,34 +3,18 @@ package main;
 use strict;
 use warnings;
 
-BEGIN {
-    eval {
-	require Test::More;
-	Test::More->VERSION( 0.88 );	# Because of done_testing()
-	Test::More->import();
-	1;
-    } or do {
-	print <<eod;
-1..0 # skip Test::More 0.88 or higher required.
-eod
-	exit;
-    };
-}
+use Test2::V0;
+use Test2::Tools::LoadModule;
 
-BEGIN {
-    eval {
-	require ExtUtils::Manifest;
-	ExtUtils::Manifest->import( qw{ manicheck filecheck } );
-	1;
-    } or do {
-	plan( skip_all => "ExtUtils::Manifest required" );
-	exit;
-    };
-}
+load_module_or_skip_all 'ExtUtils::Manifest', undef, [
+    qw{ manicheck filecheck } ];
 
-plan( tests => 2 );
+my @got = manicheck();
+ok @got == 0, 'Missing files per MANIFEST';
 
-is( join( ' ', manicheck() ), '', 'Missing files per manifest' );
-is( join( ' ', filecheck() ), '', 'Files not in MANIFEST or MANIFEST.SKIP' );
+@got = filecheck();
+ok @got == 0, 'Files not in MANIFEST or MANIFEST.SKIP';
+
+done_testing;
 
 1;

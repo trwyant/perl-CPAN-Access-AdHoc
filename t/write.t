@@ -7,7 +7,7 @@ use warnings;
 
 use lib qw{ ./inc };
 
-use Test::More 0.88;	# Because of done_testing();
+use Test2::V0;
 use CPAN::Access::AdHoc::Archive;
 use File::chdir;
 

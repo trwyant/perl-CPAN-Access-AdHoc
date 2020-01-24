@@ -5,7 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 
-use Test::More 0.88;	# Because of done_testing();
+use Test2::V0;
 
 use CPAN::Access::AdHoc::Archive;
 
@@ -29,7 +29,7 @@ SKIP: {
     is $kit->base_directory(), 'Yehudi-0.001/',
 	'Base directory of Yehudi-0.001.tar.gz';
 
-    is_deeply [ sort $kit->list_contents() ], [ sort qw{
+    is [ sort $kit->list_contents() ], [ sort qw{
 	    lib/Yehudi.pm
 	    Makefile.PL
 	    MANIFEST
@@ -74,7 +74,7 @@ SKIP: {
     is $kit->base_directory(), 'PDQ-0.000_01/',
 	'Base directory of BACH/PDQ-0.000_01.zip';
 
-    is_deeply [ sort $kit->list_contents() ], [ qw{
+    is [ sort $kit->list_contents() ], [ qw{
 	MANIFEST
 	META.json
 	META.yml

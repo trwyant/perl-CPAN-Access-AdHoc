@@ -5,7 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 
-use Test::More 0.88;	# Because of done_testing();
+use Test2::V0;
 
 use CPAN::Access::AdHoc::Util qw{ __guess_media_type };
 use HTTP::Response;

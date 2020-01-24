@@ -3,15 +3,17 @@ package main;
 use strict;
 use warnings;
 
-use ExtUtils::Manifest qw{maniread};
-use Test::More 0.88;
+use Test2::V0;
+use Test2::Tools::LoadModule;
+
+load_module_or_skip_all 'ExtUtils::Manifest', undef, [ 'maniread' ];
 
 my $manifest = maniread();
 
 foreach ( sort keys %{ $manifest } ) {
-    m{ \A bin / }smx
-	and next;
     m{ \A eg / }smx
+	and next;
+    m{ \A script / }smx
 	and next;
     m{ \A tools / }smx
 	and next;

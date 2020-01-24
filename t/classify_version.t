@@ -6,9 +6,9 @@ use strict;
 use warnings;
 
 use CPAN::Access::AdHoc::Util qw{ __classify_version };
-use Test::More 0.88;	# Because of done_testing();
+use Test2::V0;
 
-is_deeply [ sort( __classify_version() ) ], [ qw{
+is [ sort( __classify_version() ) ], [ qw{
     development production unreleased } ], 'List of classifications';
 
 foreach (

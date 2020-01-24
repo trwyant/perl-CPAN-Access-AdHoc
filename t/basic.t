@@ -5,7 +5,9 @@ use 5.010;
 use strict;
 use warnings;
 
-use Test::More 0.88;	# Because of done_testing();
+use Test2::V0;
+use Test2::Plugin::BailOnFail;
+use Test2::Tools::LoadModule;
 
 my @expect_default_class_methods = qw{ get_clean_checksums get_cpan_url };
 my @expect_archive_methods = qw{
@@ -14,64 +16,55 @@ my @expect_archive_methods = qw{
     path wrap_archive write
 };
 
-require_ok 'CPAN::Access::AdHoc::Util'
-    or BAIL_OUT 'CPAN::Access::AdHoc::Util is required';
+load_module_ok 'CPAN::Access::AdHoc::Util';
 
-can_ok     'CPAN::Access::AdHoc::Util' => qw{
+can_ok     'CPAN::Access::AdHoc::Util' => [ qw{
     __attr __cache __expand_distribution_path __guess_media_type
     __load __whinge __wail __weep
-};
+} ];
 
-require_ok 'CPAN::Access::AdHoc::Archive'
-    or BAIL_OUT 'CPAN::Access::AdHoc::Archive is required';
+load_module_ok 'CPAN::Access::AdHoc::Archive';
 
-can_ok     'CPAN::Access::AdHoc::Archive' => qw{
+can_ok     'CPAN::Access::AdHoc::Archive' => [ qw{
     archive metadata path
-};
+} ];
 
-require_ok 'CPAN::Access::AdHoc::Archive::Null'
-    or BAIL_OUT 'CPAN::Access::AdHoc::Archive::Null is required';
+load_module_ok 'CPAN::Access::AdHoc::Archive::Null';
 
-can_ok     'CPAN::Access::AdHoc::Archive::Null' => @expect_archive_methods;
+can_ok     'CPAN::Access::AdHoc::Archive::Null' => \@expect_archive_methods;
 
-require_ok 'CPAN::Access::AdHoc::Archive::Tar'
-    or BAIL_OUT 'CPAN::Access::AdHoc::Archive::Tar is required';
+load_module_ok 'CPAN::Access::AdHoc::Archive::Tar';
 
-can_ok     'CPAN::Access::AdHoc::Archive::Tar' => @expect_archive_methods;
+can_ok     'CPAN::Access::AdHoc::Archive::Tar' => \@expect_archive_methods;
 
-require_ok 'CPAN::Access::AdHoc::Archive::Zip'
-    or BAIL_OUT 'CPAN::Access::AdHoc::Archive::Zip is required';
+load_module_ok 'CPAN::Access::AdHoc::Archive::Zip';
 
-can_ok     'CPAN::Access::AdHoc::Archive::Zip' => @expect_archive_methods;
+can_ok     'CPAN::Access::AdHoc::Archive::Zip' => \@expect_archive_methods;
 
-require_ok 'CPAN::Access::AdHoc::Default::CPAN::CPAN'
-    or BAIL_OUT 'CPAN::Access::AdHoc::Default::CPAN::CPAN is required';
+load_module_ok 'CPAN::Access::AdHoc::Default::CPAN::CPAN';
 
 can_ok     'CPAN::Access::AdHoc::Default::CPAN::CPAN' =>
-	    @expect_default_class_methods;
+	    \@expect_default_class_methods;
 
-require_ok 'CPAN::Access::AdHoc::Default::CPAN::cpanm'
-    or BAIL_OUT 'CPAN::Access::AdHoc::Default::CPAN::cpanm is required';
+load_module_ok 'CPAN::Access::AdHoc::Default::CPAN::cpanm';
 
 can_ok     'CPAN::Access::AdHoc::Default::CPAN::cpanm' =>
-	    @expect_default_class_methods;
+	    \@expect_default_class_methods;
 
-require_ok 'CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini'
-    or BAIL_OUT 'CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini is required';
+load_module_ok 'CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini';
 
 can_ok     'CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini' =>
-	    @expect_default_class_methods;
+	    \@expect_default_class_methods;
 
-require_ok 'CPAN::Access::AdHoc::Default::CPAN::CPANPLUS'
-    or BAIL_OUT 'CPAN::Access::AdHoc::Default::CPAN::CPANPLUS is required';
+load_module_ok 'CPAN::Access::AdHoc::Default::CPAN::CPANPLUS';
 
 can_ok     'CPAN::Access::AdHoc::Default::CPAN::CPANPLUS' =>
-	    @expect_default_class_methods;
+	    \@expect_default_class_methods;
 
-require_ok 'CPAN::Access::AdHoc'
-    or BAIL_OUT 'CPAN::Access::AdHoc is required';
+load_module_ok 'CPAN::Access::AdHoc';
 
-can_ok     'CPAN::Access::AdHoc' => qw{ config cpan __debug default_cpan_source };
+can_ok     'CPAN::Access::AdHoc' => [
+    qw{ config cpan __debug default_cpan_source } ];
 
 done_testing;
 

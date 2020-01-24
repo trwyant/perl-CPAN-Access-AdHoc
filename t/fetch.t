@@ -9,7 +9,7 @@ use lib qw{ ./inc };
 
 use File::Spec;
 use POSIX ();
-use Test::More 0.88;	# Because of done_testing();
+use Test2::V0;
 use Time::Local;
 use URI::file;
 
@@ -70,7 +70,7 @@ my $cad = CPAN::Access::AdHoc->new(
     is $arc->base_directory(), 'modules/',
 	'Base directory of null archive.';
 
-    is_deeply [ $arc->list_contents() ], [ $file_name ],
+    is [ $arc->list_contents() ], [ $file_name ],
 	"The archive contents are $file_name";
 
     ok $arc->item_present( $file_name ),
@@ -121,7 +121,7 @@ my $cad = CPAN::Access::AdHoc->new(
 
 my ( $module_index, $meta ) = $cad->fetch_module_index();
 
-is_deeply $module_index, {
+is $module_index, {
     Johann	=> {
 	distribution	=> 'B/BA/BACH/Johann-0.001.tar.bz2',
 	version		=> 0.001,
@@ -136,7 +136,7 @@ is_deeply $module_index, {
     },
 }, 'Contents of the repository index';
 
-is_deeply $meta, {
+is $meta, {
     Columns	=> 'package name, version, path',
     Description	=> 'Package names found in directory $CPAN/authors/id/',
     File	=> '02packages.details.txt',
@@ -146,7 +146,7 @@ is_deeply $meta, {
 
 my $author_index = $cad->fetch_author_index();
 
-is_deeply $author_index, {
+is $author_index, {
     BACH	=> {
 	name	=> 'J. S. Bach',
 	address	=> 'bach@cpan.org',
@@ -173,7 +173,7 @@ EOD
     $desc =~ s/ \s+ / /smxg;
     $desc =~ s/ \s+ \z //smx;
 
-    is_deeply $meta, {
+    is $meta, {
 	File	=> '03modlist.data',
 	Description => $desc,
 	Modcount	=> 2,
@@ -181,7 +181,7 @@ EOD
 	Date =>		'Mon, 26 Dec 2011 17:10:00 GMT',
     }, 'Metadata for 03modlist.data';
 
-    is_deeply $registered_module_index, {
+    is $registered_module_index, {
 	Johann	=> {
 	    modid	=> 'Johann',
 	    statd	=> 'R',
@@ -213,10 +213,10 @@ EOD
 {
     my $cksum = do 'mock/repos/authors/id/B/BA/BACH/CHECKSUMS';
 
-    is_deeply $cad->fetch_distribution_checksums( 'BACH/' ),
+    is $cad->fetch_distribution_checksums( 'BACH/' ),
         $cksum, 'BACH/CHECKSUMS';
 
-    is_deeply $cad->fetch_distribution_checksums(
+    is $cad->fetch_distribution_checksums(
 	    'BACH/Johann-0.001.tar.bz2' ),
 	$cksum->{ 'Johann-0.001.tar.bz2' },
 	'BACH/Johann-0.001.tar.bz2 checksums';
@@ -228,12 +228,12 @@ EOD
 
 # Test other thingies
 
-is_deeply [ $cad->corpus( 'BACH' ) ], [ qw{
+is [ $cad->corpus( 'BACH' ) ], [ qw{
     B/BA/BACH/Johann-0.001.tar.bz2
     B/BA/BACH/PDQ-0.000_01.zip
     } ], q{Corpus of CPAN ID 'BACH'};
 
-is_deeply [ $cad->indexed_distributions() ], [ qw{
+is [ $cad->indexed_distributions() ], [ qw{
     B/BA/BACH/Johann-0.001.tar.bz2
     B/BA/BACH/PDQ-0.000_01.zip
     M/ME/MENUHIN/Yehudi-0.001.tar.gz
@@ -265,7 +265,7 @@ SKIP: {
     is $kit->base_directory(), 'Yehudi-0.001/',
 	'Base directory of Yehudi-0.001.tar.gz';
 
-    is_deeply [ sort $kit->list_contents() ], [ sort qw{
+    is [ sort $kit->list_contents() ], [ sort qw{
 	    lib/Yehudi.pm
 	    Makefile.PL
 	    MANIFEST
@@ -295,7 +295,7 @@ SKIP: {
 
     is $meta->version(), '0.001', q{Module version is 0.001};
 
-    is_deeply $kit->provides(), {
+    is $kit->provides(), {
 	Yehudi	=> {
 	    file	=> 'lib/Yehudi.pm',
 	    version	=> '0.001',
@@ -382,7 +382,7 @@ SKIP: {
     is $kit->base_directory(), 'PDQ-0.000_01/',
 	'Base directory of BACH/PDQ-0.000_01.zip';
 
-    is_deeply [ sort $kit->list_contents() ], [ qw{
+    is [ sort $kit->list_contents() ], [ qw{
 	MANIFEST
 	META.json
 	META.yml
@@ -449,7 +449,7 @@ $cad = CPAN::Access::AdHoc->new(
     cpan => URI::file->new( Cwd::abs_path( 'mock/src' ) ),
 );
 
-is_deeply scalar $cad->fetch_module_index(), {},
+is scalar $cad->fetch_module_index(), {},
     'Can use HTTP error handler to change non-existant index to empty index';
 
 $cad->flush();				# Flush cache

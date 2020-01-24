@@ -4,21 +4,16 @@ use strict;
 use warnings;
 
 use File::Spec;
-use Test::More 0.88;
 
-BEGIN {
-    eval {
-	require Test::Perl::Critic;
-	Test::Perl::Critic->import(
-	    -profile => File::Spec->catfile(qw{xt author perlcriticrc})
-	);
-	1;
-    } or do {
-	plan skip_all => 'Test::Perl::Critic required to criticize code.';
-	exit;
-    };
-}
+use Test2::Tools::LoadModule;
+
+load_module_or_skip_all PPI => 1.215;
+
+load_module_or_skip_all 'Test::Perl::Critic', undef, [
+    -profile => File::Spec->catfile( qw{ xt author perlcriticrc } ) ];
 
 all_critic_ok();
 
 1;
+
+# ex: set textwidth=72 :

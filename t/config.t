@@ -5,7 +5,8 @@ use 5.010;
 use strict;
 use warnings;
 
-use Test::More 0.88;	# Because of done_testing();
+use Test2::V0;
+use Test2::Tools::LoadModule;
 
 use lib qw{ ./mock };
 
@@ -14,13 +15,20 @@ use File::Spec;
 use File::Spec::Unix;
 use URI::file;
 
-require_ok 'Config::Tiny';		# Load mock object
-require_ok 'CPAN';			# Load mock object
-require_ok 'CPAN::Mini';		# Load mock object
-require_ok 'CPANPLUS::Configure';	# Load mock object
-require_ok 'File::HomeDir';		# Load mock object.
+use constant LOAD_MOCK_ERR	=> 'Mock object required for testing';
 
-use CPAN::Access::AdHoc;
+load_module_ok 'Config::Tiny'		# Load mock object
+    or bail_out( LOAD_MOCK_ERR );
+load_module_ok 'CPAN'			# Load mock object
+    or bail_out( LOAD_MOCK_ERR );
+load_module_ok 'CPAN::Mini'		# Load mock object
+    or bail_out( LOAD_MOCK_ERR );
+load_module_ok 'CPANPLUS::Configure'	# Load mock object
+    or bail_out( LOAD_MOCK_ERR );
+load_module_ok 'File::HomeDir'		# Load mock object.
+    or bail_out( LOAD_MOCK_ERR );
+load_module_ok 'CPAN::Access::AdHoc'
+    or bail_out( 'CPAN::Access::AdHoc does not load using mock objects' );
 
 # Make sure mock objects work as desired.
 
@@ -35,6 +43,8 @@ is( File::HomeDir->my_dist_config( 'CPAN-Access-AdHoc' ),
 q{File::HomeDir->my_dist_config( 'CPAN-Access-AdHoc' ) returns 'mock/Perl/CPAN-Access-AdHoc'});
 
 {
+    no warnings qw{ once };
+
     local $File::HomeDir::BASE = 'mock';
 
     is( File::HomeDir->my_dist_config( 'CPAN' ), 'mock/CPAN',
@@ -43,9 +53,9 @@ q{File::HomeDir->my_dist_config( 'CPAN-Access-AdHoc' ) returns 'mock/Perl/CPAN-A
 
 # Mock Config::Tiny
 
-is_deeply( Config::Tiny->new(), {}, 'Config::Tiny->new() returns empty hash' );
+is( Config::Tiny->new(), {}, 'Config::Tiny->new() returns empty hash' );
 
-is_deeply( Config::Tiny->read( 'fu.bar' ), {},
+is( Config::Tiny->read( 'fu.bar' ), {},
     q{Config::Tiny->read( 'fu.bar' ) returns an empty hash by default} );
 
 {
@@ -53,16 +63,16 @@ is_deeply( Config::Tiny->read( 'fu.bar' ), {},
 	fu	=> 'bar',
     };
 
-    is_deeply( Config::Tiny->read( 'fu.bar' ), { fu => 'bar' },
+    is( Config::Tiny->read( 'fu.bar' ), { fu => 'bar' },
 	q{Config::Tiny->read( 'fu.bar' ) can return a custom config} );
 }
 
-is_deeply( Config::Tiny->read( 'fu.bar' ), {},
+is( Config::Tiny->read( 'fu.bar' ), {},
     q{Config::Tiny->read( 'fu.bar' ) reverts if changes are localized} );
 
 # Mock CPAN::Mini
 
-is_deeply( { CPAN::Mini->read_config() }, { local => 'mock/repos' },
+is( { CPAN::Mini->read_config() }, { local => 'mock/repos' },
     q{CPAN::Mini->read_config() returns 'mock/repos'} );
 
 # Mock CPAN
@@ -71,14 +81,14 @@ CPAN::HandleConfig->load();
 
 {
     no warnings qw{ once };
-    is_deeply $CPAN::Config, {
+    is $CPAN::Config, {
 	urllist	=> [ $default_mock_repos ],
     }, "CPAN::HandleConfig loads urllist [ '$default_mock_repos' ]";
 }
 
 # Mock CPANPLUS
 
-is_deeply(
+is(
     CPANPLUS::Configure->new(),
     {
 	hosts	=> [
@@ -96,7 +106,7 @@ my $cad = CPAN::Access::AdHoc->new(
     cpan	=> 'http://someone/',
 );
 
-is_deeply $cad->default_cpan_source(),
+is $cad->default_cpan_source(),
     [ qw{ 
 	CPAN::Access::AdHoc::Default::CPAN::CPAN::Mini
 	CPAN::Access::AdHoc::Default::CPAN::cpanm

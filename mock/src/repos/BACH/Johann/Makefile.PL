@@ -1,4 +1,4 @@
-use 5.006;	# for 'our'.
+use 5.010;	# for 'our'.
 
 use strict;
 use warnings;

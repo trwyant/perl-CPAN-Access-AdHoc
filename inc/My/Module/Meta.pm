@@ -26,7 +26,9 @@ sub build_requires {
 	'File::Glob'		=> 0,
 	'IO::Compress::Gzip'	=> 0,
 	'Pod::Usage'		=> 0,
-	'Test::More'		=> 0.88,	# Because of done_testing().
+	'Test2::V0'		=> 0,
+	'Test2::Plugin::BailOnFail'	=> 0,
+	'Test2::Tools::LoadModule'	=> 0,
 	'Time::Local'		=> 0,
     };
 }
@@ -87,20 +89,13 @@ package main;
 use strict;
 use warnings;
 
-use Test::More 0.88;
-
 use lib qw{ ./inc };
 
 use My::Module::Meta;
+use Test2::Tools::LoadModule;
 
-BEGIN {
-    eval {
-	require Test::Without::Module;
-	Test::Without::Module->import(
-	    My::Module::Meta->optionals() );
-	1;
-    } or plan skip_all => 'Test::Without::Module not available';
-}
+load_module_or_skip_all 'Test::Without::Module', undef, [
+    My::Module::Meta->optionals() ];
 
 do 't/$_';
 

@@ -8,7 +8,7 @@ use warnings;
 use lib qw{ ./mock };
 
 use Scalar::Util qw{ blessed };
-use Test::More 0.88;	# Because of done_testing();
+use Test2::V0;
 
 use CPAN::Access::AdHoc;
 use CPAN::Access::AdHoc::Archive;
@@ -16,11 +16,11 @@ use CPAN::Access::AdHoc::Util qw{ :all };
 
 sub exception ($$$$);
 sub init (@);
-sub warning ($$$$);
+sub caveat ($$$$);	# was warning() but conflicted with Test2::V0
 
 init;
 
-warning   \&__whinge, 'Awww', qr{\AAwww\b}, 'Check __whinge';
+caveat   \&__whinge, 'Awww', qr{\AAwww\b}, 'Check __whinge';
 
 exception \&__wail, 'Pfui', qr{\APfui\b}, 'Check __wail';
 
@@ -50,7 +50,7 @@ exception fetch => 'fubar/bazzle',
     qr{/fubar/bazzle: 404\b},
     'fetch a non-existant file, back to default behaviour.';
 
-warning http_error_handler => sub {
+caveat http_error_handler => sub {
 ##  my ( $self, $url, $resp ) = @_;
     my ( undef, $url ) = @_;		# Invocant and response not used
     $url =~ m{ /modules/02packages_details [.] txt [.] gz \z }smx
@@ -61,20 +61,20 @@ warning http_error_handler => sub {
 
 exception fetch => 'fubar/bazzle',
     qr{\Afubar/bazzle not found\b},
-    'Fetch a non-existant file and get alternate warning.';
+    'Fetch a non-existant file and get alternate caveat.';
 
 eval {
-    warning fetch => 'fubar/modules/02packages.details.txt.gz', undef,
+    caveat fetch => 'fubar/modules/02packages.details.txt.gz', undef,
 	'Can supress exception with HTTP error handler';
     1;
 } or fail "HTTP error handler allowed unexpected error $@";
 
-warning http_error_handler => undef, undef,
+caveat http_error_handler => undef, undef,
     'Restore the original HTTP error handler';
 
 exception fetch => 'fubar/bazzle',
     qr{/fubar/bazzle: 404\b},
-    'Fetch a non-existant file and get original warning.';
+    'Fetch a non-existant file and get original caveat.';
 
 
 SKIP: {
@@ -213,10 +213,6 @@ done_testing;
 	%instantiator = map { $_ => 1 } qw{ new };
     }
 
-    sub object {
-	return $cad;
-    }
-
     sub _xqt {
 	my ( $method, $args ) = @_;
 	ARRAY_REF eq ref $args
@@ -272,25 +268,25 @@ done_testing;
 	goto &pass;
     }
 
-    sub warning ($$$$) {
-	my ( $method, $args, $warning, $title ) = @_;
+    sub caveat ($$$$) {
+	my ( $method, $args, $caveat, $title ) = @_;
 	my $err;
 	{
 	    local $SIG{__WARN__} = sub { $err = $_[0] };
 	    _xqt( $method, $args );
 	}
 	if ( defined $err ) {
-	    if ( defined $warning ) {
-		@_ = ( $err, $warning, $title );
-		REGEXP_REF eq ref $warning
+	    if ( defined $caveat ) {
+		@_ = ( $err, $caveat, $title );
+		REGEXP_REF eq ref $caveat
 		    and goto &like;
 		goto &is;
 	    } else {
-		@_ = ( "$title gave warning '$err'" );
+		@_ = ( "$title gave caveat '$err'" );
 		goto &fail;
 	    }
-	} elsif ( defined $warning ) {
-	    @_ = "$method() did not generate a warning";
+	} elsif ( defined $caveat ) {
+	    @_ = "$method() did not generate a caveat";
 	    goto &fail;
 	} else {
 	    @_ = ( $title );

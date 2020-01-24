@@ -1,6 +1,6 @@
 package PDQ;
 
-use 5.006002;
+use 5.010;
 
 use strict;
 use warnings;
