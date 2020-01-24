@@ -7,8 +7,6 @@ use warnings;
 
 use Test::More 0.88;	# Because of done_testing();
 
-use lib qw{ mock };
-
 my @expect_default_class_methods = qw{ get_clean_checksums get_cpan_url };
 my @expect_archive_methods = qw{
     new base_directory extract get_item_content get_item_mtime

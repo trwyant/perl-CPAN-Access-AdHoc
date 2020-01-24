@@ -5,7 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 
-use lib qw{ mock };
+use lib qw{ ./mock };
 
 use Scalar::Util qw{ blessed };
 use Test::More 0.88;	# Because of done_testing();

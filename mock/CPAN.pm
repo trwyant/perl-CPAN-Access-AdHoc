@@ -33,7 +33,7 @@ CPAN - Mock CPAN class.
 
 =head1 SYNOPSIS
 
- use lib qw{ mock };
+ use lib qw{ ./mock };
  use CPAN;
  
  CPAN::HandleConfig->load();

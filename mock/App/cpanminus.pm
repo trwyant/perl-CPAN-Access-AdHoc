@@ -20,7 +20,7 @@ App::cpanminus - Mock cpanminus class.
 
 =head1 SYNOPSIS
 
- use lib qw{ mock };
+ use lib qw{ ./mock };
  use App::cpanminus;
 
 =head1 DESCRIPTION

@@ -22,7 +22,7 @@ eval {
     1;
 } or plan skip_all => 'Unable to load version';
 
-use lib qw{ inc };
+use lib qw{ ./inc };
 use My::Module::Meta;
 
 my $min_perl = My::Module::Meta->requires_perl();

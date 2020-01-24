@@ -7,7 +7,7 @@ use warnings;
 
 use Test::More 0.88;	# Because of done_testing();
 
-use lib qw{ mock };
+use lib qw{ ./mock };
 
 use Cwd();
 use File::Spec;

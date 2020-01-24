@@ -89,7 +89,7 @@ use warnings;
 
 use Test::More 0.88;
 
-use lib qw{ inc };
+use lib qw{ ./inc };
 
 use My::Module::Meta;
 
@@ -182,7 +182,7 @@ My::Module::Meta - Information needed to build CPAN::Access::AdHoc
 
 =head1 SYNOPSIS
 
- use lib qw{ inc };
+ use lib qw{ ./inc };
  use My::Module::Meta;
  my $meta = My::Module::Meta->new();
  use YAML;

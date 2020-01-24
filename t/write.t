@@ -5,7 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 
-use lib qw{ inc };
+use lib qw{ ./inc };
 
 use Test::More 0.88;	# Because of done_testing();
 use CPAN::Access::AdHoc::Archive;

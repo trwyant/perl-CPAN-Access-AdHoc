@@ -42,7 +42,7 @@ CPANPLUS::Configure - Mock CPANPLUS::Configure class
 
 =head1 SYNOPSIS
 
- use lib qw{ mock };
+ use lib qw{ ./mock };
  use CPANPLUS::Configure;
  
  my $conf = CPANPLUS::Configure->new();

@@ -3,7 +3,7 @@ use warnings;
 
 use 5.010;
 
-use lib qw{ inc };
+use lib qw{ ./inc };
 
 use Config;
 use Module::Build;

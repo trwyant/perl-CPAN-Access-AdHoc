@@ -27,7 +27,7 @@ CPAN::Mini - Mock CPAN::Mini class
 
 =head1 SYNOPSIS
 
- use lib qw{ mock };
+ use lib qw{ ./mock };
  use CPAN::Mini;
  
  my %config = CPAN::Mini->read_config();

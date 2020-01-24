@@ -3,7 +3,7 @@ use 5.010;
 use strict;
 use warnings;
 
-use lib qw{ inc };
+use lib qw{ ./inc };
 
 use Config;
 use ExtUtils::MakeMaker;

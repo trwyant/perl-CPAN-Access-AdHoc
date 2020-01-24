@@ -36,7 +36,7 @@ Config::Tiny - Mock Config::Tiny object.
 
 =head1 SYNOPSIS
 
- use lib qw{ mock };
+ use lib qw{ ./mock };
  use Config::Tiny;
  
  my $empty = Config::Tiny->new();

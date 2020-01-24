@@ -27,7 +27,7 @@ File::HomeDir - Mock File::HomeDir class
 
 =head1 SYNOPSIS
 
- use lib qw{ mock };
+ use lib qw{ ./mock };
  use File::HomeDir;
  
  my $config_dir = File::HoneDir->my_dist_config( 'Foo-Bar' );
