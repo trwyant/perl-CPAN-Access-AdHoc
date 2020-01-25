@@ -80,10 +80,14 @@ sub corpus {
     my $corpus = $self->fetch_distribution_checksums( $cpan_id, %arg )
 	    or return;
 
+    my $match = $arg{match} // qr/ (?:) /smx;
+
     my %found;
     foreach my $filename ( keys %{ $corpus || {} } ) {
 	$filename =~ m/ [.] meta \z /smx
 	    and next;
+	$filename =~ $match
+	    or next;
 	my $pathname = __expand_distribution_path(
 	    "$cpan_id/$filename" );
 	my $info = CPAN::DistnameInfo->new( $pathname );
@@ -992,6 +996,12 @@ distribution.
 
 The kind of distribution, one of C<'development'>, C<'production'>, or
 C<'unreleased'>.
+
+=item match
+
+A reference to a regular expression that the base name of the
+distribution must match. If unspecified or undefined, everything
+matches.
 
 =item mtime
 

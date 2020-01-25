@@ -233,6 +233,10 @@ is [ $cad->corpus( 'BACH' ) ], [ qw{
     B/BA/BACH/PDQ-0.000_01.zip
     } ], q{Corpus of CPAN ID 'BACH'};
 
+is [ $cad->corpus( 'BACH', match => qr/ \A PDQ \b /smx ) ], [ qw{
+    B/BA/BACH/PDQ-0.000_01.zip
+    } ], q{Corpus of CPAN ID 'BACH' that matches /\\APDQ\\b/};
+
 is [ $cad->indexed_distributions() ], [ qw{
     B/BA/BACH/Johann-0.001.tar.bz2
     B/BA/BACH/PDQ-0.000_01.zip

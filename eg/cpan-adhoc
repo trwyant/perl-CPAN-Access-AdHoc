@@ -220,7 +220,8 @@ sub verb_corpus {
     my $go = Getopt::Long::Parser->new();
     $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s
 	development! date! distribution|distro!
-	format=s latest!  production! quiet!  since=s unreleased! } )
+	format=s latest! match=s  production! quiet!  since=s
+	unreleased|unpublished! } )
 	or return;
     @argv
 	or @argv = ( $cad->pause_user() );
@@ -246,6 +247,8 @@ sub verb_corpus {
 		$opt{format}, localtime $item->{mtime} )
 	);
     };
+    defined $opt{match}
+	and $opt{match} = qr/$opt{match}/;
     foreach my $id ( @argv ) {
 	my $uc_id = uc $id;
 	if ( $inx->{$uc_id} ) {
@@ -1239,6 +1242,13 @@ displayed.
 
 The default is C<-nolatest>.
 
+=item -match
+
+ -match Acme-
+
+If present, the argument is a regular expression pattern, and only
+distributions whose base name matches the pattern will be displayed.
+
 =item -production
 
 If asserted, production packages are listed; if not asserted they are
@@ -1257,6 +1267,10 @@ This option, if present, specifies that only distributions created
 on or after the given date be listed.
 
 For how the date is parsed, see C<-before>.
+
+=item -unpublished
+
+This is a synonym for L<-unreleased|/-unreleased>.
 
 =item -unreleased
 
