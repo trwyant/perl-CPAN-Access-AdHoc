@@ -944,7 +944,9 @@ These methods are what all the rest is in aid of.
 This convenience method returns a list of distributions by the author
 with the given CPAN ID. The argument is converted to upper case before
 use. The argument defaults to whatever is returned by
-L<pause_user()|/pause_user>, if that can be called successfully.
+L<pause_user()|/pause_user>, if that can be called successfully. If
+named arguments are specified, though, you must specify this argument as
+C<undef> if you wish to take the default value.
 
 This list is derived from the author's F<CHECKSUMS> file. If run against
 a Mini-CPAN, the returned data may list distributions that are not

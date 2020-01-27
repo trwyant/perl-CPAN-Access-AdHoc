@@ -1,0 +1,159 @@
+#!/usr/bin/env perl
+
+use 5.010;
+
+use strict;
+use warnings;
+
+use CPAN::Access::AdHoc;
+use Getopt::Long 2.33 qw{ :config auto_version };
+use Pod::Usage;
+
+our $VERSION = '0.104';
+
+my %opt;
+
+GetOptions( \%opt,
+    qw{
+	author=s development! latest! local=s
+	production! unreleased|unpublished!
+    },
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) or pod2usage( { -verbose => 0 } );
+
+defined $opt{latest}
+    or $opt{latest} = 1;
+
+my $cad = CPAN::Access::AdHoc->new();
+
+my $author = delete( $opt{author} ) // $cad->pause_user();
+my $local = delete $opt{local}
+    and do {
+	require CPAN::DistnameInfo;
+	require File::Spec;
+    };
+
+my %uses = map { $_ => 1 } @ARGV ? @ARGV : 'Test::More';
+
+foreach my $distro ( $cad->corpus( $author => %opt ) ) {
+    my $meta;
+
+    if ( $local ) {
+	my $d = CPAN::DistnameInfo->new( $distro );
+	my $dir = File::Spec->catdir( $local, $d->dist() );
+	if ( -d $dir ) {
+	    foreach my $fn ( qw{ META.json META.yml } ) {
+		my $meta_file = File::Spec->catfile( $dir, $fn );
+		-e $meta_file
+		    or next;
+		$meta = CPAN::Meta->load_file( $meta_file );
+		last;
+	    }
+	}
+    } else {
+	my $archive = $cad->fetch_distribution_archive( $distro );
+	$meta = $archive->metadata();
+    }
+
+    if ( $meta ) {
+	my $prereq = $meta->effective_prereqs();
+	foreach my $phase ( qw{ configure build test } ) {
+	    my $req = $prereq->requirements_for( $phase, 'requires' );
+	    foreach my $module ( sort $req->required_modules() ) {
+		$uses{$module}
+		    and say "$distro uses $module"
+	    }
+	}
+    } else {
+	warn "No metadata found for $distro\n";
+    }
+}
+
+__END__
+
+=head1 TITLE
+
+config-requires - Find author's distributions that use specified modules for configuration, building, or testing.
+
+=head1 SYNOPSIS
+
+ config-requires
+ config-requires Test2::V0
+ config-requires -help
+ config-requires -version
+
+=head1 OPTIONS
+
+=head2 -author
+
+ -author MENUHIN
+
+This option specifies the author whose corpus is to be searched. The
+default is the currently-configured PAUSE author.
+
+=head2 -development
+
+If asserted, this Boolean option selects development releases.
+
+=head2 -help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 -latest
+
+If this Boolean option is true, only the latest version of a given
+distribution is displayed.
+
+The default is C<-nolatest>.
+
+=head2 -local
+
+ -local ~/Code/perl
+
+If this option is specified, the source for the author's distributions
+is assumed to be local, residing in the given directory in
+subdirectories named after the distribution.
+
+=head2 -production
+
+If asserted, this Boolean option specifies production releases.
+
+=head2 -unpublished
+
+This is a synonym for L<-unreleased|/-unreleased>.
+
+=head2 -unreleased
+
+If asserted, this Boolean option specifies unreleased releases (sic).
+
+=head2 -version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script searches an author's corpus for distributions that use
+a specified module or modules for configuration, building, or testing.
+The module names are specified on the command line. If none is
+specified, C<Test::More> is searched for.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III (wyant at cpan dot org)
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2020 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the full text
+of the licenses in the directory LICENSES.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :

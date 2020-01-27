@@ -2,6 +2,9 @@ This directory contains sample scripts. Specifically:
 
 README - This file.
 
+config-requires - Given a CPAN ID, list distributions by that author
+	which require a given module for configuration, build, or test.
+
 corpus - Given a CPAN ID, list the distributions by that author.
 
 cpan-adhoc - An interactive script to obtain information about CPAN

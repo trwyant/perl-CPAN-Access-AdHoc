@@ -2,6 +2,7 @@ Build.PL
 Build_Repos.PL
 Changes
 eg/README
+eg/config-requires
 eg/corpus
 eg/cpan-adhoc
 eg/dist-extensions
