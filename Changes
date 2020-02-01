@@ -1,3 +1,17 @@
+0.000_218	2020-02-01	T. R. Wyant
+    Add eg/config-requires which selects distributions from an author's
+    corpus and reports on whether configuration requires specified
+    modules.
+
+    Add -match option to corpus; and (in eg/cpan-adhoc only), -unpub as
+    a synonym for -unrel.
+
+    Convert testing to Test2::V0 and Test2::Tools::LoadModule.
+
+    Correct 'use lib'; prefix './' to relative dirs
+
+    Fix careless error in eg/cpan-adhoc
+
 0.000_217	2020-01-02	T. R. Wyant
     Add attribute undef_if_not_found. This causes fetch() and all code
     based on it to return undef on a 404 error rather than throwing an
