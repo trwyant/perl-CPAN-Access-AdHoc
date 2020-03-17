@@ -152,6 +152,16 @@ sub get_item_mtime {
     return $attr->{contents}{$file}{mtime};
 }
 
+sub get_item_size {
+    my ( $self, $file ) = @_;
+    my $attr = $self->__attr();
+
+    defined $file
+	or ( $file ) = keys %{ $attr->{contents} };
+
+    return length $attr->{contents}{$file}{content};
+}
+
 {
 
     my %handled = map { $_ => 1 } qw{ application/octet-stream };

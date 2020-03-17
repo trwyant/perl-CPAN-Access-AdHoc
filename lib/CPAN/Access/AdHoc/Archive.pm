@@ -413,6 +413,15 @@ This method returns the modification time of the named item in the
 archive. The name of the item is specified relative to
 C<< $arc->base_directory() >>.
 
+=head3 get_item_size
+
+ printf "README size %d bytes\n",
+     $arc->get_item_size( 'README' );
+
+This method returns the uncompressed size in bytes of the named item in
+the archive. The name of the item is specified relative to
+C<< $arc->base_directory() >>.
+
 =head3 __handle_http_response
 
 This static method is private to the C<CPAN-Access-AdHoc> package.

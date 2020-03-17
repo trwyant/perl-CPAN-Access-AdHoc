@@ -115,6 +115,15 @@ sub get_item_mtime {
     return;
 }
 
+sub get_item_size {
+    my ( $self, $file ) = @_;
+    $file = $self->base_directory() . $file;
+    my @files = $self->archive()->get_files( $file );
+    @files
+	and return $files[0]->size();
+    return;
+}
+
 {
 
     my %handled = map { $_ => 1 } qw{ application/x-tar };

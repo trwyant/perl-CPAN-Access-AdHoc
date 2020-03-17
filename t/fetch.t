@@ -89,6 +89,8 @@ my $cad = CPAN::Access::AdHoc->new(
 	"Check the modification time of $file_name"
 	or mtime_diag( $got, $want );
 
+    ok $arc->get_item_size(), length $text, "Size of $file_name";
+
     SKIP: {
 	my $tests = 1;
 
@@ -246,7 +248,7 @@ is [ $cad->indexed_distributions() ], [ qw{
 # Test access to .tar.gz archive
 
 SKIP: {
-    my $tests = 11;
+    my $tests = 12;
 
     my $pkg = $module_index->{Yehudi}{distribution}
 	or skip q{Module 'Yehudi' not indexed}, $tests;
@@ -279,8 +281,9 @@ SKIP: {
 	} ],
 	'Contents of Yehudi-0.001.tar.gz';
 
-    is $kit->get_item_content( 'Makefile.PL' ),
-	slurp( 'mock/src/repos/MENUHIN/Yehudi/Makefile.PL' ),
+    my $text = slurp( 'mock/src/repos/MENUHIN/Yehudi/Makefile.PL' );
+
+    is $kit->get_item_content( 'Makefile.PL' ), $text,
 	"Can extract Makefile.PL from $pkg";
 
     {
@@ -290,6 +293,9 @@ SKIP: {
 	"Can get Makefile.PL mod time from $pkg"
 	    or mtime_diag( $got, $want );
     }
+
+    is $kit->get_item_size( 'Makefile.PL' ), length $text,
+	"Size of $pkg Makefile.PL";
 
     my $meta = $kit->metadata();
 
@@ -363,7 +369,7 @@ SKIP: {
 # Test access to .zip archive
 
 SKIP: {
-    my $tests = 10;
+    my $tests = 11;
 
     my $pkg = $module_index->{PDQ}{distribution}
 	or skip q{Module 'PDQ' not indexed}, $tests;
@@ -396,8 +402,9 @@ SKIP: {
 	} ],
     'Contents of BACH/PDQ-0.000_01.zip';
 
-    is $kit->get_item_content( 'Makefile.PL' ),
-	slurp( 'mock/src/repos/BACH/PDQ/Makefile.PL' ),
+    my $text = slurp( 'mock/src/repos/BACH/PDQ/Makefile.PL' );
+
+    is $kit->get_item_content( 'Makefile.PL' ), $text,
 	"Can extract Makefile.PL from $pkg";
 
 #   {
@@ -411,6 +418,9 @@ SKIP: {
 #	"Can get Makefile.PL mod time from $pkg"
 #	    or mtime_diag( $got, $want );
 #   }
+
+    is $kit->get_item_size( 'Makefile.PL' ), length $text,
+	"Size of $pkg Makefile.PL";
 
     my $meta = $kit->metadata();
 

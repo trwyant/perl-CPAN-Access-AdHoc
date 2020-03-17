@@ -101,6 +101,14 @@ sub get_item_mtime {
     return scalar $member->lastModTime();
 }
 
+sub get_item_size {
+    my ( $self, $file ) = @_;
+    $file = $self->base_directory() . $file;
+    my $member = $self->archive()->memberNamed( $file )
+	or return;
+    return scalar $member->uncompressedSize();
+}
+
 {
 
     my %handled = map { $_ => 1 } qw{ application/zip };
