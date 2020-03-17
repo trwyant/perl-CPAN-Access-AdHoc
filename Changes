@@ -1,3 +1,7 @@
+0.000_220	2020-03-17	T. R. Wyant
+    Add -l to eg/cpan-adhoc 'list' command. This adds size and date of
+    both the archive and its items to the output.
+
 0.000_219	2020-03-16	T. R. Wyant
     Add Archive method size(), which returns the size in bytes of the
     archive.
