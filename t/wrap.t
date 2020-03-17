@@ -10,7 +10,7 @@ use Test2::V0;
 use CPAN::Access::AdHoc::Archive;
 
 SKIP: {
-    my $tests = 7;	# Not counting instantiation.
+    my $tests = 8;	# Not counting instantiation.
     my $pkg = 'M/ME/MENUHIN/Yehudi-0.001.tar.gz';
     my $fn = "mock/repos/authors/id/$pkg";
     my $kit;
@@ -25,6 +25,8 @@ SKIP: {
 
     is $kit->path(), 'authors/id/M/ME/MENUHIN/Yehudi-0.001.tar.gz',
 	'Path to Yehudi-0.001.tar.gz';
+
+    is $kit->size(), -s $fn, 'Size of Yehudi-0.001.tar.gz';
 
     is $kit->base_directory(), 'Yehudi-0.001/',
 	'Base directory of Yehudi-0.001.tar.gz';
@@ -54,7 +56,7 @@ SKIP: {
 }
 
 SKIP: {
-    my $tests = 7;	# Not counting instantiation.
+    my $tests = 8;	# Not counting instantiation.
     my $pkg = 'B/BA/BACH/PDQ-0.000_01.zip';
     my $fn = "mock/repos/authors/id/$pkg";
     my $kit;
@@ -70,6 +72,8 @@ SKIP: {
 
     is $kit->path(), 'authors/id/S/SC/SCHICKELE/PDQ-0.000_01.zip',
 	'Path to PDQ-0.000_01.zip';
+
+    is $kit->size(), -s $fn, 'Size of PDQ-0.000_01.zip';
 
     is $kit->base_directory(), 'PDQ-0.000_01/',
 	'Base directory of BACH/PDQ-0.000_01.zip';

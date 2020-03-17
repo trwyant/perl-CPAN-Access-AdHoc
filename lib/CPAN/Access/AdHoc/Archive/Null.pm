@@ -92,7 +92,7 @@ sub new {
     }
 
     $self->mtime( $mtime );
-    $self->path( delete $arg{path} );
+    $self->$_( delete $arg{$_} ) for qw{ path size };
 
     return $self;
 }
@@ -171,6 +171,7 @@ sub get_item_mtime {
 	    mtime	=> HTTP::Date::str2time(
 		scalar $rslt->header( 'Last-Modified' ) ),
 	    path	=> scalar $rslt->header( 'Content-Location' ),
+	    size	=> scalar $rslt->header( 'Content-Length' ),
 	);
     }
 
@@ -188,6 +189,14 @@ sub list_contents {
     my $attr = $self->__attr();
 
     return ( sort keys %{ $attr->{contents} } );
+}
+
+sub __size_of_archive {
+    my ( $self ) = @_;
+    my $attr = $self->__attr();
+
+    my ( $data ) = values %{ $attr->{contents} };
+    return length $data->{content};
 }
 
 {

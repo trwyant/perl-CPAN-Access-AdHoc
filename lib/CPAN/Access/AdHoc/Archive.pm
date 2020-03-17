@@ -10,6 +10,7 @@ use ExtUtils::MakeMaker;
 use File::chdir;
 use CPAN::Access::AdHoc::Util qw{
     __attr __expand_distribution_path __guess_media_type :carp
+    SCALAR_REF
 };
 use CPAN::Meta ();
 use HTTP::Date ();
@@ -139,6 +140,7 @@ sub path {
 	caller eq ref $self
 	    or __wail( 'Attribute path is read-only' );
 	$attr->{path} = $value[0];
+	delete $attr->{size};
 	return $self;
     } else {
 	return $attr->{path};
@@ -178,6 +180,27 @@ sub __set_archive_mtime {
     return;
 }
 
+# Note that this can be called as a mutator, but the mutator
+# functionality is private to the invocant's class.
+sub size {
+    my ( $self, @value ) = @_;
+    my $attr = $self->__attr();
+
+    if ( @value ) {
+	caller eq ref $self
+	    or __wail( 'Attribute path is read-only' );
+	$attr->{size} = $value[0];
+	return $self;
+    } else {
+	return $attr->{size} //= $self->__size_of_archive();
+    }
+}
+
+sub __size_of_archive {
+    my ( $self ) = @_;
+    return -s $self->path();
+};
+
 sub __change_to_target_dir {
     my ( undef, $target ) = @_;	# Invocant unused
     defined $target
@@ -191,7 +214,9 @@ sub wrap_archive {
     my ( $fn ) = @args;
     -f $fn
 	or __wail( "File $fn not found" );
-    my $mtime = ( stat _ )[9];
+    my @stat = stat _;
+    my $size = $stat[7];
+    my $mtime = $stat[9];
     my $content;
     {
 	local $/ = undef;
@@ -232,6 +257,8 @@ sub wrap_archive {
     defined $mtime
 	and $resp->header( 'Last-Modified' => HTTP::Date::time2str(
 	    $mtime ) );
+    defined $size
+	and $resp->header( 'Content-Length' => $size );
     return $class->__handle_http_response( $resp );
 }
 
@@ -341,6 +368,12 @@ This attribute is read-only, so it is an error to pass an argument.
 =head3 path
 
 This method is an accessor for the path of the archive.
+
+This attribute is read-only, so it is an error to pass an argument.
+
+=head3 size
+
+This method is an accessor for the size of the archive in bytes.
 
 This attribute is read-only, so it is an error to pass an argument.
 

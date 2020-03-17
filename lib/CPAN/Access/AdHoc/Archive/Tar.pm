@@ -62,8 +62,7 @@ our $VERSION = '0.000_218';
 
 	}
 
-	$self->mtime( delete $arg{mtime} );
-	$self->path( delete $arg{path} );
+	$self->$_( delete $arg{$_} ) for qw{ mtime path size };
 
 	return $self;
     }
@@ -132,6 +131,7 @@ sub get_item_mtime {
 	    mtime	=> HTTP::Date::str2time(
 		scalar $rslt->header( 'Last-Modified' ) ),
 	    path	=> scalar $rslt->header( 'Content-Location' ),
+	    size	=> scalar $rslt->header( 'Content-Length' ),
 	);
     }
 
