@@ -412,9 +412,11 @@ sub verb_less {
 
 sub verb_list {
     my @argv = @_;
-    my %opt;
+    my %opt = (
+	format	=> $opt{date_format},
+    );
     my $go = Getopt::Long::Parser->new();
-    $go->getoptionsfromarray( \@argv, \%opt, qw{ less! } )
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ l! less! } )
 	or return;
     @argv
 	or push @argv, CURRENT_PACKAGE;
@@ -423,14 +425,30 @@ sub verb_list {
 	my $pkg = _resolve_unique_distribution(
 	    $name, record => 1, warn => 1 )
 	    or next;
+	my $archive = _get_archive( $pkg );
+	$opt{l}
+	    and printf { $output } '%8d  %s  ', $archive->size(),
+	    strftime( $opt{format}, localtime $archive->mtime() );
 	say { $output } $pkg->{name};
-	foreach my $file ( _get_archive( $pkg )->list_contents() ) {
-	    say { $output } '    ', $file;
+	foreach my $file ( $archive->list_contents() ) {
+	    print { $output } '    ';
+	    $opt{l}
+		and printf { $output } '%8d  %s  ',
+		    $archive->get_item_size( $file ),
+		    strftime(
+			$opt{format},
+			localtime $archive->get_item_mtime( $file),
+		    );
+	    say { $output } $file;
 	}
     }
     $opt{less}
 	and _less( $output );
     return;
+}
+
+sub verb_ls {
+    goto &verb_list;
 }
 
 sub verb_look {
@@ -1435,10 +1453,23 @@ displays the given file in the current distribution, if any
  cpan-adhoc> list
 
 This command lists the files in the given distributions. If no
-distribution is specified, the current distribution is listed. You can
-specify option C<-less> to view the list in Perl's default pager.
+distribution is specified, the current distribution is listed. The
+following options are available:
+
+=over
+
+=item -l
+
+Adds size and date to the output;
+
+=item -less
+
+Views the output in Perl's default pager.
+
+=back
 
 =head2 look
+
  cpan-adhoc> look libwww-perl
  cpan-adhoc> look
 
@@ -1448,6 +1479,10 @@ distribution is specified, the current distribution is expanded.
 
 The shell is the contents of environment variable C<SHELL>, or
 F</bin/sh> otherwise.
+
+=head2 ls
+
+This command is a synonym for L<list|/list>.
 
 =head2 metadata
 
