@@ -1,3 +1,10 @@
+0.000_219	2020-03-16	T. R. Wyant
+    Add Archive method size(), which returns the size in bytes of the
+    archive.
+
+    Add Archive method get_item_size(), which returns the uncompressed
+    size of the item in bytes.
+
 0.000_218	2020-02-01	T. R. Wyant
     Add eg/config-requires which selects distributions from an author's
     corpus and reports on whether configuration requires specified
