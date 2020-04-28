@@ -1375,11 +1375,6 @@ C<CPAN::Easy> by Chris Weyl, which retrieves distributions and their
 meta information. As of this writing it has been retracted, and, it
 never supported version 2.0 of the meta spec.
 
-C<CPAN::Index> by Adam Kennedy, which accesses the CPAN indices, storing
-them in an SQLite database. The module can be found at
-L<https://metacpan.org/release/CPAN-Index>. This module clashes with one
-of the modules included in the core L<CPAN|CPAN> distribution.
-
 L<CPAN::Inject|CPAN::Inject> by Adam Kennedy, which injects tarballs
 into a F<.cpan/sources> directory for a given CPAN ID.
 
