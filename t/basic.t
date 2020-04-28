@@ -41,6 +41,8 @@ load_module_ok 'CPAN::Access::AdHoc::Archive::Zip';
 
 can_ok     'CPAN::Access::AdHoc::Archive::Zip' => \@expect_archive_methods;
 
+load_module_ok 'CPAN::Access::AdHoc::Default::CPAN';
+
 load_module_ok 'CPAN::Access::AdHoc::Default::CPAN::CPAN';
 
 can_ok     'CPAN::Access::AdHoc::Default::CPAN::CPAN' =>
@@ -65,6 +67,8 @@ load_module_ok 'CPAN::Access::AdHoc';
 
 can_ok     'CPAN::Access::AdHoc' => [
     qw{ config cpan __debug default_cpan_source } ];
+
+all_modules_tried_ok;
 
 done_testing;
 

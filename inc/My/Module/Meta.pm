@@ -28,7 +28,7 @@ sub build_requires {
 	'Pod::Usage'		=> 0,
 	'Test2::V0'		=> 0,
 	'Test2::Plugin::BailOnFail'	=> 0,
-	'Test2::Tools::LoadModule'	=> 0,
+	'Test2::Tools::LoadModule'	=> 0.002,
 	'Time::Local'		=> 0,
     };
 }
