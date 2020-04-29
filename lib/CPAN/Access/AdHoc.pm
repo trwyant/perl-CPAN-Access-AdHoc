@@ -108,6 +108,7 @@ sub corpus {
 		info	=> $info,
 		kind	=> $kind,
 		mtime	=> $mtime,
+		path	=> $pathname,
 		version	=> $v,
 	    };
 	    1;
@@ -122,12 +123,14 @@ sub corpus {
 		    info	=> $info,
 		    kind	=> $kind,
 		    mtime	=> $mtime,
+		    path	=> $pathname,
 		    version	=> version->parse( $v2 ),
 		};
 	    };
 	};
     }
 
+    my $distro_matcher = _distro_matcher( $arg{requires} );
     my @rslt;
     foreach my $name ( sort keys %found ) {
 	my @distro = sort {
@@ -144,6 +147,12 @@ sub corpus {
 	    defined $arg{since}
 		and $info->{mtime} < $arg{since}
 		and next;
+	    my $arch;
+	    # TODO want this to handle using prebuilt matcher.
+	    $distro_matcher
+		and ( $arch ||= $self->fetch_distribution_archive( $info->{path}, %arg ) )
+		and not $self->_distro_requires( $arch, $distro_matcher )
+		and next;
 	    push @rslt, $info;
 	}
     }
@@ -155,6 +164,39 @@ sub corpus {
 	and return @rslt;
     return ( map { $_->{info}->pathname() } @rslt );
 
+}
+
+sub _distro_matcher {
+    my ( $requires ) = @_;
+    defined $requires
+	or return;
+    CODE_REF eq ref $requires
+	and return $requires;
+    ref $requires
+	and __wail( "Matcher may not be $requires" );
+    $requires =~ m/ [^\w:] /smx
+	or return sub { $_[0]{$requires} };
+    ( my $expr = $requires ) =~ s/ ( [\w:]+ ) /\$_[0]{'$1'}/smxg;
+    local $@ = undef;
+    my $matcher = eval "sub { $expr }"	## no critic (ProhibitStringyEval)
+	or __wail( "Can not build matcher: $@" );
+    return $matcher;
+}
+
+sub _distro_requires {
+    my ( undef, $arch, $matcher ) = @_;	# Invocant unused
+    my $meta = $arch->metadata();
+    my $prereq = $meta->effective_prereqs();
+    my %req;
+    # TODO this is a crock. I ought to be able to query the $prereq
+    # object for the specified phases -- or the defined phases at least
+    foreach my $phase ( $prereq->phases() ) {
+	my $req = $prereq->requirements_for( $phase, 'requires' );
+	foreach my $module ( $req->required_modules() ) {
+	    $req{$module} = 1;
+	}
+    }
+    return $matcher->( \%req );
 }
 
 sub _parse_checksums_date {
@@ -534,7 +576,7 @@ sub __attr__cpan__validate {
     $value =~ s{ (?<! / ) \z }{/}smx;
 
     my $url = URI->new( $value )
-	or _wail( "Bad URL '$value'" );
+	or __wail( "Bad URL '$value'" );
 
     my $scheme = $url->scheme();
     unless ( defined $scheme ) {
@@ -1012,6 +1054,11 @@ preference this is derived from the F<CHECKSUMS> file, and so is to the
 nearest day. If this is unavailable for some reason the modification
 time of the archive file is used.
 
+=item path
+
+The path to the distribution relative to the base of the CPAN repository
+being used.
+
 =item version
 
 The L<version|version> object representing this distribution's version.
@@ -1043,6 +1090,49 @@ If this argument is true, production distributions are returned. These
 are distributions for which
 L<__classify_version()|CPAN::Access::Adhoc::Util/__classify_version>
 returns C<'production'>.
+
+=item requires
+
+This argument specifies module requirements for the distribution. Only
+distributions that meet these requirements will be selected. This
+argument can be:
+
+=over
+
+=item * A code reference
+
+This will be called and passed a hash of all the requirements of the
+module. It should return a true value to select the distribution.
+
+=item * A module name
+
+The distribution will be selected if it lists this module as a
+prerequisite.
+
+=item * A selector expression
+
+This consists of module names joined by Perl Boolean operations. This is
+munged into a code reference as documented above. A distribution will be
+selected if that code reference returns a true value.
+
+For example:
+
+ ! Test::More && ! Test2::V0
+
+returns true if and only if a distribution lists neither C<Test::More>
+nor C<Test2::V0> as prerequisites.
+
+What is actually done to make this happen is an implementation detail
+subject to change without notice. But (purely for illustrative purposes)
+as of this writing the above becomes
+
+ sub { ! $_[0]{'Test::More'} && ! $_[0]{'Test2::V0'} }
+
+
+B<Caveat:> No safety-checking is done on the selector expression. If you
+specify C<-requires '`sudo rm -rf /`'>, on your head be the consequences.
+
+=back
 
 =item since
 

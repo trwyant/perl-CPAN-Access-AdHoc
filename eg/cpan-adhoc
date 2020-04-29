@@ -98,7 +98,7 @@ while ( defined( my $buffer = $rl->( 'cpan-adhoc> ' ) ) ) {
 
 {
     no warnings qw{ once };
-    -t STOUT
+    -t STDOUT
 	and say '';
 }
 
@@ -220,8 +220,9 @@ sub verb_corpus {
     my $go = Getopt::Long::Parser->new();
     $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s
 	development! date! distribution|distro!
-	format=s latest! match=s  production! quiet!  since=s
-	unreleased|unpublished! } )
+	format=s latest! match=s
+	production! quiet! requires=s
+	since=s unreleased|unpublished! } )
 	or return;
     @argv
 	or @argv = ( $cad->pause_user() );
@@ -1278,6 +1279,20 @@ C<-unreleased> is asserted, all are asserted by default.
 
 If asserted, the name and address of the author is suppressed unless
 at least one distribution by that author is listed.
+
+=item -requires
+
+ -requires Test::More
+ -requires 'Test::More || Test::V2'
+
+This option selects distributions that require the given modules.
+
+Boolean expressions on module names are permitted, and get munged into
+Perl fragments to perform the specified test. If the munge produces
+invalid Perl the error message is likely to be unhelpful.
+
+B<Caveat:> If you provide a pernicious expression, on your head be the
+consequences.
 
 =item -since date-and-optional-time
 
