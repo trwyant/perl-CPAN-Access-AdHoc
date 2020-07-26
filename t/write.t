@@ -17,8 +17,6 @@ eval {
 } or plan skip_all =>
     'File::Temp unavailable, or does not support new() or newdir()';
 
-sub are_archives_same (@);
-
 SKIP: {
     my $tests = 1;
     my $name = 'Yehudi-0.001.tar.gz';
@@ -37,8 +35,8 @@ SKIP: {
     my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive(
 	{ author => 'MENUHIN' }, $name );
 
-    are_archives_same "rewritten $name" => $arc2,
-	"original $name" => $arc1;
+    are_archives_same( "rewritten $name" => $arc2,
+	"original $name" => $arc1 );
 }
 
 SKIP: {
@@ -59,8 +57,8 @@ SKIP: {
     my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive(
 	{ author => 'BACH' }, $name );
 
-    are_archives_same "rewritten $name" => $arc2,
-	"original $name" => $arc1;
+    are_archives_same( "rewritten $name" => $arc2,
+	"original $name" => $arc1 );
 
 }
 
@@ -82,8 +80,8 @@ SKIP: {
     my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive(
 	{ author => 'BACH' }, $name );
 
-    are_archives_same "rewritten $name" => $arc2,
-	"original $name" => $arc1;
+    are_archives_same( "rewritten $name" => $arc2,
+	"original $name" => $arc1 );
 
 }
 
@@ -105,14 +103,14 @@ SKIP: {
     my $arc2 = CPAN::Access::AdHoc::Archive->wrap_archive(
 	{ directory => 'modules' }, $name );
 
-    are_archives_same "rewritten $name" => $arc2,
-	"original $name" => $arc1;
+    are_archives_same( "rewritten $name" => $arc2,
+	"original $name" => $arc1 );
 
 }
 
 done_testing;
 
-sub are_archives_same (@) {
+sub are_archives_same {
     my ( $name1, $arc1, $name2, $arc2 ) = @_;
     my $got1 = $arc1->base_directory();
     my $got2 = $arc2->base_directory();

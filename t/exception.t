@@ -14,67 +14,63 @@ use CPAN::Access::AdHoc;
 use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{ :all };
 
-sub exception ($$$$);
-sub init (@);
-sub caveat ($$$$);	# was warning() but conflicted with Test2::V0
+init();
 
-init;
+caveat( \&__whinge, 'Awww', qr{\AAwww\b}, 'Check __whinge' );
 
-caveat   \&__whinge, 'Awww', qr{\AAwww\b}, 'Check __whinge';
+exception( \&__wail, 'Pfui', qr{\APfui\b}, 'Check __wail' );
 
-exception \&__wail, 'Pfui', qr{\APfui\b}, 'Check __wail';
+exception( \&__weep, 'Fubar', qr{\AProgramming Error - Fubar},
+    'Check __weep' );
 
-exception \&__weep, 'Fubar', qr{\AProgramming Error - Fubar},
-    'Check __weep';
+exception( \&__load, '1module', qr{\AMalformed module name '1module'},
+    'Check __load' );
 
-exception \&__load, '1module', qr{\AMalformed module name '1module'},
-    'Check __load';
-
-exception new => [ fubar => 'bazzle' ],
+exception( new => [ fubar => 'bazzle' ],
     qr{\A\QUnknown attribute(s): fubar},
-    'New with invalid arguments.';
+    'New with invalid arguments.' );
 
-exception fetch => 'fubar/bazzle',
+exception( fetch => 'fubar/bazzle',
     qr{/fubar/bazzle: 404\b},
-    'fetch a non-existant file.';
+    'fetch a non-existant file.' );
 
-exception fetch => [ 'fubar/bazzle', http_error_handler => sub {
+exception( fetch => [ 'fubar/bazzle', http_error_handler => sub {
 	$_[2]->code( 'CDIV' );	# Roman numeral for 404
 	$_[2]->message( 'Otnay Oundfay' );
 	goto &CPAN::Access::AdHoc::DEFAULT_HTTP_ERROR_HANDLER;
     }, ],
     qr{/fubar/bazzle: CDIV\b},
-    'fetch a non-existant file, temporary error handler.';
+    'fetch a non-existant file, temporary error handler.' );
 
-exception fetch => 'fubar/bazzle',
+exception( fetch => 'fubar/bazzle',
     qr{/fubar/bazzle: 404\b},
-    'fetch a non-existant file, back to default behaviour.';
+    'fetch a non-existant file, back to default behaviour.' );
 
-caveat http_error_handler => sub {
+caveat( http_error_handler => sub {
 ##  my ( $self, $url, $resp ) = @_;
     my ( undef, $url ) = @_;		# Invocant and response not used
     $url =~ m{ /modules/02packages_details [.] txt [.] gz \z }smx
 	and return;
     die "$url not found\n"
 }, undef,
-    'Set an alternate HTTP error handler';
+    'Set an alternate HTTP error handler' );
 
-exception fetch => 'fubar/bazzle',
+exception( fetch => 'fubar/bazzle',
     qr{\Afubar/bazzle not found\b},
-    'Fetch a non-existant file and get alternate caveat.';
+    'Fetch a non-existant file and get alternate caveat.' );
 
 eval {
-    caveat fetch => 'fubar/modules/02packages.details.txt.gz', undef,
-	'Can supress exception with HTTP error handler';
+    caveat( fetch => 'fubar/modules/02packages.details.txt.gz', undef,
+	'Can supress exception with HTTP error handler' );
     1;
 } or fail "HTTP error handler allowed unexpected error $@";
 
-caveat http_error_handler => undef, undef,
-    'Restore the original HTTP error handler';
+caveat( http_error_handler => undef, undef,
+    'Restore the original HTTP error handler' );
 
-exception fetch => 'fubar/bazzle',
+exception( fetch => 'fubar/bazzle',
     qr{/fubar/bazzle: 404\b},
-    'Fetch a non-existant file and get original caveat.';
+    'Fetch a non-existant file and get original caveat.' );
 
 
 SKIP: {
@@ -99,9 +95,9 @@ SKIP: {
 	return;
     };
 
-    exception fetch => 'authors/01mailrc.txt.gz',
+    exception( fetch => 'authors/01mailrc.txt.gz',
 	qr{Unsupported Content-Type 'something/awful'},
-	'Unexpected Content-Type';
+	'Unexpected Content-Type' );
 }
 
 SKIP: {
@@ -120,22 +116,22 @@ SKIP: {
 	return;
     };
 
-    exception fetch_author_index => [],
+    exception( fetch_author_index => [],
 	qr{\AUnable to open string reference:},
-	'Failure to open a string reference in fetch_author_index()';
+	'Failure to open a string reference in fetch_author_index()' );
 
-    exception fetch_module_index => [],
+    exception( fetch_module_index => [],
 	qr{\AUnable to open string reference:},
-	'Failure to open a string reference in fetch_module_index()';
+	'Failure to open a string reference in fetch_module_index()' );
 
-    exception fetch_registered_module_index => [],
+    exception( fetch_registered_module_index => [],
 	qr{\AUnable to open string reference:},
-	'Failure to open a string reference in fetch_registered_module_index()';
+	'Failure to open a string reference in fetch_registered_module_index()' );
 }
 
-exception fetch_distribution_checksums => 'fubar',
+exception( fetch_distribution_checksums => 'fubar',
     qr{\AFailed to get file:},
-    'Fetch checksums for an invalid distribution name';
+    'Fetch checksums for an invalid distribution name' );
 
 SKIP: {
     my $tests = 1;
@@ -151,55 +147,55 @@ SKIP: {
 	return 'impossible checksum';
     };
 
-    exception fetch_distribution_archive => 'BACH/Johann-0.001.tar.bz2',
+    exception( fetch_distribution_archive => 'BACH/Johann-0.001.tar.bz2',
 	qr{\AChecksum failure on},
-	'Checksum failure';
+	'Checksum failure' );
 }
 
-exception config => {},
+exception( config => {},
     qr{\AAttribute 'config' must be a file name or a Config::Tiny reference},
-    'Set config() to invalid configuration';
+    'Set config() to invalid configuration' );
 
-exception default_cpan_source => 'fubar',
+exception( default_cpan_source => 'fubar',
     qr{\AUnknown default_cpan_source 'fubar'},
-    'Set default_cpan_source() to bad value';
+    'Set default_cpan_source() to bad value' );
 
-exception cpan => 'fubar://bazzle/',
+exception( cpan => 'fubar://bazzle/',
     qr{\AURL scheme fubar: is unsupported},
-    'Set cpan() to invalid URL.';
+    'Set cpan() to invalid URL.' );
 
-init bless {}, 'CPAN::Access::AdHoc::Archive';
+init( bless {}, 'CPAN::Access::AdHoc::Archive' );
 
-exception base_directory => [],
+exception( base_directory => [],
     qr{\A\QProgramming Error - The base_directory() method must be overridden},
-    'Must override the CPAN::Access::AdHoc::Archive base_directory method';
+    'Must override the CPAN::Access::AdHoc::Archive base_directory method' );
 
-exception extract => [],
+exception( extract => [],
     qr{\A\QProgramming Error - The extract() method must be overridden},
-    'Must override the CPAN::Access::AdHoc::Archive extract method';
+    'Must override the CPAN::Access::AdHoc::Archive extract method' );
 
-exception get_item_content => [],
+exception( get_item_content => [],
     qr{\A\QProgramming Error - The get_item_content() method must be overridden},
-    'Must override the CPAN::Access::AdHoc::Archive get_item_content method';
+    'Must override the CPAN::Access::AdHoc::Archive get_item_content method' );
 
-exception get_item_mtime => [],
+exception( get_item_mtime => [],
     qr{\A\QProgramming Error - The get_item_mtime() method must be overridden},
-    'Must override the CPAN::Access::AdHoc::Archive get_item_mtime method';
+    'Must override the CPAN::Access::AdHoc::Archive get_item_mtime method' );
 
-exception item_present => [],
+exception( item_present => [],
     qr{\A\QProgramming Error - The item_present() method must be overridden},
-    'Must override the CPAN::Access::AdHoc::Archive item_present method';
+    'Must override the CPAN::Access::AdHoc::Archive item_present method' );
 
-exception list_contents => [],
+exception( list_contents => [],
     qr{\A\QProgramming Error - The list_contents() method must be overridden},
-    'Must override the CPAN::Access::AdHoc::Archive list_contents method';
+    'Must override the CPAN::Access::AdHoc::Archive list_contents method' );
 
-exception wrap_archive => [
+exception( wrap_archive => [
 	{ author => 'NOBODY', directory => 'modules/' },
 	'mock/repos/modules/02packages.details.txt.gz',
     ],
     qr{\ASpecifying both 'author' and 'directory' is ambiguous\b},
-    q{Can not specify both 'author and 'directory' to wrap_archive};
+    q{Can not specify both 'author and 'directory' to wrap_archive} );
 
 done_testing;
 
@@ -230,7 +226,7 @@ done_testing;
 	return $rslt;
     }
 
-    sub exception ($$$$) {
+    sub exception {
 	my ( $method, $args, $exception, $title ) = @_;
 	_xqt( $method, $args ) or do {
 	    if ( defined( my $err = $@ ) ) {
@@ -247,7 +243,7 @@ done_testing;
 	goto &fail;
     }
 
-    sub init (@) {
+    sub init {
 	my ( $class, @args ) = @_;
 
 	if ( blessed( $class ) ) {
@@ -268,7 +264,8 @@ done_testing;
 	goto &pass;
     }
 
-    sub caveat ($$$$) {
+
+    sub caveat {	# was warning() but conflicted with Test2::V0
 	my ( $method, $args, $caveat, $title ) = @_;
 	my $err;
 	{
@@ -286,7 +283,7 @@ done_testing;
 		goto &fail;
 	    }
 	} elsif ( defined $caveat ) {
-	    @_ = "$method() did not generate a caveat";
+	    @_ = ( "$method() did not generate a caveat" );
 	    goto &fail;
 	} else {
 	    @_ = ( $title );
