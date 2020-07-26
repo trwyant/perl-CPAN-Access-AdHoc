@@ -7,7 +7,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '0.000_221';
+our $VERSION = '0.000_222';
 
 our $LOCAL ||= 'mock/repos';
 
