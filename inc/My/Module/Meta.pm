@@ -48,7 +48,7 @@ sub meta_merge {
 	},
 	resources	=> {
 #	    bugtracker	=> {
-#                web	=> 'https://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Access-AdHoc',
+#                web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues',
 #                mailto  => 'wyant@cpan.org',
 #            },
 	    license	=> 'http://dev.perl.org/licenses/',
@@ -166,7 +166,6 @@ sub requires_perl {
     return 5.010;
 }
 
-
 1;
 
 __END__
@@ -280,7 +279,6 @@ This method returns the version of Perl required by the distribution.
 
 This class has no public attributes.
 
-
 =head1 ENVIRONMENT
 
 =head2 MAKING_MODULE_DISTRIBUTION
@@ -288,7 +286,6 @@ This class has no public attributes.
 This environment variable should be set to a true value if you are
 making a distribution. This ensures that no configuration-specific
 information makes it into F<META.yml>.
-
 
 =head1 SUPPORT
 
