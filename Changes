@@ -1,3 +1,6 @@
+0.000_223	2021-01-02	T. R. Wyant
+    Use GitHub as bug tracker. R.I.P. rt.cpan.org.
+
 0.000_222	2020-07-26	T. R. Wyant
     Remove prototypes from testing subroutines defined in t/*.t
 
