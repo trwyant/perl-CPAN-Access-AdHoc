@@ -219,7 +219,7 @@ sub verb_corpus {
     );
     my $go = Getopt::Long::Parser->new();
     $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s
-	development! date! distribution|distro!
+	development! date|by_date|by-date! distribution|distro!
 	format=s latest! match=s
 	production! quiet! requires=s
 	since=s unreleased|unpublished! } )
@@ -1225,6 +1225,10 @@ If the date does not look like an ISO-8661 date,
 L<Date::Manip|Date::Manip> will be loaded if possible and used to
 interpret the time. If L<Date::Manip|Date::Manip> can not be loaded an
 exception will be thrown.
+
+=item -by-date
+
+This Boolean option is a synonym for L<-date|/-date>.
 
 =item -date
 
