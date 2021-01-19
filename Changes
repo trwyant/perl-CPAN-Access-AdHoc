@@ -1,3 +1,9 @@
+0.000_224	2021-01-19	T. R. Wyant
+    Get prerequisites up to snuff and add xt/author/prereq.t to ensure
+    they stay that way.
+
+    In eg/cpan-adhoc, add -by-date as alias for -date
+
 0.000_223	2021-01-02	T. R. Wyant
     Use GitHub as bug tracker. R.I.P. rt.cpan.org.
 
