@@ -26,10 +26,12 @@ sub build_requires {
 	'File::Glob'		=> 0,
 	'IO::Compress::Gzip'	=> 0,
 	'Pod::Usage'		=> 0,
+	'POSIX'			=> 0,
 	'Test2::V0'		=> 0,
 	'Test2::Plugin::BailOnFail'	=> 0,
 	'Test2::Tools::LoadModule'	=> 0.002,
 	'Time::Local'		=> 0,
+	lib			=> 0,
     };
 }
 
@@ -131,6 +133,7 @@ sub requires {
 	'CPAN::Meta'		=> 0,
 	'Cwd'			=> 0,
 	'Digest::SHA'		=> 0,
+	'Exporter'		=> 0,
 	'File::chdir'		=> 0,
 	'File::HomeDir'		=> 0,
 	'File::Path'		=> 2.07,
@@ -140,6 +143,8 @@ sub requires {
 	'HTTP::Date'		=> 0,
 	'HTTP::Response'	=> 0,
 	'HTTP::Status'		=> 0,
+	'IO::Compress::Bzip2'	=> 0,
+	'IO::Compress::Gzip'	=> 0,
 	'IO::File'		=> 0,
 	'IO::Uncompress::Bunzip2'	=> 0,
 	'IO::Uncompress::Gunzip'	=> 0,
@@ -156,8 +161,9 @@ sub requires {
 	'Time::Local'		=> 0,
 	'URI'			=> 0,
 	'URI::file'		=> 0,
-	'version'		=> 0,
-	'warnings'		=> 0,
+	constant		=> 0,
+	version			=> 0,
+	warnings		=> 0,
 	@extra,
     };
 }
