@@ -222,7 +222,9 @@ sub verb_corpus {
 	development! date|by_date|by-date! distribution|distro!
 	format=s latest! match=s
 	production! quiet! requires=s
-	since=s unreleased|unpublished! } )
+	since=s unreleased|unpublished!
+	with=s@ without=s@
+	} )
 	or return;
     @argv
 	or @argv = ( $cad->pause_user() );
@@ -260,7 +262,20 @@ sub verb_corpus {
 	    1 == @argv
 		and $opt{distribution}
 		or say sprintf '%-14s %s', $uc_id, $inx->{$uc_id}{address};
+	    FOUND:
 	    foreach my $item ( @found ) {
+		if ( $opt{with} || $opt{without} ) {
+		    my $archive = $cad->fetch_distribution_archive(
+			$item->{path} );
+		    foreach my $path ( @{ $opt{with} || [] } ) {
+			$archive->item_present( $path )
+			    or next FOUND;
+		    }
+		    foreach my $path ( @{ $opt{without} || [] } ) {
+			$archive->item_present( $path )
+			    and next FOUND;
+		    }
+		}
 		say $fmtr->( $item );
 	    }
 	} else {
@@ -1316,6 +1331,23 @@ not. Unreleased packages are defined as those with an underscore in
 their version number, and only zeroes and dots before the underscore.
 If none of C<-development>, C<-production> or C<-unreleased> is
 asserted, all are asserted by default.
+
+=item -with
+
+ -with Build.PL
+
+This option specifies a file which must be present in the distribution
+for it to be selected for display. It can be specified multiple times,
+in which case all specified files must be present.
+
+=item -without
+
+ -without Build.PL
+
+This option specifies a file which must not be present in the
+distribution for it to be selected for display. It can be specified
+multiple times, in which case none of the specified files may be
+present.
 
 =back
 
