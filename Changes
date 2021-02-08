@@ -1,3 +1,11 @@
+0.000_225	2021-02-08	T. R. Wyant
+    Update xt/author/prereq.t to detect unused prereq
+
+    Add eg/cpan-adhoc -with and -without, which select distributions
+    with (or without, respectively) the specified file. Each can be
+    specified multiple times, in which case all specified files must be
+    present (for -with) or absent (for -without).
+
 0.000_224	2021-01-19	T. R. Wyant
     Get prerequisites up to snuff and add xt/author/prereq.t to ensure
     they stay that way.

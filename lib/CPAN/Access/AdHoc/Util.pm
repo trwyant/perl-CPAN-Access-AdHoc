@@ -21,7 +21,7 @@ our %EXPORT_TAGS = (
     ref	=> [ grep { m/ \A [[:upper:]_]+ _REF \z /smx } @EXPORT_OK ],
 );
 
-our $VERSION = '0.000_224';
+our $VERSION = '0.000_225';
 
 use constant ARRAY_REF	=> ref [];
 use constant CODE_REF	=> ref sub {};
