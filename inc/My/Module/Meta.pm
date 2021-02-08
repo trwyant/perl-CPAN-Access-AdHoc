@@ -19,6 +19,8 @@ sub new {
 
 sub build_requires {
     return +{
+	'Config'		=> 0,
+	'CPAN::Checksums'	=> 0,
 	'ExtUtils::MakeMaker'	=> 0,
 	'ExtUtils::Manifest'	=> 0,
 	'File::Find'		=> 0,
@@ -128,7 +130,7 @@ sub requires {
 	'Archive::Zip'		=> 0,
 	'Carp'			=> 0,
 	'Config::Tiny'		=> 0,
-	'CPAN'			=> 0,	# Core module
+	# 'CPAN'			=> 0,	# Core module
 	'CPAN::DistnameInfo'	=> 0,
 	'CPAN::Meta'		=> 0,
 	'Cwd'			=> 0,
