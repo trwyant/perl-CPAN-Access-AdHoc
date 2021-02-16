@@ -13,20 +13,19 @@ use My::Module::Meta;
 $Config{useperlio}
     or die "PerlIO is required\n";
 
-(my $mbv = Module::Build->VERSION()) =~ s/_//g;
+( my $mbv = Module::Build->VERSION() ) =~ s/_//g;
 
 my $meta = My::Module::Meta->new();
 
 my %args = (
-    dist_author => 'Tom Wyant (wyant at cpan dot org)',
-    dist_abstract => 'Provide ad-hoc access to a CPAN repository',
-    module_name => 'CPAN::Access::AdHoc',
-    build_requires => $meta->build_requires(),
-    requires => $meta->requires(
-	perl => $meta->requires_perl(),
-    ),
-    license => 'perl',
-    add_to_cleanup =>[ qw{ cover_db xt/author/optionals } ],
+    add_to_cleanup	=> [ qw{ cover_db xt/author/optionals } ],
+    build_requires	=> $meta->build_requires(),
+    configure_requires	=> $meta->configure_requires(),
+    dist_abstract	=> $meta->abstract(),
+    dist_author	=> $meta->author(),
+    dist_name	=> $meta->dist_name(),
+    license	=> $meta->license(),
+    module_name	=> $meta->module_name(),
     PL_files => {
 #	'Build_Repos.PL' => [ qw{
 #	    mock/repos/authors/01mailrc.txt.gz
@@ -41,14 +40,23 @@ my %args = (
 #	    mock/repos/mtimes.dat
 #	    } ],
     },
+    requires	=> $meta->requires(
+	perl	=> $meta->requires_perl(),
+    ),
 );
 
-$mbv >= 0.28
-    and $args{meta_merge} = $meta->meta_merge();
+if ( $mbv >= 0.28 ) {
+    $args{meta_merge} = $meta->meta_merge();
+    $args{meta_add} = {
+	no_index	=> $meta->no_index(),
+    };
+}
 
 $mbv >= 0.34
     and $args{auto_configure_requires} = 0;	# Don't require Module::Build
 
-my $bldr = My::Module::Build->new (%args);
+my $bldr = My::Module::Build->new( %args );
 
-$bldr->create_build_script ();
+$bldr->create_build_script();
+
+# ex: set textwidth=72 :

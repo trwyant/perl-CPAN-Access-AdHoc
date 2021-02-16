@@ -17,6 +17,14 @@ sub new {
     return $self;
 }
 
+sub abstract {
+    return 'Provide ad-hoc access to a CPAN repository';
+}
+
+sub author {
+    return 'Tom Wyant (wyant at cpan dot org)';
+}
+
 sub build_requires {
     return +{
 	'Config'		=> 0,
@@ -37,32 +45,40 @@ sub build_requires {
     };
 }
 
+sub configure_requires {
+    return +{
+	'CPAN::Checksums'	=> 0,
+	'CPAN::Meta'	=> 0,
+	'Config'	=> 0,
+	'Cwd'	=> 0,
+	'ExtUtils::Manifest'	=> 0,
+	'File::Copy'	=> 0,
+	'File::Find'	=> 0,
+	'File::Glob'	=> 0,
+	'File::Spec'	=> 0,
+	'Getopt::Long'	=> 2.33,
+	'IO::Compress::Gzip'	=> 0,
+	'IO::File'	=> 0,
+	'Pod::Usage'	=> 0,
+	'Time::Local'	=> 0,
+	'lib'	=> 0,
+	'strict'	=> 0,
+	'warnings'	=> 0,
+    };
+}
+
+sub dist_name {
+    return 'CPAN-Access-AdHoc';
+}
+
 sub distribution {
     my ( $self ) = @_;
     return $self->{distribution};
 }
 
-sub meta_merge {
-    return {
-	'meta-spec'	=> {
-	    version	=> 2,
-	},
-	no_index	=> {
-	    directory	=> [ qw{ inc t xt } ],
-	},
-	resources	=> {
-#	    bugtracker	=> {
-#                web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues',
-#                mailto  => 'wyant@cpan.org',
-#            },
-	    license	=> 'http://dev.perl.org/licenses/',
-#	    repository	=> {
-#		type	=> 'git',
-#		url	=> 'git://github.com/trwyant/perl-CPAN-Access-AdHoc.git',
-#		web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc',
-#	    },
-	}
-    };
+
+sub license {
+    return 'perl';
 }
 
 sub make_optional_modules_tests {
@@ -115,10 +131,56 @@ EOD
     return $dir;
 }
 
+sub meta_merge {
+    return {
+	'meta-spec'	=> {
+	    version	=> 2,
+	},
+	dynamic_config	=> 1,
+	resources	=> {
+#	    bugtracker	=> {
+#                web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues',
+#                mailto  => 'wyant@cpan.org',
+#            },
+	    license	=> 'http://dev.perl.org/licenses/',
+#	    repository	=> {
+#		type	=> 'git',
+#		url	=> 'git://github.com/trwyant/perl-CPAN-Access-AdHoc.git',
+#		web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc',
+#	    },
+	}
+    };
+}
+
+sub module_name {
+    return 'CPAN::Access::AdHoc';
+}
+
+sub no_index {
+    return +{
+      directory => [
+                     'inc',
+                     't',
+                     'xt',
+                   ],
+    };
+}
+
 sub optionals {
     return ( qw{
 	CPAN::Mini CPANPLUS App::cpanminus
     } );
+}
+
+sub provides {
+    -d 'lib'
+	or return;
+    local $@ = undef;
+    my $provides = eval {
+	require Module::Metadata;
+	Module::Metadata->provides( version => 2, dir => 'lib' );
+    } or return;
+    return ( provides => $provides );
 }
 
 sub requires {
@@ -174,6 +236,11 @@ sub requires_perl {
     return 5.010;
 }
 
+sub script_files {
+    return [
+    ];
+}
+
 1;
 
 __END__
@@ -218,6 +285,28 @@ suitable for use in a F<Build.PL> C<build_requires> key, or a
 F<Makefile.PL> C<< {META_MERGE}->{build_requires} >> or
 C<BUILD_REQUIRES> key.
 
+=head2 abstract
+
+This method returns the distribution's abstract.
+
+=head2 author
+
+This method returns the name of the distribution author
+
+=head2 configure_requires
+
+ use YAML;
+ print Dump( $meta->configure_requires() );
+
+This method returns a reference to a hash describing the modules
+required to configure the package, suitable for use in a F<Build.PL>
+C<configure_requires> key, or a F<Makefile.PL>
+C<< {META_MERGE}->{configure_requires} >> or C<CONFIGURE_REQUIRES> key.
+
+=head2 dist_name
+
+This method returns the distribution name.
+
 =head2 distribution
 
  if ( $meta->distribution() ) {
@@ -257,11 +346,47 @@ has to be provided by making use of the builder's C<meta_merge>
 functionality. This includes the C<dynamic_config>, C<no_index> and
 C<resources> data.
 
+=head2 license
+
+This method returns the distribution's license.
+
+=head2 meta_merge
+
+ use YAML;
+ print Dump( $meta->meta_merge() );
+
+This method returns a reference to a hash describing the meta-data which
+has to be provided by making use of the builder's C<meta_merge>
+functionality. This includes the C<dynamic_config> and C<resources>
+data.
+
+Any arguments will be appended to the generated array.
+
+=head2 module_name
+
+This method returns the name of the module the distribution is based
+on.
+
+=head2 no_index
+
+This method returns the names of things which are not to be indexed
+by CPAN.
+
 =head2 optionals
 
  say for My::Module::Meta->optionals();
 
 This static method simply returns the names of the optional modules.
+
+=head2 provides
+
+ use YAML;
+ print Dump( [ $meta->provides() ] );
+
+This method attempts to load L<Module::Metadata|Module::Metadata>. If
+this succeeds, it returns a C<provides> entry suitable for inclusion in
+L<meta_merge()|/meta_merge> data (i.e. C<'provides'> followed by a hash
+reference). If it can not load the required module, it returns nothing.
 
 =head2 requires
 
@@ -282,6 +407,11 @@ may be added.
      $meta->requires_perl(), "\n";
 
 This method returns the version of Perl required by the distribution.
+
+=head2 script_files
+
+This method returns a reference to an array containing the names of
+script files provided by this distribution. This array may be empty.
 
 =head1 ATTRIBUTES
 

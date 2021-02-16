@@ -19,7 +19,6 @@ my $tpm = Test::Prereq::Meta->new(
 );
 
 $tpm->all_prereq_ok(
-    qw{ blib/arch blib/lib t Build_Repos.PL },
 );
 
 $tpm->all_prereqs_used();
