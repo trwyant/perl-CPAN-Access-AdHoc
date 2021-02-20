@@ -13,7 +13,7 @@ use File::Spec::Unix ();
 use HTTP::Date ();
 use IO::File ();
 
-our $VERSION = '0.000_226';
+our $VERSION = '0.000_227';
 
 {
 
