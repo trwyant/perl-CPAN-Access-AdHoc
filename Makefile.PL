@@ -20,8 +20,8 @@ my %args = (
     ABSTRACT	=> $meta->abstract(),
     AUTHOR	=> $meta->author(),
     DISTNAME	=> $meta->dist_name(),
+    EXE_FILES	=> $meta->script_files(),
     NAME	=> $meta->module_name(),
-    # VERSION_FROM	=> 'lib/CPAN/Access/AdHoc.pm',
     PREREQ_PM	=> $meta->requires(),
     PL_FILES => {
 #	'Build_Repos.PL' => [ qw{
@@ -38,8 +38,9 @@ my %args = (
 #	    } ],
     },
     realclean	=> {
-	FILES => 'cover_db xt/author/optionals',
+	FILES => join( ' ', @{ $meta->add_to_cleanup() } ),
     },
+    VERSION_FROM	=> $meta->version_from(),
 );
 
 $mmv >= 6.31

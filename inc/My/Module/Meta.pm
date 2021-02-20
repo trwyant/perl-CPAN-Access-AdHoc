@@ -21,6 +21,10 @@ sub abstract {
     return 'Provide ad-hoc access to a CPAN repository';
 }
 
+sub add_to_cleanup {
+    return [ qw{ cover_db xt/author/optionals } ];
+}
+
 sub author {
     return 'Tom Wyant (wyant at cpan dot org)';
 }
@@ -132,25 +136,28 @@ EOD
 }
 
 sub meta_merge {
+    my ( undef, @extra ) = @_;
     return {
 	'meta-spec'	=> {
 	    version	=> 2,
 	},
 	dynamic_config	=> 1,
 	resources	=> {
-#	    bugtracker	=> {
-#                web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues',
-#                mailto  => 'wyant@cpan.org',
-#            },
+	    bugtracker	=> {
+#		web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues',
+		mailto  => 'wyant@cpan.org',
+	    },
 	    license	=> 'http://dev.perl.org/licenses/',
 #	    repository	=> {
 #		type	=> 'git',
 #		url	=> 'git://github.com/trwyant/perl-CPAN-Access-AdHoc.git',
 #		web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc',
 #	    },
-	}
+	},
+	@extra,
     };
 }
+
 
 sub module_name {
     return 'CPAN::Access::AdHoc';
@@ -241,6 +248,10 @@ sub script_files {
     ];
 }
 
+sub version_from {
+    return 'lib/CPAN/Access/AdHoc.pm';
+}
+
 1;
 
 __END__
@@ -273,6 +284,19 @@ This class supports the following public methods:
  my $meta = My::Module::Meta->new();
 
 This method instantiates the class.
+
+=head2 abstract
+
+This method returns the distribution's abstract.
+
+=head2 add_to_cleanup
+
+This method returns a reference to an array of files to be added to the
+cleanup.
+
+=head2 author
+
+This method returns the name of the distribution author
 
 =head2 build_requires
 
@@ -336,6 +360,10 @@ If C<Test::Without::Module> can not be loaded this method returns
 nothing. If the directory or any file can not be created, an exception
 is thrown.
 
+=head2 license
+
+This method returns the distribution's license.
+
 =head2 meta_merge
 
  use YAML;
@@ -343,8 +371,10 @@ is thrown.
 
 This method returns a reference to a hash describing the meta-data which
 has to be provided by making use of the builder's C<meta_merge>
-functionality. This includes the C<dynamic_config>, C<no_index> and
-C<resources> data.
+functionality. This includes the C<dynamic_config> and C<resources>
+data.
+
+Any arguments will be appended to the generated array.
 
 =head2 license
 
@@ -412,6 +442,11 @@ This method returns the version of Perl required by the distribution.
 
 This method returns a reference to an array containing the names of
 script files provided by this distribution. This array may be empty.
+
+=head2 version_from
+
+This method returns the name of the distribution file from which the
+distribution's version is to be derived.
 
 =head1 ATTRIBUTES
 
