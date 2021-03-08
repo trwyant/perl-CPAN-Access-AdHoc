@@ -115,7 +115,6 @@ our @CARP_NOT = qw{
     CPAN::Access::AdHoc::Archive::Zip
 };
 
-
 sub __whinge {
     my @args = @_;
     require Carp;
@@ -291,7 +290,9 @@ ending in C<'_REF'>.
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<https:rt.cpan.org>, or in electronic mail to the author.
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Access-AdHoc>,
+L<https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues>, or in
+electronic mail to the author.
 
 =head1 AUTHOR
 

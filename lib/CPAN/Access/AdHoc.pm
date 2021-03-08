@@ -974,7 +974,6 @@ false.
 
 If the argument is C<undef>, the default is restored.
 
-
 =head2 Functionality
 
 These methods are what all the rest is in aid of.
@@ -1127,7 +1126,6 @@ subject to change without notice. But (purely for illustrative purposes)
 as of this writing the above becomes
 
  sub { ! $_[0]{'Test::More'} && ! $_[0]{'Test2::V0'} }
-
 
 B<Caveat:> No safety-checking is done on the selector expression. If you
 specify C<-requires '`sudo rm -rf /`'>, on your head be the consequences.
@@ -1493,7 +1491,9 @@ F<modules/02packages.details.txt.gz> file.
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<https:rt.cpan.org>, or in electronic mail to the author.
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Access-AdHoc>,
+L<https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues>, or in
+electronic mail to the author.
 
 =head1 AUTHOR
 

@@ -9,7 +9,6 @@ use Carp;
 
 our $VERSION = '0.000_227';
 
-
 1;
 
 __END__
@@ -40,7 +39,9 @@ L<cpanm|cpanm>
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<https:rt.cpan.org>, or in electronic mail to the author.
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Access-AdHoc>,
+L<https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues>, or in
+electronic mail to the author.
 
 =head1 AUTHOR
 
