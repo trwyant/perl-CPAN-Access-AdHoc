@@ -1,3 +1,9 @@
+0.000_228	2021-03-07	T. R. Wyant
+    Refactor authortest into three, so I can test without optional
+    modules by setting PERL5OPT instead of making stubs for t/*.t.
+
+    Add rt.cpan.org back to bug reporting methods. Long live RT!
+
 0.000_227	2021-02-20	T. R. Wyant
     Add add_to_cleanup() to inc/My/Module/Meta.pm.  Also version_from().
 

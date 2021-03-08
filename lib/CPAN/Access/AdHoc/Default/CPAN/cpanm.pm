@@ -10,7 +10,7 @@ use parent qw{ CPAN::Access::AdHoc::Default::CPAN };
 use CPAN::Access::AdHoc::Util qw{ __load };
 use Getopt::Long 2.33;
 
-our $VERSION = '0.000_227';
+our $VERSION = '0.000_228';
 
 my $configured = eval {
     __load( 'App::cpanminus' );
