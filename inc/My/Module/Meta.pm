@@ -291,24 +291,6 @@ This method returns the distribution name.
 This method returns the value of the environment variable
 C<MAKING_MODULE_DISTRIBUTION> at the time the object was instantiated.
 
-=head2 make_optional_modules_tests
-
- My::Module::Meta->make_optional_modules_tests()
-
-This static method creates the optional module tests. These are stub
-files in F<xt/author/optionals/> that use C<Test::Without::Module> to
-hide all the optional modules and then invoke the normal tests in F<t/>.
-The aim of these tests is to ensure that we get no test failures if the
-optional modules are missing.
-
-This method is idempotent; that is, it only creates the directory and
-the individual stub files if they are missing.
-
-On success this method returns the name of the optional tests directory.
-If C<Test::Without::Module> can not be loaded this method returns
-nothing. If the directory or any file can not be created, an exception
-is thrown.
-
 =head2 license
 
 This method returns the distribution's license.
