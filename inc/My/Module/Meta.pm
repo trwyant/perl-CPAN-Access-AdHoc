@@ -84,56 +84,6 @@ sub license {
     return 'perl';
 }
 
-sub make_optional_modules_tests {
-    eval {
-	require Test::Without::Module;
-	1;
-    } or return;
-    my $dir = 'xt/author/optionals';
-    -d $dir
-	or mkdir $dir
-	or die "Can not create $dir: $!\n";
-    opendir my $dh, 't'
-	or die "Can not access t/: $!\n";
-    while ( readdir $dh ) {
-	m/ \A [.] /smx
-	    and next;
-	m/ [.] t \z /smx
-	    or next;
-	my $fn = "$dir/$_";
-	-e $fn
-	    and next;
-	print "Creating $fn\n";
-	open my $fh, '>:encoding(utf-8)', $fn
-	    or die "Can not create $fn: $!\n";
-	print { $fh } <<"EOD";
-package main;
-
-use strict;
-use warnings;
-
-use lib qw{ ./inc };
-
-use My::Module::Meta;
-use Test2::Tools::LoadModule;
-
-load_module_or_skip_all 'Test::Without::Module', undef, [
-    My::Module::Meta->optionals() ];
-
-do 't/$_';
-
-1;
-
-__END__
-
-# ex: set textwidth=72 :
-EOD
-    }
-    closedir $dh;
-
-    return $dir;
-}
-
 sub meta_merge {
     my ( undef, @extra ) = @_;
     return {
