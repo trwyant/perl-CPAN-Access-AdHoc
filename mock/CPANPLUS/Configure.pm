@@ -9,7 +9,7 @@ use Carp ();
 use Cwd ();
 use Storable ();
 
-our $VERSION = '0.000_228';
+our $VERSION = '0.000_229';
 
 our $CONFIG ||= {
     hosts	=> [

@@ -1,3 +1,6 @@
+0.000_229	2021-03-13	T. R. Wyant
+    Remove POD for My::Module::Meta::make_optional_modules_test()
+
 0.000_228	2021-03-07	T. R. Wyant
     Refactor authortest into three, so I can test without optional
     modules by setting PERL5OPT instead of making stubs for t/*.t.
