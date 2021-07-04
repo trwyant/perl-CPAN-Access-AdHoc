@@ -33,12 +33,6 @@ my %args = (
     },
     META_MERGE => {
 ##	bugtracker => 'https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues/Public/Dist/Display.html?Name=Encode-RAD50',
-	provides	=> {
-	    'PDQ'	=> {
-		file	=> 'lib/PDQ.pm',
-		version	=> '0.000_01',
-	    },
-	},
 	resources => {
 	    license => 'http://dev.perl.org/licenses/',
 	},

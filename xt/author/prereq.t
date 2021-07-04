@@ -14,7 +14,6 @@ my $tpm = Test::Prereq::Meta->new(
     accept	=> [ qw{
 	Config::Identity::PAUSE
 	Errno
-	File::Temp
 	} ],
 );
 

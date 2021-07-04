@@ -430,6 +430,15 @@ SKIP: {
 
     is $meta->version(), '0.000_01', q{Module version is 0.000_01};
 
+    # For this distro, the metadata do not have 'provides', so we
+    # generate it ourselves.
+    is $kit->provides(), {
+	PDQ	=> {
+	    file	=> 'lib/PDQ.pm',
+	    version	=> '0.000_01',
+	},
+    }, 'package provides PDQ 0.000_01';
+
     SKIP: {
 
 	Archive::Zip::Archive->can( 'extractTree' )

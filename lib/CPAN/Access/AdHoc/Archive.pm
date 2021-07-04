@@ -6,15 +6,17 @@ use strict;
 use warnings;
 
 use Cwd ();
-use ExtUtils::MakeMaker;
-use File::chdir;
 use CPAN::Access::AdHoc::Util qw{
     __attr __expand_distribution_path __guess_media_type :carp
     SCALAR_REF
 };
 use CPAN::Meta ();
+use ExtUtils::MakeMaker;
+use File::chdir;
+use File::Spec;
 use HTTP::Date ();
 use HTTP::Response ();
+use Module::Metadata;
 use Module::Pluggable::Object;
 use URI::file;
 
@@ -156,17 +158,34 @@ sub provides {
     $provides = $meta->provides()
 	and keys %{ $provides }
 	and return $provides;
-    foreach my $file ( $self->list_contents() ) {
-	$file =~ m/ [.] pm \z /smx
-	    and $meta->should_index_file( $file )
-	    or next;
-	my $content = $self->get_item_content( $file );
-	$content =~ m/ \b package \s+ ( [\w:]+ ) /smx
-	    or next;
-	$provides->{$1} = {
-	    file	=> $file,
-	    version	=> scalar MM->parse_version( \$content ),
-	};
+
+    # The Module::Metadata docs say not to use
+    # package_versions_from_directory() directly, but the 'files =>'
+    # version of provides() is broken, and has been known to be so since
+    # 2014, so it's not getting fixed any time soon. So:
+
+    {
+	my @files = grep { m/ [.] pm \z /smx } $self->list_contents();
+
+	# Unfortunately Module::Metadata requires a real directory, so
+	# we have to provide one. Sigh.
+	my $td_obj = File::Temp->newdir();
+	my $td_name = $td_obj->dirname();
+	$self->extract( $td_name );
+	local $CWD = File::Spec->catdir( $td_name, join '-',
+	    $meta->name(), $meta->version () );
+	$provides = Module::Metadata->package_versions_from_directory(
+	    undef,
+	    \@files,
+	);
+    }
+
+    foreach my $pkg ( keys %{ $provides } ) {
+	$meta->should_index_package( $pkg )
+	    and $meta->should_index_file(
+		$provides->{$pkg}{file} )
+	    and next;
+	delete $provides->{$pkg};
     }
     return $provides;
 }
@@ -201,12 +220,20 @@ sub __size_of_archive {
     return -s $self->path();
 };
 
+=begin comment
+
+# This appears to be unused.
+
 sub __change_to_target_dir {
     my ( undef, $target ) = @_;	# Invocant unused
     defined $target
 	or return $target;
     return CPAN::Access::AdHoc::chdir->new( $target );
 }
+
+=end comment
+
+=cut
 
 sub wrap_archive {
     my ( $class, @args ) = @_;
