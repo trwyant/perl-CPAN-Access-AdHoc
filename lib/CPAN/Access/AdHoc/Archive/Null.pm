@@ -15,7 +15,7 @@ use File::Spec ();
 use HTTP::Date ();
 use IO::File ();
 
-our $VERSION = '0.000_230';
+our $VERSION = '0.000_231';
 
 my %decode = (
     gzip	=> sub {

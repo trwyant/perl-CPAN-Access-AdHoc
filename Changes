@@ -1,3 +1,6 @@
+0.000_231	2021-07-13	T. R. Wyant
+    Tweak 'no_index' and 'provides' metadata. Again.
+
 0.000_230	2021-07-04	T. R. Wyant
     Correct generation of 'provides' metadata.  Thanks to Favio Poletti
     for blogging
