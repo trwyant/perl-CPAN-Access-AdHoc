@@ -1,3 +1,7 @@
+0.000_232	2021-09-19	T. R. Wyant
+    Fix ::Archive::Null when no base directory.  It was trying to put
+    the scratch file in the root.
+
 0.000_231	2021-07-13	T. R. Wyant
     Tweak 'no_index' and 'provides' metadata. Again.
 

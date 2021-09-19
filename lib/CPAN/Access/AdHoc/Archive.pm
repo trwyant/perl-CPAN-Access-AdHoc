@@ -20,7 +20,7 @@ use Module::Metadata;
 use Module::Pluggable::Object;
 use URI::file;
 
-our $VERSION = '0.000_231';
+our $VERSION = '0.000_232';
 
 # Note that this can be called as a mutator, but the mutator
 # functionality is private to the invocant's class.
