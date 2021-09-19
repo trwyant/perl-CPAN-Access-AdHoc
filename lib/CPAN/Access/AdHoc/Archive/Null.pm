@@ -75,9 +75,11 @@ sub new {
 		File::Spec->splitpath( $arg{path} );
 	    $base_dir =~ s{ \A authors/id/
 		([^/]) / ( \1 [^/] ) / \2 [^/]* / }{}smx;
+	    '' eq $base_dir
+		and $base_dir = File::Spec->curdir();
 	    $file_name =~ s/ [.] (?: gz | bz2 ) \z //smx;
 	} else {
-	    ( $base_dir, $file_name ) = ( '', 'unknown' );
+	    ( $base_dir, $file_name ) = ( File::Spec->curdir(), 'unknown' );
 	}
 
 	$attr->{base_dir} = $base_dir;
