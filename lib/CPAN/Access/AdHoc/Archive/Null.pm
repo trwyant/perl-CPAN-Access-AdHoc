@@ -119,7 +119,9 @@ sub __extract {
     }
 
     foreach my $name ( keys %{ $attr->{contents} } ) {
-	my $path = File::Spec->catfile( $where, $name );
+	my $path = defined( $where ) ?
+	    File::Spec->catfile( $where, $name ) :
+	    $name;
 	my $fh = IO::File->new( $path, '>' )
 	    or __wail( "Unable to open $path for output: $!" );
 	print { $fh } $attr->{contents}{$name}{content};
