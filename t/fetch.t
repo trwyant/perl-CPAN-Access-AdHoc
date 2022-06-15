@@ -89,7 +89,7 @@ my $cad = CPAN::Access::AdHoc->new(
 	"Check the modification time of $file_name"
 	or mtime_diag( $got, $want );
 
-    ok $arc->get_item_size(), length $text, "Size of $file_name";
+    is $arc->get_item_size(), length $text, "Size of $file_name";
 
     SKIP: {
 	my $tests = 1;
