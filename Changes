@@ -1,3 +1,18 @@
+0.000_234	2022-06-16	T. R. Wyant
+    Add archive method get_item_content_decoded(),
+
+commit 57d907e510c57507c52a89060aff648ecf99919c
+Author: Tom Wyant <wyant@cpan.org>
+Date:   Wed Jun 15 17:49:15 2022 -0400
+
+    Fix test error in t/fetch.t
+
+commit 513c169ff54c8dfdf7053ee9ef6fb3e196b4d478
+Author: Tom Wyant <wyant@cpan.org>
+Date:   Sat Jan 29 09:02:22 2022 -0500
+
+    Update copyright to 2022.
+
 0.000_233	2021-09-19	T. R. Wyant
     Default ::Archive::Null base directory to the current directory.
 

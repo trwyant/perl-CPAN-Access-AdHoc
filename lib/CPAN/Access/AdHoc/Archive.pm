@@ -22,7 +22,7 @@ use Module::Metadata;
 use Module::Pluggable::Object;
 use URI::file;
 
-our $VERSION = '0.000_233';
+our $VERSION = '0.000_234';
 
 # Note that this can be called as a mutator, but the mutator
 # functionality is private to the invocant's class.
@@ -447,6 +447,8 @@ name of the item is specified relative to C<< $arc->base_directory() >>.
  my ( $encoding, $content ) =
    $src->get_item_content_decoded( 'README' );
  my $content = $src->get_item_content_decoded( 'README' );
+
+Added in version 0.000_234.
 
 This method returns a list containing the encoding object and contents
 of the item. If the encoding object is C<undef> the raw contents are
