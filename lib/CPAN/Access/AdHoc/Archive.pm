@@ -7,10 +7,12 @@ use warnings;
 
 use Cwd ();
 use CPAN::Access::AdHoc::Util qw{
-    __attr __expand_distribution_path __guess_media_type :carp
-    SCALAR_REF
+    __attr __expand_distribution_path __is_text __guess_media_type
+    :carp SCALAR_REF
 };
 use CPAN::Meta ();
+use Encode ();
+use Encode::Guess;
 use ExtUtils::MakeMaker;
 use File::chdir;
 use File::Spec;
@@ -56,6 +58,17 @@ sub __extract {
 
 sub get_item_content {
     __weep( 'The get_item_content() method must be overridden' );
+}
+
+sub get_item_content_decoded {
+    my ( $self, $file ) = @_;
+    my $content = $self->get_item_content( $file );
+    __is_text( $content )
+	or return ( undef, $content );
+    my $enc = Encode::Guess::guess_encoding( $content, 'iso-latin-1' );
+    ref $enc
+	or return ( undef, $content );
+    return ( $enc, Encode::decode( $enc, $content ) );
 }
 
 sub get_item_mtime {
@@ -428,6 +441,22 @@ into. If this directory can not be used, an exception is thrown.
 
 This method returns the content of the named item in the archive. The
 name of the item is specified relative to C<< $arc->base_directory() >>.
+
+=head3 get_item_content_decoded
+
+ my ( $encoding, $content ) =
+   $src->get_item_content_decoded( 'README' );
+ my $content = $src->get_item_content_decoded( 'README' );
+
+This method returns a list containing the encoding object and contents
+of the item. If the encoding object is C<undef> the raw contents are
+returned.  If called in scalar context just the possibly-decoded
+contents are returned.
+
+L<Encode::Guess|Encode::Guess> is used to guess the encoding.
+
+The name of the item is specified relative to
+C<< $arc->base_directory() >>.
 
 =head3 get_item_mtime
 

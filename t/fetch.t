@@ -80,6 +80,17 @@ my $cad = CPAN::Access::AdHoc->new(
 	$text,
 	"Check the contents of $file_name";
 
+    {
+	my $enc = Encode::find_encoding( 'ascii' );
+	is [ $arc->get_item_content_decoded() ],
+	    [ $enc, $text ],
+	    "Check the encoding and decoded contents of $file_name";
+    }
+
+    is scalar $arc->get_item_content_decoded(),
+	$text,
+	"Check the decoded contents of $file_name";
+
     # Yes, this is the correct modification time, since the null archive
     # was made up from the raw file. If it comes from the compressed
     # file it may be another story.

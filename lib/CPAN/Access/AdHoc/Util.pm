@@ -7,11 +7,12 @@ use warnings;
 
 use parent qw{ Exporter };
 
+use Encode ();
 use LWP::MediaTypes ();
 
 our @EXPORT_OK = qw{
     __attr __cache __classify_version __expand_distribution_path
-    __guess_media_type __load __whinge __wail __weep
+    __guess_media_type __is_text __load __whinge __wail __weep
     ARRAY_REF CODE_REF HASH_REF REGEXP_REF SCALAR_REF
 };
 
@@ -88,6 +89,42 @@ sub __expand_distribution_path {
 	return;
     }
 
+}
+
+sub __is_text {	## no critic (RequireArgUnpacking)
+    defined $_[0]
+	and $_[0] ne ''
+	or return undef;	## no critic (ProhibitExplicitReturnUndef)
+    my $bytes = substr $_[0], 0, 512;
+
+    {
+	my $buffer = $bytes;	# Because decode() walks on it.
+	my $chars = Encode::decode( 'utf-8', $buffer, Encode::FB_QUIET );
+	# The intent of the following is:
+	# The un-decoded $buffer (if any) is a partial UTF-8 character
+	# (since valid unicode encodes to a maximum of 4 bytes in UTF-8,
+	# and all multi-byte encodings have the high bit of each byte
+	# set)
+	# AND
+	# the decoded $chars contain at least one non-ASCII character.
+	length( $buffer ) < 4
+	    and $buffer !~ m/ [[:ascii:]] /smx
+	    and $chars =~ m/ [^[:ascii:]] /smx
+	    and return 1;
+    }
+
+    # TODO at this point it is conidered text if it does not contain a
+    # null, or if at least two-thirds of characters are:
+    # printable
+    # space (except vertical tab)
+    # backspace
+    # escape
+    # NOTE that if LC_CTYPE is in effect, the check becomes just print
+    # and space.
+    $bytes =~ tr/\0/\0/
+	and return 0;
+    my $normal = $bytes =~ tr/\N{U+08}-\N{U+0A}\N{U+0C}\N{U+0D}\N{U+1B}\N{U+20}-\N{U+7E}/\N{U+08}-\N{U+0A}\N{U+0C}\N{U+0D}\N{U+1B}\N{U+20}-\N{U+7E}/;
+    return  ( $normal > length( $bytes ) * 2 / 3 ) ? 1 : 0;
 }
 
 sub __load {
@@ -226,6 +263,17 @@ returned.
 
 Note that the arguments are reversed from
 C<LWP::MediaTypes::guess_media_type()>.
+
+=head2 __is_text
+
+ __is_text( $buffer ) and say '$buffer is text';
+
+This subroutine determines whether its argument is text, using methods
+similar to C<-T>. It returns a true value if its argument is text, a
+false value if not, or C<undef> if its argument is C<undef> or C<''>.
+
+The algorithm is cribbed as nearly as I was able from Perl source file
+F<pp_sys.c>, subroutine C<pp_fttest>.
 
 =head2 __load
 

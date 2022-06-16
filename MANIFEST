@@ -70,6 +70,7 @@ t/classify_version.t
 t/config.t
 t/exception.t
 t/fetch.t
+t/is_text.t
 t/media_type.t
 t/wrap.t
 t/write.t

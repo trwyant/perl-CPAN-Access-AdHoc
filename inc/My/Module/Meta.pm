@@ -187,6 +187,8 @@ sub requires {
 	'CPAN::Meta'		=> 0,	# Core since 5.13.10
 	'Cwd'			=> 0,
 	'Digest::SHA'		=> 0,
+	'Encode',		=> 0,
+	'Encode::Guess',	=> 0,
 	'Exporter'		=> 0,
 	'File::chdir'		=> 0,
 	'File::HomeDir'		=> 0,
