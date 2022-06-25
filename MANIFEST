@@ -1,6 +1,7 @@
 Build.PL
 Build_Repos.PL
 Changes
+CONTRIBUTING
 eg/config-requires
 eg/corpus
 eg/cpan-adhoc
