@@ -93,16 +93,16 @@ sub meta_merge {
 	dynamic_config	=> 1,
 	resources	=> {
 	    bugtracker	=> {
-#		web	=> 'https://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Access-AdHoc',
-#		# web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues',
+		web	=> 'https://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Access-AdHoc',
+		# web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues',
 		mailto  => 'wyant@cpan.org',
 	    },
 	    license	=> 'http://dev.perl.org/licenses/',
-#	    repository	=> {
-#		type	=> 'git',
-#		url	=> 'git://github.com/trwyant/perl-CPAN-Access-AdHoc.git',
-#		web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc',
-#	    },
+	    repository	=> {
+		type	=> 'git',
+		url	=> 'git://github.com/trwyant/perl-CPAN-Access-AdHoc.git',
+		web	=> 'https://github.com/trwyant/perl-CPAN-Access-AdHoc',
+	    },
 	},
 	@extra,
     };
