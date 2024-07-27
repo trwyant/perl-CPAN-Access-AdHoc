@@ -208,6 +208,42 @@ sub _parse_checksums_date {
     return Time::Local::timelocal( 0, 0, 0, $da, $mo - 1, $yr - 1900 );
 }
 
+sub resolve_distributions {
+    my ( $self, @args ) = @_;
+    my $re = qr< @{[ join ' | ', map { quotemeta } @args ]} >smx;
+    my @rslt;
+    foreach my $dist ( $self->indexed_distributions() ) {
+	$dist =~ $re
+	    or next;
+	push @rslt, $dist;
+    }
+    return @rslt;
+}
+
+sub resolve_unique_distribution {
+    my ( $self, $name ) = @_;
+    my @rslt = $self->resolve_distributions( $name )
+	or __wail( "Distribution $name not found" );
+    if ( @rslt > 1 ) {
+	my %base;
+	foreach my $d ( @rslt ) {
+	    my $di = CPAN::DistnameInfo->new( $d );
+	    my $dn = $di->dist();
+	    my $dv = version->parse( $di->version() );
+	    $base{$dn}
+		and $base{$dn}{version} >= $dv
+		or $base{$dn} = {
+		distro	=> $d,
+		version	=> $dv,
+	    };
+	}
+	@rslt = map { $base{$_}{distro} } keys %base;
+    }
+    @rslt > 1
+	and return __wail( "Distribution $name not unique" );
+    return $rslt[0];
+}
+
 sub exists : method {	## no critic (ProhibitBuiltinHomonyms)
     my ( $self, $path ) = @_;
 
@@ -1351,12 +1387,24 @@ This convenience method returns a list of all indexed distributions in
 ASCIIbetical order. This information is derived from the results of
 L<fetch_module_index()|/fetch_module_index>, and is cached.
 
-=head2 pause_user
+=head3 pause_user
 
 This method can be called as a normal method, a static method, or even
 as a subroutine. If L<Config::Identity::PAUSE|Config::Identity>
 can be loaded and a PAUSE identity file exists, the user name from that
 file is returned. Otherwise an exception is raised.
+
+=head3 resolve_distributions
+
+This method takes a list of base distribution names and returns all
+fully-qualified distribution names that match any of the arguments.
+
+=head3 resolve_unique_distribution
+
+This method takes a base distribution name and resolves it to a
+fully-qualified distribution name. Any number of matches but one results
+in an exception -- except when the only difference is the version, in
+which case the highest version is returned.
 
 =head2 Subclass Methods
 

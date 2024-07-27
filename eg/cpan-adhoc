@@ -807,14 +807,9 @@ sub _resolve_distributions {
     @args
 	and HASH_REF eq ref $args[-1]
 	and %opt = %{ pop @args };
-    my $re = qr< @{[ join ' | ', map { quotemeta } @args ]} >smx;
-    my @rslt;
-    foreach my $dist ( $cad->indexed_distributions() ) {
-	$dist =~ $re
-	    or next;
-	$opt{record}
-	    and $dist = _record_distribution( $dist );
-	push @rslt, $dist;
+    my @rslt = $cad->resolve_distributions( @args );
+    if ( $opt{record} ) {
+	@rslt = map { _record_distribution( $_ ) } @rslt;
     }
     return @rslt;
 }
@@ -831,28 +826,15 @@ sub _resolve_unique_distribution {
 
     $name eq CURRENT_PACKAGE
 	and _flunk( 'No current package', %arg );
-    my @rslt = _resolve_distributions( $name )
-	or _flunk( "Distribution $name not found", %arg );
-    if ( @rslt > 1 ) {
-	my %base;
-	foreach my $d ( @rslt ) {
-	    my $di = CPAN::DistnameInfo->new( $d );
-	    my $dn = $di->dist();
-	    my $dv = version->parse( $di->version() );
-	    $base{$dn}
-		and $base{$dn}{version} >= $dv
-		or $base{$dn} = {
-		distro	=> $d,
-		version	=> $dv,
-	    };
-	}
-	@rslt = map { $base{$_}{distro} } keys %base;
-    }
-    @rslt > 1
-	and return _flunk( "Distribution $name not unique", %arg );
-    $arg{record}
-	and return _record_distribution( $rslt[0] );
-    return $rslt[0];
+
+    my $dist;
+    eval {
+	$dist = $cad->resolve_unique_distribution( $name );
+	$arg{record}
+	    and return _record_distribution( $dist );
+	1;
+    } or return _flunk( $@ );
+    return $dist;
 }
 
 sub _flunk {
