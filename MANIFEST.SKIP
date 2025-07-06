@@ -16,6 +16,7 @@ CVS/
 \.old$
 ^pod2htm.\.tmp$
 \.git/
+\.github/
 \.gitignore$
 \.svn/
 \.swp$
