@@ -11,15 +11,15 @@ use CPAN::Access::AdHoc::Util qw{ __load };
 
 our $VERSION = '0.000_235';
 
-my $configured = eval {
+use constant CONFIGURED	=> eval {
     __load( 'CPANPLUS::Configure' );
     1;
-};
+} || 0;
 
 sub get_cpan_url {
 ##  my ( $class ) = @_;		# Invocant not used
 
-    $configured
+    CONFIGURED
 	or return;
 
     my $cpp = CPANPLUS::Configure->new();

@@ -13,15 +13,15 @@ use URI::file;
 
 our $VERSION = '0.000_235';
 
-my $configured = eval {
+use constant CONFIGURED	=> eval {
     __load( 'CPAN::Mini' );
     1;
-};
+} || 0;
 
 sub get_cpan_url {
 ##  my ( $class ) = @_;		# Invocant is not used.
 
-    $configured
+    CONFIGURED
 	or return;
 
     my %config = CPAN::Mini->read_config( {} )
@@ -37,7 +37,7 @@ sub get_cpan_url {
 
 sub get_clean_checksums {
 
-    $configured
+    CONFIGURED
 	or return;
 
     my %config = CPAN::Mini->read_config( {} )

@@ -12,14 +12,16 @@ use Getopt::Long 2.33;
 
 our $VERSION = '0.000_235';
 
-my $configured = eval {
+use constant CONFIGURED	=> eval {
     __load( 'App::cpanminus' );
     1;
-};
+} || 0;
 
 sub get_cpan_url {
-    $configured
+
+    CONFIGURED
 	or return;
+
     my @mirrors;
     if ( defined $ENV{PERL_CPANM_OPT} ) {
 	my $psr = Getopt::Long::Parser->new();
