@@ -7,7 +7,7 @@ use warnings;
 
 use parent qw{ CPAN::Access::AdHoc::Archive };
 
-use Archive::Tar ();
+use Archive::Tar 1.46 ();	# For COMPRESS_GZIP
 use CPAN::Access::AdHoc::Util qw{ :carp __guess_media_type };
 use File::Spec::Unix ();
 use HTTP::Date ();

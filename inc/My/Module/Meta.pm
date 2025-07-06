@@ -178,7 +178,7 @@ sub requires {
 ##  if ( ! $self->distribution() ) {
 ##  }
     return +{
-	'Archive::Tar'		=> 0,
+	'Archive::Tar'		=> 1.46,	# For COMPRESS_GZIP
 	'Archive::Zip'		=> 0,
 	'Carp'			=> 0,
 	'Config::Tiny'		=> 0,
