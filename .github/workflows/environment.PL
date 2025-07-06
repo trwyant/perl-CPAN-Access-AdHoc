@@ -95,6 +95,7 @@ sub want_modules {
         };
     } elsif ( $perl_ver >= PERL_5_10 ) {
         return qw{
+            PETDANCE/HTML-Tagset-3.20.tar.gz
             RRA/podlators-4.14.tar.gz
         };
     } else {
