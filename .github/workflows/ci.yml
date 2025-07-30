@@ -1,6 +1,6 @@
 # Explicit name of workflow. This is optional.
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#name
-name: Perl CI v2.0.1
+name: Perl CI
 
 # Specify the events that trigger this workflow.
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
@@ -8,11 +8,6 @@ name: Perl CI v2.0.1
 on:
   push:
   pull_request:
-
-# Define environment variables for all jobs
-env:
-  MY_IS_GITHUB_ACTION: 1
-  PERL_CPANM_OPT: '--mirror https://cpan.metacpan.org'
 
 
 # Define the jobs that make up the workflow.
@@ -35,7 +30,10 @@ jobs:
       matrix:
 
         # OS environments under which the job runs.
-        runner: [ubuntu-latest, macos-latest, windows-latest]
+        # I don't feel like dealing with Windows weirdness in an
+        #   unpublished module
+        # runner: [ubuntu-latest, macos-latest, windows-latest]
+        runner: [ubuntu-latest, macos-latest]
         # Version of Perl to run. This specifies the most-recent Perl 5.
         perl: [ '5' ]
 
@@ -48,9 +46,9 @@ jobs:
           - runner: macos-latest
             # v5.8.8 is the earliest known to work
             perl: '5.10.0'
-          - runner: windows-latest
+          # - runner: windows-latest
             # v5.26.0 is the earliest known to work
-            perl: '5.26.0'
+            # perl: '5.26.0'
     # Define where the job runs.
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: ${{matrix.runner}}
@@ -78,11 +76,16 @@ jobs:
           perl-version: ${{ matrix.perl }}
           distribution: ${{ ( startsWith( matrix.runner, 'windows-' ) && 'strawberry' ) || 'default' }}
 
-    - name: Show Perl and Cpanm versions
+    - name: Show Perl Version
       # Run a command to display the version of Perl being used.
       run: |
         perl -v
+
+    - name: Install support modules
+      continue-on-error: true
+      run: |
         cpanm -v
+        cpanm File::HomeDir Getopt::Long version
 
     - name: Customize environment
       run: |
@@ -90,7 +93,12 @@ jobs:
 
     - name: Display local envoronment variables
       run: |
-        echo MY_MAKE=${{ env.MY_MAKE }}
+        echo MY_HOME=${{ env.MY_HOME }}
+        echo MY_IS_GITHUB_ACTION=${{ env.MY_IS_GITHUB_ACTION }}
+        echo MY_IS_UNIX=${{ env.MY_IS_UNIX }}
+        echo MY_IS_WINDOWS=${{ env.MY_IS_WINDOWS }}
+        echo MY_TOOLCHAIN_EUMM=${{ env.MY_TOOLCHAIN_EUMM }}
+        echo MY_TOOLCHAIN_MB=${{ env.MY_TOOLCHAIN_MB }}
         echo MY_WANT_MODULES=${{ env.MY_WANT_MODULES }}
 
     # The current versions of various non-core toolchain modules have
@@ -106,30 +114,29 @@ jobs:
         cpanm --with-configure --notest --installdeps .
 
     - name: Run ExtUtils::MakeMaker tests
-      # Abuse the hashFiles() built-in to see if file exists. From
-      # https://stackoverflow.com/questions/71336204/github-action-check-if-a-file-already-exists
-      if: ${{ hashFiles( 'Makefile.PL' ) != '' }}
+      if: env.MY_TOOLCHAIN_EUMM
       run: |
         perl Makefile.PL
-        ${{ env.MY_MAKE }}
-        ${{ env.MY_MAKE }} test
+        perl .github/workflows/make.PL
+        perl .github/workflows/make.PL test
 
     - name: Run Module::Build tests
-      if: ${{ hashFiles( 'Build.PL' ) != '' }}
+      if: env.MY_TOOLCHAIN_MB
       run: |
         perl Build.PL
         ./Build
         ./Build test
 
-    # The following technique inspired by Gabor Szabo. Thanks:
+    # The following technique from Gabor Szabo. Thanks:
     # https://perlmaven.com/install-developer-dependencies-first-test-css
-    # But rewritten in powershell since that is the only usable shell
-    # available to all runners.
-    - name: Show cpanm install log
-      if: failure()
-      shell: pwsh
+    - name: Show cpanm install log under Unix
+      if: failure() && env.MY_IS_UNIX
+      run: cat $MY_HOME/.cpanm/work/*/build.log
+
+    - name: Show cpanm install log under Windows
+      if: failure() && env.MY_IS_WINDOWS
       run: |
-        $dirs = Get-ChildItem "$HOME\\.cpanm\\work\\"
+        $dirs = Get-ChildItem "$env:MY_HOME\\.cpanm\\work\\"
         foreach ( $d in $dirs ) {
             $file = $d.FullName + "\\build.log"
             echo ""
