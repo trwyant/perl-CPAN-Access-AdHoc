@@ -80,7 +80,6 @@ jobs:
       run: |
         perl -v
         cpanm -v
-        cpanm version
 
     - name: Customize environment
       run: |
