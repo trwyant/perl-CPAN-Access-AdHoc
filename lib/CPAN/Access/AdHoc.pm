@@ -10,7 +10,7 @@ use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{
     :carp __attr __cache __classify_version __expand_distribution_path
     __guess_media_type
-    ARRAY_REF CODE_REF
+    ARRAY_REF CODE_REF HASH_REF
 };
 use CPAN::DistnameInfo;
 use Digest::SHA ();
@@ -151,7 +151,7 @@ sub corpus {
 	    # TODO want this to handle using prebuilt matcher.
 	    $distro_matcher
 		and ( $arch ||= $self->fetch_distribution_archive( $info->{path}, %arg ) )
-		and not $self->_distro_requires( $arch, $distro_matcher )
+		and not $distro_matcher->( $arch->__requires() )
 		and next;
 	    push @rslt, $info;
 	}
@@ -181,22 +181,6 @@ sub _distro_matcher {
     my $matcher = eval "sub { $expr }"	## no critic (ProhibitStringyEval)
 	or __wail( "Can not build matcher: $@" );
     return $matcher;
-}
-
-sub _distro_requires {
-    my ( undef, $arch, $matcher ) = @_;	# Invocant unused
-    my $meta = $arch->metadata();
-    my $prereq = $meta->effective_prereqs();
-    my %req;
-    # TODO this is a crock. I ought to be able to query the $prereq
-    # object for the specified phases -- or the defined phases at least
-    foreach my $phase ( $prereq->phases() ) {
-	my $req = $prereq->requirements_for( $phase, 'requires' );
-	foreach my $module ( $req->required_modules() ) {
-	    $req{$module} = 1;
-	}
-    }
-    return $matcher->( \%req );
 }
 
 sub _parse_checksums_date {
@@ -452,7 +436,8 @@ sub indexed_distributions {
 
     my %pkg;
     foreach my $info ( values %{ $inx } ) {
-	$pkg{$info->{distribution}}++;
+	defined $info->{distribution}
+	    and $pkg{$info->{distribution}}++;
     }
 
     return @{ $cache->{indexed_distributions} = [ sort keys %pkg ] };
@@ -464,6 +449,49 @@ sub pause_user {
 	    my %id = Config::Identity::PAUSE->load();
 	    $id{user};
 	} );
+}
+
+sub requires {
+    my ( $self, $name ) = @_;
+    if ( ref $name ) {
+	if ( Scalar::Util::blessed( $name ) ) {
+	    $name->isa( 'CPAN::Access::AdHoc::Archive' )
+		and return $name->requires();
+	} elsif ( HASH_REF eq ref $name ) {
+	    my $arch = $self->fetch_distribution_archive( $name->{name} );
+	    return $arch->requires();
+	}
+	__wail "Can not process $name";
+    } else {
+	my $dist = $self->resolve_unique_distribution( $name )
+	    or __wail( "Distribution '$name' not found" );
+	my $arch = $self->fetch_distribution_archive( $dist );
+	return $arch->requires();
+    }
+}
+
+sub requires_recursive {
+    my ( $self, @work ) = @_;
+    my $inx = $self->fetch_module_index();
+    my %processed;
+    my %rslt;
+    while ( @work ) {
+	my $name = shift @work;
+	$processed{$name}++
+	    and next;
+	foreach my $module ( $self->requires( $name ) ) {
+	    $rslt{$module}++
+		and next;
+	    defined( my $distro = $inx->{$module}{distribution} )
+		or next;
+	    index( $distro, '/perl-5.' ) >= 0
+		and next;
+	    $processed{$distro}
+		and next;
+	    push @work, $distro;
+	}
+    }
+    return keys %rslt;
 }
 
 # Set up the accessor/mutators. All mutators interpret undef as being a
@@ -1393,6 +1421,22 @@ This method can be called as a normal method, a static method, or even
 as a subroutine. If L<Config::Identity::PAUSE|Config::Identity>
 can be loaded and a PAUSE identity file exists, the user name from that
 file is returned. Otherwise an exception is raised.
+
+=head3 requires
+
+This method takes the name of a distribution or a
+L<CPAN::Access::AdHoc::Archive|CPAN::Access::AdHoc::Archive> object, and
+returns the names of the modules required to configure, build, test, and
+run the module, as specified in the distribution's metadata.
+
+=head3 requires_recursive
+
+This method takes the name of a distribution or a
+L<CPAN::Access::AdHoc::Archive|CPAN::Access::AdHoc::Archive> object, and
+returns the names of the modules required to configure, build, test, and
+run the module, as specified in the metadata of the distribution itself,
+the distributions containing all modules used by the initial
+distribution, and so on.
 
 =head3 resolve_distributions
 

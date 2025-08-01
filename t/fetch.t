@@ -323,6 +323,10 @@ SKIP: {
 	},
     }, 'package provides Yehudi 0.001';
 
+    is [ sort $kit->requires() ],
+	[ qw{ Carp ExtUtils::MakeMaker Test::More strict warnings } ],
+	'Kit package requires Yehudi 0.001';
+
     SKIP: {
 
 	Archive::Tar->can( 'extract' )
@@ -506,6 +510,14 @@ ok scalar $cad->fetch( 'modules/02packages.details.txt' ),
     'Can still fetch extant file with undef_if_not_found true';
 
 $cad->undef_if_not_found( undef );	# Restore default.
+
+is [ sort $cad->requires( 'Yehudi' ) ],
+    [ qw{ Carp ExtUtils::MakeMaker Test::More strict warnings } ],
+    'App package requires Yehudi 0.001';
+
+is [ sort $cad->requires_recursive( 'Yehudi' ) ],
+    [ qw{ Carp ExtUtils::MakeMaker Test::More strict warnings } ],
+    'App package requires_recursive Yehudi 0.001';
 
 done_testing;
 

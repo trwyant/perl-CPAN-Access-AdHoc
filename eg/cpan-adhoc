@@ -631,6 +631,24 @@ sub verb_provides {
     return;
 }
 
+sub verb_requires {
+    my @argv = @_;
+    my %opt;
+    my $go = Getopt::Long::Parser->new();
+    $go->getoptionsfromarray( \@argv, \%opt, qw{ less! recursive|recurse|R! } )
+	or return;
+    # FIXME I have to use the real package, not just CURRENT_PACKAGE
+    @argv
+	or push @argv, $dist{ +CURRENT_PACKAGE };
+    my $method = $opt{recursive} ? 'requires_recursive' : 'requires';
+    my $output = $opt{less} ? File::Temp->new() : *STDOUT;
+    say { $output } $_ for sort( $cad->$method( @argv ) );
+    $opt{less}
+	and _less( $output );
+    return;
+}
+
+
 sub verb_pwd {
     say cwd;
     return;
@@ -1054,32 +1072,32 @@ cpan-adhoc - Get arbitrary information from a CPAN mirror.
  $ cpan-adhoc http://cpan.pair.com/
  cpan-adhoc> ...
  
- $ cpan-adhoc -help
- $ cpan-adhoc -version
+ $ cpan-adhoc --help
+ $ cpan-adhoc --version
 
 =head1 OPTIONS
 
-=head2 -date-format strftime_format
+=head2 --date-format strftime_format
 
 This option specifies the default date format for date and time output.
 This can typically be overridden at the individual commands.
 
-The default is C<-date-format '%d-%b-%Y %H:%M:%S'>.
+The default is C<--date-format '%d-%b-%Y %H:%M:%S'>.
 
-=head2 -help
+=head2 --help
 
 This option displays the documentation for this script. The script then
 exits.
 
-=head2 -verbose
+=head2 --verbose
 
 If asserted, this option causes the banner to be printed and commands
 echoed when not reading commands from a terminal.
 
-The default is C<-verbose> if standard in is a terminal, and
-C<-noverbose> otherwise.
+The default is C<--verbose> if standard in is a terminal, and
+C<--noverbose> otherwise.
 
-=head2 -version
+=head2 --version
 
 This option displays the version of this script. The script then exits.
 
@@ -1209,7 +1227,7 @@ Supported options are:
 
 =over
 
-=item -before date-and-optional-time
+=item --before date-and-optional-time
 
 This option, if present, specifies that only distributions created
 before the given date be listed.
@@ -1223,68 +1241,68 @@ L<Date::Manip|Date::Manip> will be loaded if possible and used to
 interpret the time. If L<Date::Manip|Date::Manip> can not be loaded an
 exception will be thrown.
 
-=item -by-date
+=item --by-date
 
-This Boolean option is a synonym for L<-date|/-date>.
+This Boolean option is a synonym for L<--date|/--date>.
 
-=item -date
+=item --date
 
 If this Boolean option is true, distributions are sorted by date. If
 not, they are sorted by distribution name.
 
-=item -development
+=item --development
 
 If asserted, development packages are listed; if not asserted they are
 not. Development packages are defined as those with an underscore in
 their version number, and digits other than zero before the underscore.
-If none of C<-development>, C<-production> or C<-unreleased> is
+If none of C<--development>, C<--production> or C<--unreleased> is
 asserted, all are asserted by default.
 
-=item -distribution
+=item --distribution
 
 If asserted, only the distribution name is listed, and the author name
 is suppressed if only one author was specified.
 
-=item -distro
+=item --distro
 
-This is a synonym for L<-distribution|/-distribution>.
+This is a synonym for L<--distribution|/--distribution>.
 
-=item -format strftime_format
+=item --format strftime_format
 
 This option specifies the C<strftime()> format for date output. It has
-no effect unless C<-date> is specified. The default C<'%Y-%m-%d'>, which
+no effect unless C<--date> is specified. The default C<'%Y-%m-%d'>, which
 is the format used in the F<CHECKSUMS> file.
 
-=item -latest
+=item --latest
 
 If asserted, only the highest-numbered version of any distribution is
 displayed.
 
-The default is C<-nolatest>.
+The default is C<--nolatest>.
 
-=item -match
+=item --match
 
- -match Acme-
+ --match Acme-
 
 If present, the argument is a regular expression pattern, and only
 distributions whose base name matches the pattern will be displayed.
 
-=item -production
+=item --production
 
 If asserted, production packages are listed; if not asserted they are
 not. Production packages are defined as those with no underscore in
-their version number. If none of C<-development>, C<-production> or
-C<-unreleased> is asserted, all are asserted by default.
+their version number. If none of C<--development>, C<--production> or
+C<--unreleased> is asserted, all are asserted by default.
 
-=item -quiet
+=item --quiet
 
 If asserted, the name and address of the author is suppressed unless
 at least one distribution by that author is listed.
 
-=item -requires
+=item --requires
 
- -requires Test::More
- -requires 'Test::More || Test::V2'
+ --requires Test::More
+ --requires 'Test::More || Test::V2'
 
 This option selects distributions that require the given modules.
 
@@ -1295,36 +1313,36 @@ invalid Perl the error message is likely to be unhelpful.
 B<Caveat:> If you provide a pernicious expression, on your head be the
 consequences.
 
-=item -since date-and-optional-time
+=item --since date-and-optional-time
 
 This option, if present, specifies that only distributions created
 on or after the given date be listed.
 
-For how the date is parsed, see C<-before>.
+For how the date is parsed, see C<--before>.
 
-=item -unpublished
+=item --unpublished
 
-This is a synonym for L<-unreleased|/-unreleased>.
+This is a synonym for L<--unreleased|/--unreleased>.
 
-=item -unreleased
+=item --unreleased
 
 If asserted, unreleased packages are listed; if not asserted they are
 not. Unreleased packages are defined as those with an underscore in
 their version number, and only zeroes and dots before the underscore.
-If none of C<-development>, C<-production> or C<-unreleased> is
+If none of C<--development>, C<--production> or C<--unreleased> is
 asserted, all are asserted by default.
 
-=item -with
+=item --with
 
- -with Build.PL
+ --with Build.PL
 
 This option specifies a file which must be present in the distribution
 for it to be selected for display. It can be specified multiple times,
 in which case all specified files must be present.
 
-=item -without
+=item --without
 
- -without Build.PL
+ --without Build.PL
 
 This option specifies a file which must not be present in the
 distribution for it to be selected for display. It can be specified
@@ -1337,14 +1355,14 @@ present.
 
  cpan-adhoc> cpan
  cpan-adhoc> cpan file:///home/yehudi/Mini-CPAN/
- cpan-adhoc> cpan -default
+ cpan-adhoc> cpan --default
 
 If no argument is specified, this command displays the CPAN URL being
 used.
 
 If an argument is specified, this command sets the CPAN URL being used.
 
-If the CPAN URL was specified as C<-default>, a default value is
+If the CPAN URL was specified as C<--default>, a default value is
 computed from the current setting of C<default_cpan_source>, and that
 value is both set as the current soure and displayed. If no default can
 be computed from the current C<default_cpan_source>, an error is
@@ -1354,7 +1372,7 @@ displayed and the current setting is left unchanged.
 
  cpan-adhoc> default_cpan_source
  cpan-adhoc> default_cpan_source cpanm,CPAN
- cpan-adhoc> default_cpan_source -default
+ cpan-adhoc> default_cpan_source --default
 
 If no argument is specified, this command displays the sources of
 default CPAN URLs being used.
@@ -1362,13 +1380,13 @@ default CPAN URLs being used.
 If an argument is specified, this command sets the sources of default
 CPAN URLs. The value is a comma-delimited list.
 
-If the argument was specified as C<-default>, the default value is
+If the argument was specified as C<--default>, the default value is
 reinstated.
 
 B<Note> that setting this value does not affect the C<cpan> setting. If
 you want to recompute the C<cpan> URL after setting this, you must do
 
- cpan-adhoc> cpan -default
+ cpan-adhoc> cpan --default
 
 The default is C<'CPAN::Mini,cpanm,CPAN,CPANPLUS'>.
 
@@ -1377,7 +1395,7 @@ The default is C<'CPAN::Mini,cpanm,CPAN,CPANPLUS'>.
  cpan-adhoc> diff libwww-perl README README
  cpan-adhoc> diff README README
  cpan-adhoc> diff README
- cpan-adhoc> diff -less -u README README
+ cpan-adhoc> diff --less -u README README
 
 This command runs F<diff> on a file from a CPAN archive and a local
 file. The arguments are the distribution name, the file in the
@@ -1385,23 +1403,23 @@ distribution, and the local file. The distribution defaults to the
 current distribution, and the file in the distribution defaults to the
 local file.
 
-The C<-less> option specifies that the output of F<diff> be viewed in
+The C<--less> option specifies that the output of F<diff> be viewed in
 F<less>. Anything else that looks like an option (that is, that has a
 leading dash) will be passed to the F<diff> program. Because of the
-possibility of conflict with F<diff> options, C<-less> may not be
+possibility of conflict with F<diff> options, C<--less> may not be
 abbreviated, though it may be specified as C<--less>, or negated
-C<-noless>.
+C<--noless>.
 
 The null option (C<-->) ends option processing, and causes anything
 after it to be considered an argument. For example, in
 
- cpan-adhoc> diff README -readme
+ cpan-adhoc> diff README --readme
 
-the trailing C<-readme> is taken as an option for F<diff>. But in
+the trailing C<--readme> is taken as an option for F<diff>. But in
 
  cpan-adhoc> diff -- README -readme
 
-the trailing C<-readme> is taken as a file name.
+the trailing C<--readme> is taken as a file name.
 
 =head2 dist
 
@@ -1495,7 +1513,7 @@ following options are available:
 
 Adds size and date to the output;
 
-=item -less
+=item --less
 
 Views the output in Perl's default pager.
 
@@ -1524,7 +1542,7 @@ metadata is not available (i.e. no F<META.json> or F<META.yml> was
 found) a warning will be issued.
 
 The metadata is displayed by the L<CPAN::Meta|CPAN::Meta> C<as_string()>
-method. You can specify option C<-less> to view the list in Perl's
+method. You can specify option C<--less> to view the list in Perl's
 default pager.
 
 =head2 module
@@ -1548,16 +1566,16 @@ Supported options are:
 
 =over
 
-=item -distribution
+=item --distribution
 
 If this option is asserted, no file name is specified, and the time
 displayed is the modification time of the distribution itself, or of the
 cuurrent distribution if no distribution name is given.
 
-=item -format strftime_format
+=item --format strftime_format
 
 This option specifies the C<strftime()> format for date output. The
-default is the value of the command-line C<-date-format> option.
+default is the value of the command-line C<--date-format> option.
 
 =back
 
@@ -1589,62 +1607,62 @@ package. The package may be defaulted. Supported options are:
 
 =over
 
-=item -class
+=item --class
 
 If this Boolean option is true, the dump will contain the class name of
 each element.
 
-The default is C<-class>, but this can be negated with C<-noclass>.
+The default is C<--class>, but this can be negated with C<--noclass>.
 
-=item -comments
+=item --comments
 
 If this Boolean option is true, comments will appear in the dump.
 
-The default is C<-comments>, but this can be negated with
-C<-nocomments>.
+The default is C<--comments>, but this can be negated with
+C<--nocomments>.
 
-=item -content
+=item --content
 
 If this Boolean option is true, the content of each token will appear in
 the dump.
 
-The default is C<-content>, but this can be negated with C<-nocontent>.
+The default is C<--content>, but this can be negated with C<--nocontent>.
 
-=item -gview
+=item --gview
 
 If this Boolean option is true, the C<gview> command will be used to
 display the dump. Otherwise C<less> will be used.
 
-The default is C<-nogview>.
+The default is C<--nogview>.
 
-=item -indent
+=item --indent
 
 This integer option specifies the indentation of each nesting level in
 the dump.
 
-The default is C<-indent 2>.
+The default is C<+-indent 2>.
 
-=item -locations
+=item --locations
 
 If this Boolean option is true, the location of each element in the
 source will appear in the dump.
 
-The default is C<-nolocations>.
+The default is C<--nolocations>.
 
-=item -memaddr
+=item --memaddr
 
 If this Boolean option is true, the memory address of each element in
 the dump will appear.
 
-The default is C<-nomemaddr>.
+The default is C<--nomemaddr>.
 
-=item -whitespace
+=item --whitespace
 
 If this Boolean option is true, whitespace elements will appear in the
 dump.
 
-The default is C<-whitespace>, but this can be negated with
-C<-nowhitespace>.
+The default is C<--whitespace>, but this can be negated with
+C<--nowhitespace>.
 
 =back
 
@@ -1653,8 +1671,19 @@ C<-nowhitespace>.
 This command lists the modules provided by the distribution. This comes
 from the metadata C<'provides'> key provided that is not empty;
 otherwise it is constructed from the metadata and the contents of the
-distribution. You can specify option C<-less> to view the list in Perl's
+distribution. You can specify option C<--less> to view the list in Perl's
 default pager.
+
+=head2 requires
+
+This command lists the modules required to install, test, and use the
+distribution. This comes freom the distribution's metadata. Modules
+required by phases C<develop> or C<x_*> are excluded.
+
+You can specify option C<---recursive> (or C<-R> to get recursive
+dependencies.
+
+You can specify C<--less> to view the list in Perl's default pager.
 
 =head2 pwd
 

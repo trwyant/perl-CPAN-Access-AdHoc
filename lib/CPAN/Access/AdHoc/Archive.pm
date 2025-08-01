@@ -203,6 +203,40 @@ sub provides {
     return $provides;
 }
 
+# NOTE that this relies on the metadata.
+sub __requires {
+    my ( $self ) = @_;
+    my $meta = $self->metadata();
+    unless( defined $meta ) {
+	warn "Debug - Archive @{[ $self->archive() ]} has no metadata";
+	return {};
+    }
+    my $prereq = $meta->effective_prereqs();
+    my %req;
+    # TODO this is a crock. I ought to be able to query the $prereq
+    # object for the specified phases -- or the defined phases at least
+    foreach my $phase ( $prereq->phases() ) {
+	state $ignore = { map { $_ => 1 } qw{ develop } };
+	$ignore->{$phase}
+	    and next;
+	index( $phase, 'x_' ) == 0
+	    and next;
+	my $req = $prereq->requirements_for( $phase, 'requires' );
+	foreach my $module ( $req->required_modules() ) {
+	    state $ignore = { map { $_ => 1 } qw{ perl } };
+	    $ignore->{$module}
+		and next;
+	    $req{$module} = 1;
+	}
+    }
+    return \%req;
+}
+
+sub requires {
+    my ( $self ) = @_;
+    return ( keys %{ $self->__requires() } );
+}
+
 sub __set_archive_mtime {
     my ( $self, $fn ) = @_;
     if ( defined( my $mtime = $self->mtime() ) ) {
@@ -530,6 +564,17 @@ method makes no further effort to establish what the metadata are.
 This method returns the names of all modules provided by this
 distribution. It comes from the corresponding metadata item if that
 exists; otherwise we try to generate it ourselves.
+
+=head3 requires
+
+This method returns the names of the modules required by this
+distribution. These are derived from the distribution's metadata.
+
+=head3 __requires
+
+This method returns a reference to a hash whose keys are the modules
+required by this distribution, and whose values are true. These are
+derived from the distribution's metadata.
 
 =head3 __set_archive_mtime
 
