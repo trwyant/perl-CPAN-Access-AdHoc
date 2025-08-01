@@ -66,6 +66,7 @@ mock/src/repos/MENUHIN/Yehudi/MANIFEST
 mock/src/repos/MENUHIN/Yehudi/MANIFEST.SKIP
 mock/src/repos/MENUHIN/Yehudi/t/basic.t
 README
+SECURITY
 t/basic.t
 t/classify_version.t
 t/config.t
