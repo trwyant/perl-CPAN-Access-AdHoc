@@ -1,3 +1,14 @@
+0.000_236	2025-07-31	T. R. Wyant
+    Add SECURITY policy.
+
+    Add requires() and requires_recursive()
+
+    Require Archive::Tar 1.45, for COMPRESS_GZIP.
+
+    Have Makefile.PL & Build.PL build mock/repos if needed.
+
+    Tweak ::Default::CPAN config logic.
+
 0.000_235	2024-07-27	T. R. Wyant
     Factor distro resolution into CPAN::Access::AdHoc
 

@@ -9,7 +9,7 @@ use parent qw{ CPAN::Access::AdHoc::Default::CPAN };
 
 use CPAN::Access::AdHoc::Util qw{ __load };
 
-our $VERSION = '0.000_235';
+our $VERSION = '0.000_236';
 
 use constant CONFIGURED	=> eval {
     __load( 'CPAN' );
