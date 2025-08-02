@@ -327,6 +327,13 @@ SKIP: {
 	[ qw{ Carp ExtUtils::MakeMaker Test::More strict warnings } ],
 	'Kit package requires Yehudi 0.001';
 
+    # DANGER WILL ROBINSON!!! FRAGILE CODE ALERT
+    # This works because if I pass the CPAN::Meta object the invocant is
+    # unused.
+    is [ sort CPAN::Access::AdHoc->requires( $meta ) ],
+	[ qw{ Carp ExtUtils::MakeMaker Test::More strict warnings } ],
+	'Kit metadata requires Yehudi 0.001';
+
     SKIP: {
 
 	Archive::Tar->can( 'extract' )

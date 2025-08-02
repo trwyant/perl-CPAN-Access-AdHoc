@@ -9,7 +9,7 @@ use Config::Tiny ();
 use CPAN::Access::AdHoc::Archive;
 use CPAN::Access::AdHoc::Util qw{
     :carp __attr __cache __classify_version __expand_distribution_path
-    __guess_media_type
+    __guess_media_type __requires
     ARRAY_REF CODE_REF HASH_REF
 };
 use CPAN::DistnameInfo;
@@ -151,7 +151,7 @@ sub corpus {
 	    # TODO want this to handle using prebuilt matcher.
 	    $distro_matcher
 		and ( $arch ||= $self->fetch_distribution_archive( $info->{path}, %arg ) )
-		and not $distro_matcher->( $arch->__requires() )
+		and not $distro_matcher->( $arch )
 		and next;
 	    push @rslt, $info;
 	}
@@ -175,12 +175,23 @@ sub _distro_matcher {
     ref $requires
 	and __wail( "Matcher may not be $requires" );
     $requires =~ m/ [^\w:] /smx
-	or return sub { $_[0]{$requires} };
-    ( my $expr = $requires ) =~ s/ ( [\w:]+ ) /\$_[0]{'$1'}/smxg;
+	or return sub {
+	_distro_requirements( $_[0] )->{$requires};
+    };
+    ( my $expr = $requires ) =~ s/ ( [\w:]+ ) /\$req->{'$1'}/smxg;
     local $@ = undef;
-    my $matcher = eval "sub { $expr }"	## no critic (ProhibitStringyEval)
-	or __wail( "Can not build matcher: $@" );
+    my $matcher = eval <<"EOD"	## no critic (ProhibitStringyEval)
+sub {
+    my \$req = _distro_requirements( \$_[0] );
+    return $expr;
+}
+EOD
+	or __weep( "Can not build matcher: $@" );
     return $matcher;
+}
+
+sub _distro_requirements {
+    return __requires( $_[0]->metadata() ) || {};
 }
 
 sub _parse_checksums_date {
@@ -454,12 +465,16 @@ sub pause_user {
 sub requires {
     my ( $self, $name ) = @_;
     if ( ref $name ) {
-	if ( Scalar::Util::blessed( $name ) ) {
-	    $name->isa( 'CPAN::Access::AdHoc::Archive' )
-		and return $name->requires();
-	} elsif ( HASH_REF eq ref $name ) {
-	    my $arch = $self->fetch_distribution_archive( $name->{name} );
-	    return $arch->requires();
+	my $arch = $name;
+	HASH_REF eq ref $arch
+	    and $arch = $self->fetch_distribution_archive( $arch->{name} );
+	if ( Scalar::Util::blessed( $arch ) ) {
+	    my $meta = $arch;
+	    my $code;
+	    $code = $arch->can( 'metadata' )
+		and $meta = $code->( $arch );
+	    $meta->isa( 'CPAN::Meta' )
+		and return keys %{ __requires( $meta ) || {} };
 	}
 	__wail "Can not process $name";
     } else {
@@ -1192,7 +1207,8 @@ as of this writing the above becomes
  sub { ! $_[0]{'Test::More'} && ! $_[0]{'Test2::V0'} }
 
 B<Caveat:> No safety-checking is done on the selector expression. If you
-specify C<-requires '`sudo rm -rf /`'>, on your head be the consequences.
+specify C<< requires => '`sudo rm -rf /`' >>, on your head be the
+consequences.
 
 =back
 
@@ -1425,18 +1441,19 @@ file is returned. Otherwise an exception is raised.
 =head3 requires
 
 This method takes the name of a distribution or a
-L<CPAN::Access::AdHoc::Archive|CPAN::Access::AdHoc::Archive> object, and
-returns the names of the modules required to configure, build, test, and
-run the module, as specified in the distribution's metadata.
+L<CPAN::Access::AdHoc::Archive|CPAN::Access::AdHoc::Archive> or
+L<CPAN::Meta|CPAN::Meta> object, and returns the names of the modules
+required to configure, build, test, and run the module, as specified in
+the distribution's metadata.
 
 =head3 requires_recursive
 
 This method takes the name of a distribution or a
-L<CPAN::Access::AdHoc::Archive|CPAN::Access::AdHoc::Archive> object, and
-returns the names of the modules required to configure, build, test, and
-run the module, as specified in the metadata of the distribution itself,
-the distributions containing all modules used by the initial
-distribution, and so on.
+L<CPAN::Access::AdHoc::Archive|CPAN::Access::AdHoc::Archive> or
+L<CPAN::Meta|CPAN::Meta> object, and returns the names of the modules
+required to configure, build, test, and run the module, as specified in
+the metadata of the distribution itself, the distributions containing
+all modules used by the initial distribution, and so on.
 
 =head3 resolve_distributions
 

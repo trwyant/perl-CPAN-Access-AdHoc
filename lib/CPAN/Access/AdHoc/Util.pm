@@ -9,10 +9,11 @@ use parent qw{ Exporter };
 
 use Encode ();
 use LWP::MediaTypes ();
+use Scalar::Util ();
 
 our @EXPORT_OK = qw{
     __attr __cache __classify_version __expand_distribution_path
-    __guess_media_type __is_text __load __whinge __wail __weep
+    __guess_media_type __is_text __load __requires __whinge __wail __weep
     ARRAY_REF CODE_REF HASH_REF REGEXP_REF SCALAR_REF
 };
 
@@ -142,6 +143,41 @@ sub __load {
 	require $fn;
     }
     return;
+}
+
+sub __requires {
+    my ( $meta, $filter ) = @_;
+    defined $meta
+	or return;
+    ref $meta
+	and Scalar::Util::blessed( $meta )
+	and $meta->isa( 'CPAN::Meta' )
+	or __weep( 'Metadata must be a CPAN::Meta object' );
+    $filter ||= sub {
+	state $ignore = { map { $_ => 1 } qw{ develop } };
+	return ! ( $ignore->{$_[0]} || index( $_[0], 'x_' ) == 0 );
+    };
+    ref $filter eq CODE_REF
+	or __weep( 'Filter must be a CODE reference' );
+    my $prereq = $meta->effective_prereqs();
+    my %req;
+    # TODO this is a crock. I ought to be able to query the $prereq
+    # object for the specified phases -- or the defined phases at least
+    foreach my $phase ( $prereq->phases() ) {
+	state $ignore = { map { $_ => 1 } qw{ develop } };
+	$ignore->{$phase}
+	    and next;
+	index( $phase, 'x_' ) == 0
+	    and next;
+	my $req = $prereq->requirements_for( $phase, 'requires' );
+	foreach my $module ( $req->required_modules() ) {
+	    state $ignore = { map { $_ => 1 } qw{ perl } };
+	    $ignore->{$module}
+		and next;
+	    $req{$module} = 1;
+	}
+    }
+    return \%req;
 }
 
 our @CARP_NOT = qw{
@@ -279,6 +315,20 @@ F<pp_sys.c>, subroutine C<pp_fttest>.
 
 This subroutine takes as its arguments one or more module names, and
 loads them.
+
+=head3 __requires
+
+This subroutine takes a L<CPAN::Meta|CPAN::Meta> object and an optional
+phase filter argument, and returns a reference to a hash whose keys are
+the modules required by this distribution, and whose values are true.
+These are derived from the distribution's metadata. If the
+L<CPAN::Meta|CPAN::Meta> object is C<undef>, nothing is returned.
+
+The phase filter is a reference to a subroutine that takes a dependency
+phase name as its argument, and returns a true value if the phase is to
+be processed, or a false value if the phase is to be ignored. The
+default is to process all phases except C<'develop'> and phases whose
+names begin with C<'x_'>.
 
 =head2 __whinge
 
