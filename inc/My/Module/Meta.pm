@@ -52,7 +52,7 @@ sub build_requires {
 sub configure_requires {
     return +{
 	'CPAN::Checksums'	=> 0,
-	'CPAN::Meta'	=> 0,
+	'CPAN::Meta'	=> 2.150006,	# Full phases() support
 	'Config'	=> 0,
 	'Cwd'	=> 0,
 	'ExtUtils::Manifest'	=> 0,

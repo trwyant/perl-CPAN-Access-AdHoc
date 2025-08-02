@@ -12,7 +12,7 @@ use CPAN::Access::AdHoc::Util qw{
     __requires
     SCALAR_REF
 };
-use CPAN::Meta ();
+use CPAN::Meta 2.150006 ();	# Full phases() support
 use Encode ();
 use Encode::Guess;
 use ExtUtils::MakeMaker;
