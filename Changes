@@ -1,3 +1,8 @@
+0.000_237	2025-08-02	T. R. Wyant
+    Have app's requires() method take a CPAN::Meta object so that I can
+    get recursive dependencies from the metadata in a distribution's
+    directory.
+
 0.000_236	2025-07-31	T. R. Wyant
     Add SECURITY policy.
 

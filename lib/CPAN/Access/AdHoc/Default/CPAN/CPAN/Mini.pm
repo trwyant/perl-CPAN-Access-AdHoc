@@ -11,7 +11,7 @@ use CPAN::Access::AdHoc::Util qw{ __load };
 use Cwd ();
 use URI::file;
 
-our $VERSION = '0.000_236';
+our $VERSION = '0.000_237';
 
 use constant CONFIGURED	=> eval {
     __load( 'CPAN::Mini' );
