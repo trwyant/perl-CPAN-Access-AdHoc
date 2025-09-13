@@ -36,10 +36,12 @@ jobs:
         include:
           - perl: 5.10.0
             runner: macos-latest
+          - perl: 5.10.0
+            runner: ubuntu-latest
         perl:
           - 5
         runner:
-          - ubuntu_latest
+          - ubuntu-latest
           - macos-latest
     # Define where the job runs.
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idruns-on
