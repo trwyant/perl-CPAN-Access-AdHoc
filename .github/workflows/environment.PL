@@ -7,7 +7,7 @@ use warnings;
 
 use Config;
 
-our $VERSION = '2.000003';
+our $VERSION = '2.000004';
 
 use constant THIS_PERL  => "$]";
 
@@ -79,9 +79,9 @@ sub want_modules {
         or $perl_ver = THIS_PERL;
     foreach (
 	[ qw{ 5.012000  } ],
-	[ qw{ 5.010001 Pod::Text@4.14 } ],
-	[ qw{ 5.010000 HTML::Tagset@3.20 Pod::Text@4.14 XSLoader@0.10 } ],
-	[ qw{ 5.000000 HTML::Tagset@3.20 Pod::Text@4.14 ExtUtils::ParseXS@3.30 XSLoader@0.10 } ],
+	[ qw{ 5.010001 Test::Deep@0.119 Pod::Text@4.14 } ],
+	[ qw{ 5.010000 HTML::Tagset@3.20 Test::Deep@0.119 Pod::Text@4.14 XSLoader@0.10 } ],
+	[ qw{ 5.000000 HTML::Tagset@3.20 Test::Deep@0.119 Pod::Text@4.14 ExtUtils::ParseXS@3.30 XSLoader@0.10 } ],
     ) {
         my ( $version, @want ) = @{ $_ };
         $perl_ver >= $version
