@@ -15,10 +15,11 @@ our $VERSION = '0.000_237';
 my %opt;
 
 GetOptions( \%opt,
-    qw{ distributions|distros! files! },
+    qw{ distributions|distros! files! lines! },
     help => sub { pod2usage( { -verbose => 2 } ) },
 ) and @ARGV == 1 or pod2usage( { -verbose => 0 } );
 
+$opt{files} //= $opt{lines};
 $opt{distributions} //= $opt{files};
 
 my ( $json_file ) = @ARGV;
@@ -42,8 +43,15 @@ foreach my $author ( sort keys %{ $data->{critique} } ) {
 		    and not $violations
 		    and say "$author/$dist_name";
 		$violations++;
-		$opt{files}
-		    and say "    $file_name";
+		if ( $opt{lines} ) {
+		    my @lines = map { $_->[0] }
+			@{ $corpus->{$dist_name}{$file_name} };
+			my $l = @lines == 1 ? 'line' : 'lines';
+		    local $" = ', ';
+		    say "    $file_name $l @lines";
+		} elsif ( $opt{files} ) {
+		    say "    $file_name";
+		}
 	    }
 	}
 	$distros_with_violations += $violations ? 1 : 0;
@@ -86,6 +94,21 @@ The default is C<--no-distributions>.
 =head2 --distros
 
 This option is a synonym for L<--distributions|/--distributions>.
+
+=head2 --files
+
+If this Boolean option is asserted, files with violations are listed.
+This implies L<--distributions|/--distributions>.
+
+The default is C<--no-files>.
+
+=head2 --lines
+
+If this Boolean option is asserted, the line numbers of violations are
+appended to the names of files containing violations. This option
+implies L<--files|/--files>.
+
+The default is C<--no-lines>.
 
 =head2 --help
 
