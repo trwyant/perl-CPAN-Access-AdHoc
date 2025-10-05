@@ -1,0 +1,672 @@
+#!/usr/bin/env perl
+
+use 5.010;
+
+use strict;
+use warnings;
+
+use Carp qw{ confess };
+use CPAN::Access::AdHoc;
+use CPAN::DistnameInfo;
+use File::chdir;
+use File::Spec;
+use File::Temp;
+use Getopt::Long 2.33 qw{ :config auto_version };
+use Pod::Usage;
+use Scalar::Util qw{ refaddr };
+use YAML;
+
+our $VERSION = '0.000_011';
+
+our $DEBUG_INFO;
+
+use constant CONFIG_FILE	=> 'criticize-cpan-rc';
+use constant SKIP_FILE		=> 'criticize-cpan.skip';
+use constant LOCAL_CONFIG_DIR	=> './meta/criticize-cpan';
+use constant USER_CONFIG_DIR	=> "$ENV{HOME}/.config/Perl/criticize-cpan";
+
+use constant ARRAY_REF		=> ref [];
+
+my %opt = (
+    distribution	=> [],
+    indent		=> 0,
+    offset		=> 0,
+);
+
+foreach my $config_dir ( LOCAL_CONFIG_DIR, USER_CONFIG_DIR ) {
+    my $config_file = "$config_dir/@{[ CONFIG_FILE ]}";
+    if ( open my $fh, '<:encoding(utf-8)', $config_file ) {
+	warn 'Default configuration from ', $config_file, "\n";
+	my @config;
+	while ( <$fh> ) {
+	    m/ \A \s* (?: \z | [#] ) /smx
+		and next;
+	    warn $_;
+	    s/ \s+ \z //smx;
+	    push @config, $_;
+	}
+	close $fh;
+	splice @ARGV, 0, 0, @config;
+    }
+}
+
+say for @ARGV;
+
+GetOptions( \%opt,
+    qw{ blib! code! clean! cpan=s distribution|distro=s@ format=s
+    indent=i modules! offset=i profile=s
+    record=s skip=s@ trace! unpublished! verbose! view:s },
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) and @ARGV or pod2usage( { -verbose => 0 } );
+
+unless ( $opt{skip} ) {
+    foreach my $config_dir ( USER_CONFIG_DIR, LOCAL_CONFIG_DIR ) {
+	my $skip_file = "$config_dir/@{[ SKIP_FILE ]}";
+	-e $skip_file
+	    or next;
+	push @{ $opt{skip} }, $skip_file;
+    }
+}
+
+$opt{_indent} = ' ' x $opt{indent};
+
+my %skip;
+foreach my $skip_file ( @{ $opt{skip} } ) {
+    open my $fh, '<:encoding(utf-8)', $skip_file
+	or die "Failed to open $skip_file: $!\n";
+    while ( <$fh> ) {
+	chomp;
+	m/ \A (?: \z | [#] ) /smx
+	    and next;
+	my ( $cpan_id, $distro_name, $path ) = split /\//, $_, 3;
+	my $skip_info = $skip{"$cpan_id/$distro_name"} ||= {
+	    skip_file	=> $skip_file,
+	    path		=> [],
+	};
+	defined $path
+	    and push @{ $skip_info->{path} }, $path;
+    }
+    close $fh;
+}
+
+# TODO the idea here is that the 'done' file returns a hash whose keys
+# are fully-qualified perl critic policy names, and whose values are
+# subroutines to do the quick check.
+my %quick_pass;
+foreach my $config_dir ( USER_CONFIG_DIR, LOCAL_CONFIG_DIR ) {
+    my $fn = "$config_dir/bin/quick_pass.PL";
+    -e $fn
+	or next;
+    local $@ = undef;
+    local $! = 0;
+    my $qp = do $fn;
+    $@
+	and die "Failed to compile $fn: $@\n";
+    $!
+	and die "Failed to load $fn: $!\n";
+    @quick_pass{ keys %{ $qp } } = values %{ $qp };
+}
+
+my ( $json, $term );
+if ( defined $opt{record} ) {
+    require JSON;
+    require File::Slurp;
+    require Time::Piece;
+    $json = JSON->new->utf8->pretty->canonical;
+    $opt{_record} = {
+	asof	=> Time::Piece::gmtime()->strftime( '%Y-%m-%dT%H:%M:%SZ' ),
+    };
+} elsif ( keys %quick_pass ) {
+    require File::Slurp;
+}
+
+if ( defined $opt{view} ) {
+    require Term::UI;
+    require Term::ReadLine;
+    $opt{_term} = Term::ReadLine->new( 'record' );
+    $opt{_choices} = [
+	'True positive',
+	'False positive',
+	'Again',
+	'Quit',
+    ];
+    if ( '' eq $opt{view} ) {
+	$opt{view} = [ qw{ vim -R %1$s +%2$d } ];
+    } else {
+	require Text::ParseWords;
+	$opt{view} = [ Text::ParseWords::parse_line( qr{ \s+ }, 0,
+		$opt{view} ) ];
+    }
+
+    $opt{_term} = Term::ReadLine->new( 'view' );
+    $opt{_choices} ||= [
+	'Next',
+	'Again',
+	'Quit',
+    ];
+}
+
+if ( $opt{blib} ) {
+    require blib;
+    blib->import();
+}
+
+# We defer the loading of Perl::Critic so that we don't have to take the
+# overhead if we only want the version or the help.
+
+require Perl::Critic;
+require Perl::Critic::Utils;
+require Perl::Critic::Violation;
+
+my @critic;
+my @new_arg = (
+    '-severity'		=> undef,
+    defined $opt{profile} ? (
+	'-profile'	=> $opt{profile},
+    ) : (
+	'-noprofile'		=> 1,
+	'-profile'		=> '',
+    ),
+);
+foreach my $policy ( @ARGV ) {
+    push @critic, Perl::Critic->new(
+	'-single-policy'	=> $policy,
+	@new_arg,
+    );
+    my @matches = $critic[-1]->policies()
+	or die "No policies selected by '$policy'\n";
+    @matches > 1
+	and die "More than one policy selected by '$policy'\n";
+    if ( my $code = $quick_pass{ ref $matches[0] } ) {
+	$opt{_quick_pass}{ refaddr( $critic[-1] ) } = $code;
+    }
+}
+
+defined $opt{record}
+    and $opt{_record}{policy} = [ map { ref } map { $_->policies() } @critic ];
+
+{
+    my $code = $opt{code} ? "\n%r" : '';
+    $opt{format} //= @ARGV > 1 ?
+	"%f: %p %m at line %l, column %c.  %e.  (Severity: %s)$code":
+	"%f: %m at line %l, column %c.  %e.  (Severity: %s)$code";
+    $opt{format} =~ m/ \A [0-9]+ \z /smx
+	and $opt{format} = Perl::Critic::Utils::verbosity_to_format(
+	    $opt{format} ) . $code;
+    $opt{format} =~ s/ (?<! \n ) \z /\n/smx;
+}
+
+Perl::Critic::Violation::set_format( $opt{format} );
+
+my $cad = CPAN::Access::AdHoc->new(
+    cpan	=> $opt{cpan},
+);
+
+our $FATAL;	# Yes, this is a crock.
+
+my $match_distro_re = do {
+    local $" = ' | ';
+    qr{ (?: @{ $opt{distribution} } ) }smx;
+};
+
+DIST_NAME_LOOP:
+foreach my $dist_name (
+    grep { $_ =~ $match_distro_re } $cad->indexed_distributions()
+) {
+    my $distro = CPAN::DistnameInfo->new( $dist_name );
+    unless ( $opt{unpublished} ) {
+	my $version;
+	defined( $version = $distro->version() )
+	    and $version =~ m/ \A 0+ [.] 0+ _ /smx
+	    and next;
+    }
+    my $author = $distro->cpanid();
+    my $dist_path = join '/', $author, $distro->filename();
+    my $dist_short_name = join '/', $author, $distro->dist();
+    say "\n$dist_path";
+    local $opt{_skip_info} = undef;
+    foreach ( $dist_path, $dist_short_name ) {
+	$skip{$_}
+	    or next;
+	if ( @{ $skip{$_}{path} } ) {
+	    my $distvname = $distro->distvname();
+	    $opt{_skip_info} = {
+		skip_file	=> $skip{$_}{skip_file},
+		path		=> [ map { "$distvname/$_" }
+		    @{ $skip{$_}{path} } ],
+	    };
+	    last;
+	} else {
+	    say "    skipped per $skip{$_}{skip_file}";
+	    next DIST_NAME_LOOP;
+	}
+    }
+
+    my $dist_archive = $cad->fetch_distribution_archive( $dist_path,
+	http_error_handler	=> sub {
+	    my ( undef, undef, $resp ) = @_;
+	    if ( 404 == $resp->code() ) {
+		( my $msg = $resp->status_line() ) =~ s/ \s+ \z //smx;
+		say "    $msg";
+		return;
+	    }
+	    no warnings qw{ once };
+	    goto \&CPAN::Access::AdHoc::DEFAULT_HTTP_ERROR_HANDLER;
+	},
+    ) or next;
+    my $dist_dir = File::Temp->newdir();
+    local $CWD = $dist_dir->dirname();
+
+    eval {
+	$dist_archive->extract();
+	criticize( \@critic, \%opt, $author,
+	    $dist_archive->base_directory() );
+	1;
+    } and next;
+    $FATAL
+	and die;
+    warn;
+}
+
+if ( defined $opt{record} ) {
+    File::Slurp::write_file( $opt{record}, $json->encode(
+	    $opt{_record} ) );
+}
+
+$opt{modules}
+    and say for sort values %INC;
+
+sub criticize {
+    my ( $critic, $opt, $author, @files ) = @_;
+    my @skip = @{ $opt->{_skip_info}{path} || [] };
+
+    local $| = 1;
+
+    local $SIG{TERM} = sub {
+	$FATAL = 1;
+	defined $DEBUG_INFO
+	    or confess 'Caught SIGTERM';
+	confess 'Caught SIGTERM while processing ', Dump( $DEBUG_INFO ), ' ';
+    };
+
+    ARRAY_REF eq ref $critic
+	or $critic = [ $critic ];
+    ## FIXME the problem with the following is that it loops forever if
+    # it finds a symbolic link to . (i.e. the current directory).
+    # File::Find is smarter than this, but does not find perl files.
+    # What I think I need to do is to turn the guts of all_perl_files
+    # and all supporting routines into a File::Find wanted() subroutine.
+##    @files = map {
+##	-d $_ ? Perl::Critic::Utils::all_perl_files( $_ ) : $_ } @files;
+##    foreach my $file ( @files ) {
+    my @wanted;
+    use File::Find;
+    find(
+	sub {
+	    -d
+		and return;
+	    push @wanted, $File::Find::name;
+	    return;
+	},
+	@files,
+    );
+    PATH_LOOP:
+    foreach my $path ( Perl::Critic::Utils::all_perl_files( @wanted ) ) {
+	my ( $distro, $file ) = split qr{ / }smx, $path, 2;
+	$opt->{_record}
+	    and $opt->{_record}{critique}{$author}{$distro}{$file}
+	    and next;
+	$opt->{trace}
+	    and say "Criticizing $path";
+
+	foreach ( @skip ) {
+	    index $path, $_
+		and next;
+	    $opt->{trace}
+		or say "File $path";
+	    say "    skipped per $opt->{_skip_info}{skip_file}";
+	    next PATH_LOOP;
+	}
+
+	my $content;
+	my @violations;
+	foreach my $ebert ( @{ $critic } ) {
+	    if ( my $quick_pass = $opt->{_quick_pass}{ refaddr( $ebert ) } ) {
+		$content //= File::Slurp::read_file( $path );
+		$quick_pass->( $path, \$content )
+		    and next;
+	    }
+	    push @violations, $ebert->critique( $path );
+	}
+	@violations =
+	    map { $_->[0] }
+	    sort { $a->[1] <=> $b->[1] || $a->[2] <=> $b->[2] }
+	    map { [ $_, $_->line_number(), $_->column_number() ] }
+	    @violations;
+
+	$opt{clean}
+	    and not @violations
+	    and next;
+	$opt->{_record}{critique}
+	    and $opt->{_record}{critique}{$author}{$distro}{$file} = [];
+	if ( @violations ) {
+	    foreach my $v ( @violations ) {
+		print $opt->{_indent}, $v;
+
+		if ( defined $opt->{record} ) {
+		    push @{
+		    $opt->{_record}{critique}{$author}{$distro}{$file}
+		    }, [
+			$v->logical_line_number(),
+			$v->column_number(),
+			$v->policy(),
+			$v->description(),
+			$v->explanation(),
+		    ];
+		    if ( defined $opt->{view} ) {
+			my @cmd = map {
+			    sprintf $_, $path, $v->line_number() +
+				$opt{offset}
+			} @{ $opt->{view} };
+			{	# Single-iteration loop
+			    system { $cmd[0] } @cmd;
+			    if ( $opt->{_term} ) {
+				my $ans = $opt->{_term}->get_reply(
+				    prompt	=> 'Policy result',
+				    choices	=> $opt{_choices},
+				);
+				if ( 'Quit' eq $ans ) {
+				    delete $opt->{_record}{critique}{$author}{$distro}{$file};
+				    return 1;
+				}
+				'Again' eq $ans
+				    and redo;
+				'Next' eq $ans
+				    and next;
+				push @{
+				$opt->{_record}{critique}{$author}{$distro}{$file}[-1]
+				},
+				'True positive' eq $ans ? JSON::true() :
+				JSON::false(),
+			    }
+			}
+		    }
+		}
+	    }
+	} elsif ( $opt{verbose} ) {
+	    say "$path OK";
+	}
+    }
+
+    return;
+}
+
+__END__
+
+=head1 TITLE
+
+criticize-cpan - Run one or more Perl-Critic policies on all of CPAN.
+
+=head1 SYNOPSIS
+
+ criticize-cpan ProhibitExplicitISA
+ criticize-cpan --help
+ criticize-cpan --version
+
+=head1 OPTIONS
+
+=head2 --blib
+
+If asserted, this Boolean option causes the equivalent of C<use blib> to
+be done before L<Perl::Critic|Perl::Critic> loads the specified policy.
+
+The default is C<--no-blib>.
+
+=head2 --code
+
+If asserted, the Boolean option causes C<"\n%r"> to be appended to
+default formats and the format strings corresponding to numeric formats.
+This causes the line of code that was in violation to be appended to the
+output.
+
+The default is C<--no-code>.
+
+=head2 --clean
+
+If asserted, files that have no violations are included in the output.
+
+The default is C<--no-clean>.
+
+=head2 --cpan
+
+ --cpan ~/Nobackup/Mini-CPAN-2020-02-28
+
+This option specifies the CPAN archive to use. It is a URL; if no scheme
+is specified a C<file:> URL will be generated if the specified directory
+exists.
+
+The default is whatever default
+L<CPAN::Access::AdHoc|CPAN::Access::AdHoc> comes up with.
+
+=head2 --distribution
+
+ --distribution Time-HiRes-1.9753
+
+This option selects distributions to criticize. It can be specified more
+than once. The value is taken to be an un-anchored regular expression.
+
+If not specified, all of CPAN is criticized.
+
+=head2 --format
+
+ --format=2
+
+This option specifies the output format. The argument can be either a
+Perl::Critic verbosity level or a format. If none is specified, the
+default is
+
+    "%f: %m at line %l, column %c.  %e.  (Severity: %s)"
+
+if only one policy was specified, or
+
+    "%f: %p %m at line %l, column %c.  %e.  (Severity: %s)"
+
+if more than one policy was specified. Both will have C<"\n%r"> appended
+if L<--code|/--code> is asserted. A new line character will be appended.
+
+=head2 --help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 --indent
+
+ --indent 2
+
+This option specifies a non-negative number of characters to indent any
+violations.
+
+The default is C<--indent=0>.
+
+=head2 --modules
+
+If asserted, this Boolean option causes the values in C<%INC> to be
+dumped after the script completes.
+
+=head2 --offset
+
+This option specifies a non-negative number of lines to offset the
+display forward from the point of the infraction. It has no effect
+unless L<--view|/--view> has been specified or implied.
+
+The default is C<--offset=0>.
+
+=head2 --profile
+
+ --profile=perlcriticrc
+
+This option specifies a Perl Critic profile file to use to initialize
+the policies. The defaut is no profile.
+
+=head2 --record
+
+ --record=fubar.json
+
+This option specifies the name of a file to record the results. The
+format is a JSON hash with the following keys:
+
+=over
+
+=item asof - the ISO time the script was run
+
+=item critique - the critique information
+
+=item policy - a reference to an array of the policy names used
+
+=back
+
+The critique information is a hash keyed by CPAN ID, distribution name,
+and file name within distribution. The data for each file is a reference
+to an array of violations, possibly empty. Each violation is represented
+by an array reference containing:
+
+=over
+
+=item the line number
+
+=item the column number (actually the character number)
+
+=item the policy
+
+=item the description of the violation
+
+=item the explanation of the violation
+
+=back
+
+If L<--view|/--view> was specified, there will be a sixth element which
+is JSON true if the violation was judged a true positive, and false if it
+was judged a false positive.
+
+By default, results are not recorded.
+
+=head2 --skip
+
+ --skip criticize-cpan.skip
+
+This option specifies the name of a file to be read. This file contains
+the names of distributions in the form C<PAUSE_ID/DISTRO_ARCHIVE_NAME>
+or C<PAUSE_ID/DISTRO_ARCHIVE_NAME/POSIX_RELATIVE_PATH_LEADER> with empty
+lines and lines beginning with a hash mark (C<'#'>) ignored. The
+trailing C</POSIX_RELATIVE_PATH_LEADER> is optional. If present, all
+paths in the distribution that begin with that string will be ignored.
+If absent, the named distribution will be ignored.
+
+This option can be specified more than once. Files specified must be
+readable or a fatal exception occurs.
+
+If this option is not specified, files
+F<./meta/criticize-cpan/criticize-cpan.skip> and
+F<$HOME/.config/Perl/criticize-cpan/criticize-cpan.skip> are used if
+they exist.
+
+This was added because I found that
+C<CMORRIS/Parse-Extract-Net-MAC48-0.01.tar.gz> was pathological in that
+the F<t/> directory contains numerous symbolic links to F<.>, and
+L<File::Find|File::Find> lost its mind when it saw them. I was unable at
+this time to diagnose L<File::Find|File::Find>, so I went low-tech.
+
+=head2 --trace
+
+If asserted, the name of each file is displayed before it is analyzed.
+
+=head2 --unpublished
+
+If asserted, unpublished modules are included. These are recognized by
+having version numbers that match C</\A0+\.0+_/>.
+
+The default is C<--no-unpublished>.
+
+=head2 --verbose
+
+If asserted, the names of passing files are displayed.
+
+=head2 --version
+
+This option displays the version of this script. The script then exits.
+
+=head2 --view
+
+This option specifies the command required to view the file. Its value
+will be split on white space using L<Text::ParseWords|Text::ParseWords>,
+with each fragment representing a separate argument. The fragments are
+run through C<sprintf $_, $file_name, $line_number> before being
+spawned. The file name should be specified as C<'%1$s'>, and the line
+number as C<'%2$d>'. There should be no need to quote, since the command
+is spawned directly, and not run through any shell.
+
+The argument to this option is itself optional, and defaults to
+
+ --view='vim -R %1$s +%2$d'
+
+If you default the argument B<and> this option is followed by the policy
+name, you will need to specify C<--> after this option to prevent the
+policy name from being taken as the argument to this option.
+
+=head1 DETAILS
+
+This Perl script runs one or more C<Perl-Critic> policies specified on
+the command line against the whole of the user's currently-configured
+CPAN mirror. It is recommended that this be run against a local
+repository.
+
+=head1 CONFIGURATION
+
+The configuration system is pretty ad-hoc, and involves files placed in
+either the local configuration directory, F<./meta/criticize-cpan>, or
+the user's configuration directory,
+F<$HOME/.config/Perl/criticize-cpan>. Where applicable, the local
+configuration directory takes precedence.
+
+Default options can be configured by placing them in file
+F<criticize-cpan-rc> in either or both of the configuration directories.
+Blank lines and lines whose first non-blank character is C<'#'> are
+ignored. all other lines have trailing white space trimmed, and become
+leading command-line arguments. If both files exist, configuration in
+the local file takes precedence over configuration in the user file.
+
+Distributions or individual files can be skipped. See L<--skip|/--skip>
+for details.
+
+For some policies, it may be possible to tell quickly that a given file
+does not violate the policy. For example, if a policy checks the use of
+C<goto>, a file whose contents do not match C</\bgoto\b/> probably can
+not produce a violation. This kind of thing is specified in file
+F<bin/quick_pass.PL> in either or both configuration directories. The
+last expression in the file must evaluate to a hash reference. The keys
+of the hash are the fully-qualified names of Perl critic policies. The
+values are references to code that receives two arguments: the name of a
+file and a reference to the contents of that file. If the code returns a
+true value, the policy is not run, and no violations are reported in the
+file. If the core returns a false value, the policy is run and any
+violations are reported.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2013, 2018-2022, 2025 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the full text
+of the licenses in the directory LICENSES.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 autoindent :

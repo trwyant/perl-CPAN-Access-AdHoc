@@ -1,0 +1,95 @@
+#!/usr/bin/env perl
+
+use 5.010;
+
+use strict;
+use warnings;
+
+use open qw{ :std :encoding(utf-8) };
+
+use Getopt::Long 2.33 qw{ :config auto_version };
+use JSON::MaybeXS;
+use Pod::Usage;
+
+our $VERSION = '0.000_001';
+
+my %opt;
+
+GetOptions( \%opt,
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) or pod2usage( { -verbose => 0 } );
+
+my $json = JSON::MaybeXS->new()->pretty()->canonical();
+
+my $data = do {
+    local $/ = undef;
+    $json->decode( <> );
+};
+
+foreach my $author ( keys %{ $data->{critique} } ) {
+    my $corpus = $data->{critique}{$author};
+    foreach my $distro ( keys %{ $corpus } ) {
+	foreach my $file ( keys %{ $corpus->{$distro} } ) {
+	    @{ $corpus->{$distro}{$file} }
+		or delete $corpus->{$distro}{$file};
+	}
+	keys %{ $corpus->{$distro} }
+	    or delete $corpus->{$distro};
+    }
+    keys %{ $corpus }
+	or delete $data->{critique}{$author};
+}
+
+print $json->encode( $data );
+
+__END__
+
+=head1 TITLE
+
+criticize-cpan-no-empty - Purge empty critiques from criticize-cpan JSON output.
+
+=head1 SYNOPSIS
+
+ criticize-cpan-no-empty criticize-cpan.json >criticize-cpan-noempty.json
+ criticize-cpan-no-empty --help
+ criticize-cpan-no-empty --version
+
+=head1 OPTIONS
+
+=head2 --help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 --version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script reads a JSON file in the format produced by the
+F<criticize-cpan> C<--record> option, and eliminates any files,
+distributions, and authors that have no violations. Output is to
+standard out.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2022, 2025 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the Artistic
+License 1.0 at
+L<https://www.perlfoundation.org/artistic-license-10.html>, and/or the
+Gnu GPL at L<http://www.gnu.org/licenses/old-licenses/gpl-1.0.txt>.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :

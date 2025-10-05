@@ -5,6 +5,9 @@ CONTRIBUTING
 eg/config-requires
 eg/corpus
 eg/cpan-adhoc
+eg/criticize-cpan
+eg/criticize-cpan-no-empty
+eg/criticize-cpan-summary
 eg/dist-extensions
 eg/distro-by
 eg/grep-content

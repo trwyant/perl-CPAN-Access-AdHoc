@@ -1,0 +1,126 @@
+#!/usr/bin/env perl
+
+use 5.010;
+
+use strict;
+use warnings;
+
+use File::Slurper qw{ read_text };
+use Getopt::Long 2.33 qw{ :config auto_version };
+use JSON;
+use Pod::Usage;
+
+our $VERSION = '0.000_001';
+
+my %opt;
+
+GetOptions( \%opt,
+    qw{ distributions|distros! files! },
+    help => sub { pod2usage( { -verbose => 2 } ) },
+) and @ARGV == 1 or pod2usage( { -verbose => 0 } );
+
+$opt{distributions} //= $opt{files};
+
+my ( $json_file ) = @ARGV;
+
+my $json = JSON->new();
+
+my $data = $json->decode( read_text( $json_file ) );
+
+my $distros = 0;
+my $distros_with_violations = 0;
+my $files_with_violations = 0;
+
+foreach my $author ( sort keys %{ $data->{critique} } ) {
+    my $corpus = $data->{critique}{$author};
+    foreach my $dist_name ( sort keys %{ $corpus } ) {
+	$distros++;
+	my $violations = 0;
+	foreach my $file_name ( keys %{ $corpus->{$dist_name} } ) {
+	    if ( @{ $corpus->{$dist_name}{$file_name} } ) {
+		$opt{distributions}
+		    and not $violations
+		    and say "$author/$dist_name";
+		$violations++;
+		$opt{files}
+		    and say "    $file_name";
+	    }
+	}
+	$distros_with_violations += $violations ? 1 : 0;
+	$files_with_violations += $violations;
+    }
+}
+
+$opt{distributions}
+    and say '';
+
+print <<"EOD";
+                Distros: $distros
+Distros with violations: $distros_with_violations
+  Files with violations: $files_with_violations
+EOD
+
+
+
+__END__
+
+=head1 TITLE
+
+criticize-cpan-summary - Summarize the JSON produced by criticize-cpan
+
+=head1 SYNOPSIS
+
+ criticize-cpan-summary cpan-critique.json
+ criticize-cpan-summary --help
+ criticize-cpan-summary --version
+
+=head1 OPTIONS
+
+=head2 --distributions
+
+If this Boolean option is asserted, distributions in violation are
+listed.
+
+The default is C<--no-distributions>.
+
+=head2 --distros
+
+This option is a synonym for L<--distributions|/--distributions>.
+
+=head2 --help
+
+This option displays the documentation for this script. The script then
+exits.
+
+=head2 --version
+
+This option displays the version of this script. The script then exits.
+
+=head1 DETAILS
+
+This Perl script reads the JSON file produced by F<criticize-cpan> and
+summarizes it to standard out. The summary lists the number of
+distributions, the number of distributions with violations, and the
+number of files with violatoins.
+
+=head1 AUTHOR
+
+Thomas R. Wyant, III F<wyant at cpan dot org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2022, 2025 by Thomas R. Wyant, III
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl 5.10.0. For more details, see the Artistic
+License 1.0 at
+L<https://www.perlfoundation.org/artistic-license-10.html>, and/or the
+Gnu GPL at L<http://www.gnu.org/licenses/old-licenses/gpl-1.0.txt>.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
+# ex: set textwidth=72 :
