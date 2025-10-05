@@ -16,7 +16,7 @@ use Pod::Usage;
 use Scalar::Util qw{ refaddr };
 use YAML;
 
-our $VERSION = '0.000_011';
+our $VERSION = '0.000_237';
 
 our $DEBUG_INFO;
 
