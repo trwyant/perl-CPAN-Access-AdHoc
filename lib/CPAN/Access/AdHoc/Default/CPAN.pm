@@ -7,7 +7,7 @@ use warnings;
 
 use Carp;
 
-our $VERSION = '0.000_237';
+our $VERSION = '0.000_238';
 
 sub get_clean_checksums {
     return 0;
