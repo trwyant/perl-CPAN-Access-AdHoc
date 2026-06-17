@@ -30,8 +30,8 @@ lib/CPAN/Access/AdHoc/Default/CPAN/CPAN/Mini.pm
 lib/CPAN/Access/AdHoc/Default/CPAN/cpanm.pm
 lib/CPAN/Access/AdHoc/Default/CPAN/CPANPLUS.pm
 lib/CPAN/Access/AdHoc/Util.pm
-LICENSES/Artistic
-LICENSES/Copying
+LICENSE-Artistic
+LICENSE-GPL
 Makefile.PL
 MANIFEST
 META.json
