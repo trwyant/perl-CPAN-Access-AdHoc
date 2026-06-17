@@ -43,8 +43,7 @@ Returns C<'violin'>.
 =head1 SUPPORT
 
 Support is by the author. Please file bug reports at
-L<https://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Access-AdHoc>,
-L<https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues>, or in
+L<https://github.com/trwyant/perl-CPAN-Access-AdHoc/issues> or in
 electronic mail to the author.
 
 =head1 AUTHOR
