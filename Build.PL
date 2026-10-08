@@ -29,6 +29,7 @@ my %args = (
     PL_files => {
 	'Build_Repos.PL' => [ 'ignored' ],
     },
+    release_status	=> $meta->release_status(),
     requires	=> $meta->requires(
 	perl	=> $meta->requires_perl(),
     ),
