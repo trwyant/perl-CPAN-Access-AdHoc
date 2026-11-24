@@ -1,3 +1,6 @@
+0.000_240	2026-11-24	T. R. Wyant
+    Get release status from kit meta data.
+
 0.000_239	2026-10-08	T. R. Wyant
     Correct Makefile.PL EUMM version accommodations.
 

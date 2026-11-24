@@ -27,7 +27,7 @@ our %EXPORT_TAGS = (
     ref	=> [ grep { m/ \A [[:upper:]_]+ _REF \z /smx } @EXPORT_OK ],
 );
 
-our $VERSION = '0.000_239';
+our $VERSION = '0.000_240';
 
 use constant ARRAY_REF	=> ref [];
 use constant CODE_REF	=> ref sub {};
@@ -51,7 +51,7 @@ sub __cache {
     return ( $self->{'.cache'}{$name_space} ||= {} );
 }
 
-sub __classify_version {
+sub __classify_version {	## no critic (RequireArgUnpacking)
     local $_ = pop @_;
     defined
 	or return (
