@@ -15,8 +15,11 @@ my %opt;
 
 GetOptions( \%opt,
     qw{
-	author=s development! latest! local=s
-	production! unreleased|unpublished!
+	author=s
+	latest! local=s
+	stable|production!
+	testing|development!
+	unstable|unreleased|unpublished!
     },
     help => sub { pod2usage( { -verbose => 2 } ) },
 ) or pod2usage( { -verbose => 0 } );
@@ -84,30 +87,30 @@ config-requires - Find author's distributions that use specified modules for con
 
 =head1 OPTIONS
 
-=head2 -author
+=head2 --author
 
  -author MENUHIN
 
 This option specifies the author whose corpus is to be searched. The
 default is the currently-configured PAUSE author.
 
-=head2 -development
+=head2 --development
 
-If asserted, this Boolean option selects development releases.
+This is a synonym for L<--testing|/--testing>.
 
-=head2 -help
+=head2 --help
 
 This option displays the documentation for this script. The script then
 exits.
 
-=head2 -latest
+=head2 --latest
 
 If this Boolean option is true, only the latest version of a given
 distribution is displayed.
 
 The default is C<-nolatest>.
 
-=head2 -local
+=head2 --local
 
  -local ~/Code/perl
 
@@ -115,19 +118,31 @@ If this option is specified, the source for the author's distributions
 is assumed to be local, residing in the given directory in
 subdirectories named after the distribution.
 
-=head2 -production
+=head2 --production
 
-If asserted, this Boolean option specifies production releases.
+This is a synonym for L<-stable|/-stable>.
 
-=head2 -unpublished
+=head2 --stable
 
-This is a synonym for L<-unreleased|/-unreleased>.
+If asserted, this Boolean option specifies stable releases.
 
-=head2 -unreleased
+=head2 --testing
 
-If asserted, this Boolean option specifies unreleased releases (sic).
+If asserted, this Boolean option selects testing releases.
 
-=head2 -version
+=head2 --unpublished
+
+This is a synonym for L<-unstable|/-unstable>.
+
+=head2 --unreleased
+
+This is a synonym for L<-unstable|/-unstable>.
+
+=head2 --unstable
+
+If asserted, this Boolean option specifies unstable releases.
+
+=head2 --version
 
 This option displays the version of this script. The script then exits.
 

@@ -11,6 +11,7 @@ use Config;
 use CPAN::DistnameInfo;
 use CPAN::Access::AdHoc;
 use CPAN::Access::AdHoc::Util qw{
+    __classify_version
     __expand_distribution_path
     HASH_REF
 };
@@ -219,10 +220,12 @@ sub verb_corpus {
     );
     my $go = Getopt::Long::Parser->new();
     $go->getoptionsfromarray( \@argv, \%opt, qw{ before=s
-	development! date|by_date|by-date! distribution|distro!
+	date|by_date|by-date! distribution|distro!
 	format=s latest! match=s
-	production! quiet! requires=s
-	since=s unreleased|unpublished!
+	quiet! requires=s since=s
+	stable|production!
+	testing|development! 
+	unstable|unreleased|unpublished!
 	with=s@ without=s@
 	} )
 	or return;
@@ -231,7 +234,7 @@ sub verb_corpus {
     @argv
 	or die "No author specified\n";
     _default_boolean_option_group(
-	\%opt, qw{ development production unreleased } );
+	\%opt, __classify_version() );
     foreach my $name ( qw{ before since } ) {
 	$opt{$name}
 	    or next;
@@ -1039,19 +1042,6 @@ sub _readline_complete_module {
     $readline::rl_completer_terminator_character = '';
     return sort keys %rslt;
 ##    return grep { $_ =~ $match } sort keys %{ $module_index };
-}
-
-# Given a version, return:
-# 'production' unless it contains an underscore
-# 'unreleased' if it has only zeroes and dots before the underscore
-# 'development' otherwise.
-sub _version_kind {
-    my ( $version ) = @_;
-    $version =~ m/ _ /smx
-	or return 'production';
-    $version =~ m/ \A [0.]+ _ /smx
-	and return 'unreleased';
-    return 'development';
 }
 
 __END__

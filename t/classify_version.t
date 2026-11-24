@@ -5,17 +5,20 @@ use 5.010;
 use strict;
 use warnings;
 
-use CPAN::Access::AdHoc::Util qw{ __classify_version };
+use CPAN::Access::AdHoc::Util qw{ :status __classify_version };
 use Test2::V0;
 
-is [ sort( __classify_version() ) ], [ qw{
-    development production unreleased } ], 'List of classifications';
+is [ __classify_version() ], [
+    RELEASE_STATUS_STABLE,
+    RELEASE_STATUS_TESTING,
+    RELEASE_STATUS_UNSTABLE,
+], 'List of classifications';
 
 foreach (
-    [ unreleased	=> '0.000_001'	],
-    [ development	=> '0.000_90'	],
-    [ production	=> '0.001'	],
-    [ development	=> '0.001_01'	],
+    [ RELEASE_STATUS_UNSTABLE,	'0.000_001'	],
+    [ RELEASE_STATUS_TESTING,	'0.000_90'	],
+    [ RELEASE_STATUS_STABLE,	'0.001'	],
+    [ RELEASE_STATUS_TESTING,	'0.001_01'	],
 ) {
     my ( $want, $vers ) = @{ $_ };
     is __classify_version( $vers ), $want, "Version $vers is $want";

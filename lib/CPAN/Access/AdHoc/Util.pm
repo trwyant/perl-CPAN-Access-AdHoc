@@ -10,16 +10,20 @@ use parent qw{ Exporter };
 use Encode ();
 use LWP::MediaTypes ();
 use Scalar::Util ();
+use version;
 
 our @EXPORT_OK = qw{
     __attr __cache __classify_version __expand_distribution_path
     __guess_media_type __is_text __load __requires __whinge __wail __weep
     ARRAY_REF CODE_REF HASH_REF REGEXP_REF SCALAR_REF
+    RELEASE_STATUS_STABLE RELEASE_STATUS_TESTING RELEASE_STATUS_UNSTABLE
 };
 
 our %EXPORT_TAGS = (
     all	=> [ @EXPORT_OK ],
     carp => [ qw{ __whinge __wail __weep } ],
+    status => [ grep { m/ \A RELEASE_STATUS_ [[:upper:]_]+ \z /smx }
+	@EXPORT_OK ],
     ref	=> [ grep { m/ \A [[:upper:]_]+ _REF \z /smx } @EXPORT_OK ],
 );
 
@@ -30,6 +34,10 @@ use constant CODE_REF	=> ref sub {};
 use constant HASH_REF	=> ref {};
 use constant REGEXP_REF	=> ref qr{};
 use constant SCALAR_REF	=> ref \0;
+
+use constant RELEASE_STATUS_STABLE	=> 'stable';
+use constant RELEASE_STATUS_TESTING	=> 'testing';
+use constant RELEASE_STATUS_UNSTABLE	=> 'unstable';
 
 sub __attr {
     my ( $self ) = @_;
@@ -46,9 +54,16 @@ sub __cache {
 sub __classify_version {
     local $_ = pop @_;
     defined
-	or return ( qw{ development production unreleased } );
-    return m/ \A 0+ [.] 0+ _ [0-8] /smx ? 'unreleased' :
-	m/ _ /smx ? 'development' : 'production';
+	or return (
+	    RELEASE_STATUS_STABLE,
+	    RELEASE_STATUS_TESTING,
+	    RELEASE_STATUS_UNSTABLE,
+	);
+    my ( $release, $major, $minor ) = version->parse( $_ )->tuple();
+    my $release_status = ( ! $release && ! $major && $minor < 900 )
+	? RELEASE_STATUS_UNSTABLE : $minor
+	? RELEASE_STATUS_TESTING : RELEASE_STATUS_STABLE;
+    return $release_status;
 }
 
 sub __expand_distribution_path {
@@ -365,6 +380,18 @@ This manifest constant is simply C<'HASH'>.
 
 This manifest constant is simply C<'Regexp'>.
 
+=head2 RELEASE_STATUS_STABLE
+
+This manifest constant is simply C<'stable'>.
+
+=head2 RELEASE_STATUS_TESTING
+
+This manifest constant is simply C<'testing'>.
+
+=head2 RELEASE_STATUS_UNSTABLE
+
+This manifest constant is simply C<'unstable'>.
+
 =head2 SCALAR_REF
 
 This manifest constant is simply C<'SCALAR'>.
@@ -383,7 +410,12 @@ L<__weep|/__weep>.
 =head2 :ref
 
 This tag exports all the reference manifest constants; that is, those
-ending in C<'_REF'>.
+ending with C<'_REF'>.
+
+=head2 :status
+
+This tag exports all the release status manifest constants; that is,
+those beginning with C<'RELEASE_STATUS_'>.
 
 =head1 SUPPORT
 

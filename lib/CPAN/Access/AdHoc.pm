@@ -94,7 +94,6 @@ sub corpus {
 	defined( my $dist = $info->dist() )
 	    or next;
 	my $version = $info->version();
-	my $kind = __classify_version( $version );
 	my $mtime = defined $corpus->{$filename}{mtime} ?
 	    _parse_checksums_date( $corpus->{$filename}{mtime} ) : do {
 		my $arch = $self->fetch_distribution_archive(
@@ -106,7 +105,6 @@ sub corpus {
 	    my $v = version->parse( $version );
 	    push @{ $found{$dist} }, {
 		info	=> $info,
-		kind	=> $kind,
 		mtime	=> $mtime,
 		path	=> $pathname,
 		version	=> $v,
@@ -121,7 +119,6 @@ sub corpus {
 	    eval {	## no critic (RequireCheckingReturnValueOfEval)
 		push @{ $found{$dist} }, {
 		    info	=> $info,
-		    kind	=> $kind,
 		    mtime	=> $mtime,
 		    path	=> $pathname,
 		    version	=> version->parse( $v2 ),
@@ -139,7 +136,8 @@ sub corpus {
 	$arg{latest}
 	    and @distro = ( $distro[-1] );
 	foreach my $info ( @distro ) {
-	    $arg{$info->{kind}}
+	    my $arch = $self->fetch_distribution_archive( $info->{path}, %arg );
+	    $arg{ $arch->release_status() }
 		or next;
 	    defined $arg{before}
 		and $info->{mtime} >= $arg{before}
@@ -147,10 +145,8 @@ sub corpus {
 	    defined $arg{since}
 		and $info->{mtime} < $arg{since}
 		and next;
-	    my $arch;
 	    # TODO want this to handle using prebuilt matcher.
 	    $distro_matcher
-		and ( $arch ||= $self->fetch_distribution_archive( $info->{path}, %arg ) )
 		and not $distro_matcher->( $arch )
 		and next;
 	    push @rslt, $info;

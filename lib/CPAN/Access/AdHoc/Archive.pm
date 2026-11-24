@@ -8,10 +8,11 @@ use warnings;
 use Cwd ();
 use CPAN::Access::AdHoc::Util qw{
     :carp
-    __attr __expand_distribution_path __is_text __guess_media_type
-    __requires
+    __attr __classify_version __expand_distribution_path __is_text
+    __guess_media_type __requires
     SCALAR_REF
 };
+use CPAN::DistnameInfo;
 use CPAN::Meta 2.150006 ();	# Full phases() support
 use Encode ();
 use Encode::Guess;
@@ -210,6 +211,16 @@ sub requires {
     return ( keys %{ __requires( $self->metadata() ) || {} } );
 }
 
+sub release_status {
+    my ( $self ) = @_;
+    if ( my $meta = $self->metadata() ) {
+	my $release_status;
+	defined( $release_status = $meta->release_status() )
+	    and return $release_status;
+    }
+    return __classify_version( $self->version() );
+}
+
 sub __set_archive_mtime {
     my ( $self, $fn ) = @_;
     if ( defined( my $mtime = $self->mtime() ) ) {
@@ -254,6 +265,17 @@ sub __change_to_target_dir {
 =end comment
 
 =cut
+
+sub version {
+    my ( $self ) = @_;
+    if ( my $meta = $self->metadata() ) {
+	my $version;
+	defined( $version = $meta->release_status() )
+	    and return $version;
+    }
+    my $info = CPAN::DistnameInfo->new( $self->path() );
+    return $info->version();
+}
 
 sub wrap_archive {
     my ( $class, @args ) = @_;
@@ -538,6 +560,19 @@ This method returns the names of all modules provided by this
 distribution. It comes from the corresponding metadata item if that
 exists; otherwise we try to generate it ourselves.
 
+=head3 release_status
+
+ my $release_status = $self->release_status();
+
+Added in version 0.000_240.
+
+This method returns the release status of the distribution. This will be
+determined from the metadata if possible, otherwise by calling
+L<__classify_version()|CPAN::Access::AdHoc::Util/__classify_version> on
+C<< $self->version() >>.
+
+The return is one of the values defined by the CPAN metadata standard.
+
 =head3 requires
 
 This method returns the names of the modules required by this
@@ -555,6 +590,16 @@ nothing.
 
 This method is intended for the use of subclass' write() methods, and is
 not intended to be called by the user of this package.
+
+=head3 version
+
+ my $version = $self->version();
+
+Added in version 0.000_240.
+
+This method returns the version of the distribution. This will be
+determined from the metadata if possible, otherwise by parsing the
+distribution path.
 
 =head3 wrap_archive
 
